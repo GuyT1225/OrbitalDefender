@@ -210,3 +210,61 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   .roeStrip{font-size:10px}.missionActions{flex-wrap:wrap}
   .missionActions button{font-size:9px;padding:6px 8px}
 }
+
+/* V0.3 — Dual Mode / Arcade Waves */
+.modeHidden{display:none!important}
+.modeSelect{
+  min-height:100vh;display:grid;place-items:center;padding:24px;background:
+  radial-gradient(circle at 50% 20%,rgba(62,190,97,.16),transparent 36%),#020504
+}
+.modeShell{width:min(920px,100%);border:1px solid var(--line);background:linear-gradient(#09170f,#040b07);padding:24px}
+.modeShell>small{color:var(--green);letter-spacing:.14em}.modeShell h1{margin:8px 0 4px;font-size:clamp(34px,6vw,68px);line-height:.9}
+.modeShell>p{color:#86aa90;margin:0 0 20px}
+.modeCards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modeCard{min-height:220px;padding:22px;border:1px solid #2c6841;background:#07120b;color:var(--ink);text-align:left;display:flex;flex-direction:column;justify-content:flex-end}
+.modeCard span{color:var(--amber);font-weight:900;font-size:14px;letter-spacing:.16em}.modeCard b{font-size:20px;margin:8px 0}.modeCard small{color:var(--muted);line-height:1.45}
+.modeCard:hover{border-color:var(--amber);box-shadow:inset 0 0 28px rgba(240,170,67,.06)}
+.arcadeMode{background:linear-gradient(155deg,#0a2012,#120e05)}
+.arcadeApp{min-height:100vh;background:#010403;color:var(--ink);padding:8px}
+.arcadeTop{display:flex;justify-content:space-between;gap:14px;align-items:end;border:1px solid var(--line);padding:11px 14px;background:linear-gradient(#0a1b10,#061009)}
+.arcadeTop small{color:var(--green);letter-spacing:.12em}.arcadeTop h1{margin:3px 0 0;font-size:clamp(28px,4.5vw,50px)}
+.arcadeTopActions{display:flex;gap:7px}.arcadeTopActions button{border:1px solid #397b4e;background:#08160d;color:#c6f9d1;padding:8px 10px;font-weight:900}
+.arcadeHero{position:relative;border:1px solid var(--line);margin-top:8px;background:#020806;overflow:hidden}
+#arcadeField{display:block;width:100%;height:min(72vh,760px);min-height:540px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.arcadeOverlay{position:absolute;inset:0;pointer-events:none}
+.waveChip,.baseChip,.scoreChip{
+  position:absolute;top:10px;padding:7px 10px;border:1px solid #2f6f45;background:rgba(3,12,7,.85);font-size:11px;letter-spacing:.08em
+}
+.waveChip{left:10px}.baseChip{left:50%;transform:translateX(-50%)}.scoreChip{right:10px}
+.waveChip b,.scoreChip b{color:var(--amber)}.baseChip b{color:var(--cyan)}
+.arcadeBanner{
+  position:absolute;top:13%;left:50%;transform:translateX(-50%);padding:10px 18px;border:1px solid #8f6526;
+  background:rgba(37,23,5,.9);color:#ffe0a8;font-weight:900;letter-spacing:.12em;opacity:0;transition:opacity .16s
+}
+.arcadeBanner.show{opacity:1}
+.chargeReadout{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);color:#b7d8c0;font-size:10px;background:rgba(2,8,5,.78);padding:6px 9px;border:1px solid #244d32}
+.arcadeCombatDock{
+  position:sticky;bottom:0;z-index:20;border:1px solid var(--line);background:rgba(3,10,6,.96);backdrop-filter:blur(8px);padding:9px;margin-top:8px
+}
+.arcadeWeaponStrip{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.arcadeWeapon{min-height:54px;border:1px solid #2c5d3d;background:#07130c;color:#c9f7d2;display:grid;grid-template-columns:30px 1fr;grid-template-rows:auto auto;text-align:left;padding:7px 9px}
+.arcadeWeapon span{grid-row:1/3;color:var(--green);font-size:20px;align-self:center}.arcadeWeapon b{font-size:11px}.arcadeWeapon small{font-size:8px;color:var(--muted)}
+.arcadeWeapon.active{border-color:var(--amber);box-shadow:inset 4px 0 0 var(--amber);background:#181505}.arcadeWeapon.active span{color:var(--amber)}
+.arcadeMeters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}.arcadeMeters>div{display:grid;grid-template-columns:70px 1fr 48px;align-items:center;gap:7px;font-size:9px}
+.arcadeMeters span{color:var(--muted)}.arcadeMeters b{text-align:right}.arcadeBar{height:13px;border:1px solid #285139;background:#020805}.arcadeBar i{display:block;height:100%;width:100%;background:var(--green)}
+.arcadeBar.heat i{background:var(--amber);width:0}.arcadeBar.charge i{background:var(--cyan);width:0}
+.arcadeUpgrade,.arcadeEnd{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,5,3,.78);z-index:60;padding:18px}
+.arcadeUpgrade.show,.arcadeEnd.show{display:grid}
+.upgradeCard{width:min(760px,95vw);border:2px solid #3c8654;background:linear-gradient(#0b1e11,#061009);padding:22px;box-shadow:0 0 50px rgba(70,255,120,.1)}
+.upgradeCard small{color:var(--muted);letter-spacing:.16em}.upgradeCard h2{font-size:28px;margin:7px 0 16px}
+.upgradeChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.upgradeChoices button{min-height:110px;border:1px solid #346f47;background:#08150d;color:#d9ffe2;padding:13px;text-align:left}
+.upgradeChoices button b{display:block;color:#ffd480;font-size:14px}.upgradeChoices button span{display:block;color:var(--muted);font-size:10px;margin-top:5px}
+.endChoices{grid-template-columns:1fr 1fr}
+@media(max-width:720px){
+  .modeSelect{padding:0}.modeShell{border-left:0;border-right:0;padding:18px}.modeCards{grid-template-columns:1fr}.modeCard{min-height:150px}
+  .arcadeApp{padding:0}.arcadeTop{border-left:0;border-right:0}.arcadeTop h1{font-size:26px}
+  #arcadeField{height:67vh;min-height:500px}
+  .arcadeCombatDock{margin-top:0;border-left:0;border-right:0;padding:7px}
+  .arcadeMeters{grid-template-columns:1fr;gap:5px}.arcadeMeters>div{grid-template-columns:62px 1fr 46px}
+  .upgradeChoices{grid-template-columns:1fr}.upgradeChoices button{min-height:72px}
+}
