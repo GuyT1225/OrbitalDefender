@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Defender V0.1.0</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <small>ORBITAL FIRE SUPPORT // SENSOR PLATFORM 03</small>
+      <h1>ORBITAL DEFENDER</h1>
+    </div>
+    <div class="meta">
+      <small>V0.1.0 SENSOR SWEEP</small>
+      ALT 12,400 // ORBIT STABLE
+    </div>
+  </header>
+
+  <section class="stage">
+    <canvas id="field" aria-label="Orbital tactical battlefield"></canvas>
+    <div class="hud">
+      <div class="hudTop">
+        <span>IR / GRID LINK ACTIVE</span>
+        <span>PROTECT CONVOY // CONFIRM HOSTILES</span>
+      </div>
+      <div id="reticleLabel" class="reticleLabel">F-5</div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="panel">
+      <div class="panelTitle">ORDNANCE</div>
+      <div class="weapons">
+        <button class="weapon active" data-weapon="light" type="button">LIGHT</button>
+        <button class="weapon" data-weapon="medium" type="button">MEDIUM</button>
+        <button class="weapon" data-weapon="heavy" type="button">HEAVY</button>
+      </div>
+      <div class="actionRow">
+        <button id="scanBtn" class="scan" type="button">SCAN</button>
+        <button id="fireBtn" class="fire" type="button">FIRE</button>
+      </div>
+      <div class="legend">
+        <span><i class="dot friend"></i>Friendly</span>
+        <span><i class="dot unknown"></i>Unidentified</span>
+        <span><i class="dot hostile"></i>Confirmed hostile</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panelTitle">FIRE CONTROL</div>
+      <div class="readouts">
+        <div class="readout"><span>WEAPON</span><strong id="weaponName">LIGHT</strong></div>
+        <div class="readout"><span>RELOAD</span><strong id="reload">READY</strong></div>
+        <div class="readout"><span>CONTACTS</span><strong id="contact">4 HOSTILES</strong></div>
+        <div class="readout"><span>FRIENDLIES</span><strong id="friendlies">3/3</strong></div>
+      </div>
+      <div id="status" class="status" aria-live="polite">MISSION START // scan unknown contacts before weapons release.</div>
+    </div>
+  </section>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
