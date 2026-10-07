@@ -17,13 +17,18 @@ const ui={
   reload:$("reload"),cooldownFill:$("cooldownFill"),heatValue:$("heatValue"),heatFill:$("heatFill"),
   stabilityValue:$("stabilityValue"),stabilityFill:$("stabilityFill"),
   ammoLight:$("ammoLight"),ammoMedium:$("ammoMedium"),ammoHeavy:$("ammoHeavy"),
-  scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),threatMeter:$("threatMeter")
+  scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),threatMeter:$("threatMeter"),
+  roeState:$("roeState"),scanProgress:$("scanProgress"),
+  restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
+  missionResult:$("missionResult"),missionSummary:$("missionSummary"),
+  overlayRestart:$("overlayRestart"),overlayNext:$("overlayNext")
 };
 
 let cssW=1,cssH=1,dpr=1,last=performance.now();
-let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="light",shot=null,impactFx=[],wrecks=[];
+let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="light",shot=null,impactFx=[],wrecks=[],incomingFx=[];
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
-let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500;
+let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
+let shotsFired=0,hostilesDestroyed=0,friendliesLost=0;
 
 const weaponDefs={
   light:{name:"40mm AUTO",role:"FAST / PRECISION",reload:620,damage:1,radius:4,travel:650,color:"#78ef9a",ammo:120,maxAmmo:120,heat:.10,shape:"lightShape",damageLabel:"LOW"},
@@ -58,6 +63,8 @@ const contacts=[
   {x:78,z:62,hp:4,maxHp:4,state:0,label:"T-03",kind:"aa"},
   {x:54,z:38,hp:2,maxHp:2,state:0,label:"T-04",kind:"technical"}
 ];
+const baseContactPositions=contacts.map(c=>({x:c.x,z:c.z}));
+const baseFriendlyPositions=friendlies.map(f=>({x:f.x,z:f.z}));
 
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function lerp(a,b,t){return a+(b-a)*t;}
@@ -180,6 +187,11 @@ function drawVehicle(v,isFriendly){
   if(v.hp<=0)return;
   const p=project(v.x,v.z,1.8),base=project(v.x,v.z,0),c=isFriendly?"#6ad8e8":(v.state===2?"#ff665b":"#f0aa43");
   const flashing=v.flashUntil&&performance.now()<v.flashUntil;
+  ctx.save();
+  ctx.globalAlpha=isFriendly?.22:(v.state===0?.18:.32);
+  ctx.fillStyle=isFriendly?"#6ad8e8":(v.state===2?"#ff8a5b":"#ffd17a");
+  ctx.shadowColor=ctx.fillStyle;ctx.shadowBlur=isFriendly?12:20;
+  ctx.beginPath();ctx.ellipse(p.x,p.y,15,8,0,0,Math.PI*2);ctx.fill();ctx.restore();
   line(base,p,c,flashing?3.5:2);
   if(flashing){
     ctx.save();ctx.strokeStyle="#fff4d8";ctx.globalAlpha=.8;ctx.lineWidth=2.5;
@@ -330,7 +342,11 @@ function scan(){
 }
 function fire(){
   if(missionOver||shot)return;
-  const now=performance.now(),def=weaponDefs[weapon];
+  const now=performance.now(),def=weaponDefs[weapon],aimed=nearestContact(13);
+  if(aimed&&aimed.state<2){
+    ui.status.textContent="WEAPONS HOLD // SCAN AND CONFIRM CONTACT FIRST";
+    showBanner("SCAN REQUIRED","warn");setCombatEvent(aimed.label+" // IDENTIFICATION REQUIRED","warn");sfxWarn();return;
+  }
   if(now<readyAt||def.ammo<=0||heat>.92)return;
   ensureAudio();
 
@@ -339,7 +355,7 @@ function fire(){
   const end={x:reticle.x,z:reticle.z,y:0};
   const control={x:lerp(start.x,end.x,.48),z:lerp(start.z,end.z,.48),y:75+(weapon==="heavy"?12:0)};
   shot={weapon,start,control,end,startTime:now,duration:def.travel};
-  def.ammo--;readyAt=now+def.reload;heat=clamp(heat+def.heat,0,1);stability=clamp(stability-(weapon==="heavy"?.28:weapon==="medium"?.16:.07),.35,1);
+  def.ammo--;shotsFired++;readyAt=now+def.reload;heat=clamp(heat+def.heat,0,1);stability=clamp(stability-(weapon==="heavy"?.28:weapon==="medium"?.16:.07),.35,1);
 
   ui.status.textContent="SHOT AWAY // "+def.name+" // IMPACT "+(def.travel/1000).toFixed(1)+"s";
   showBanner("SHOT AWAY","warn");setCombatEvent(def.name+" // SHOT AWAY // ETA "+(def.travel/1000).toFixed(1)+"s","warn");sfxFire(weapon);updateHud();
@@ -360,7 +376,7 @@ function resolveImpact(s){
     const d=Math.hypot(c.x-s.end.x,c.z-s.end.z);
     if(d<=def.radius){
       if(c.state<2){denied=true;continue;}
-      const before=c.hp;c.hp=Math.max(0,c.hp-def.damage);hostileHit=true;hitContact=c;c.flashUntil=performance.now()+700;if(before>0&&c.hp===0){destroyed=true;wrecks.push({x:c.x,z:c.z,kind:c.kind});}
+      const before=c.hp;c.hp=Math.max(0,c.hp-def.damage);hostileHit=true;hitContact=c;c.flashUntil=performance.now()+700;if(before>0&&c.hp===0){destroyed=true;hostilesDestroyed++;wrecks.push({x:c.x,z:c.z,kind:c.kind});}
     }
   }
 
@@ -392,14 +408,39 @@ function resolveImpact(s){
 function enemyPressure(now){
   if(missionOver||now<nextEnemyFire)return;
   nextEnemyFire=now+4200+Math.random()*2600;
-  const alive=friendlies.filter(f=>f.hp>0);if(!alive.length)return;
-  const tgt=alive[Math.floor(Math.random()*alive.length)];
-  if(Math.random()<.48){
-    tgt.hp=Math.max(0,tgt.hp-1);
-    impactFx.push({x:tgt.x,z:tgt.z,start:now,duration:780,color:"#ff5f55",kind:"friendly"});
-    ui.status.textContent="INCOMING // "+tgt.label+" TAKING FIRE";showBanner("INCOMING","hit");sfxWarn();
+  const aliveF=friendlies.filter(f=>f.hp>0),aliveH=contacts.filter(c=>c.hp>0);
+  if(!aliveF.length||!aliveH.length)return;
+  const tgt=aliveF[Math.floor(Math.random()*aliveF.length)];
+  const src=aliveH[Math.floor(Math.random()*aliveH.length)];
+  src.flashUntil=now+900;
+  if(src.state===0)src.state=1;
+  incomingFx.push({source:src,target:tgt,start:now,duration:900,hit:Math.random()<.55,resolved:false});
+  ui.status.textContent="INCOMING // "+src.label+" FIRING ON "+tgt.label;
+  setCombatEvent(src.label+" → "+tgt.label+" // INCOMING FIRE","hit");
+  showBanner("INCOMING FIRE","hit");sfxWarn();updateHud();
+}
+function drawIncomingFire(now){
+  incomingFx=incomingFx.filter(f=>now-f.start<f.duration+350);
+  for(const f of incomingFx){
+    const t=clamp((now-f.start)/f.duration,0,1),a=project(f.source.x,f.source.z,2),b=project(f.target.x,f.target.z,1.5);
+    const x=lerp(a.x,b.x,t),y=lerp(a.y,b.y,t);
+    ctx.save();ctx.strokeStyle="#ff5f55";ctx.lineWidth=2.3;ctx.setLineDash([7,5]);ctx.globalAlpha=.78;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle="#fff2d2";ctx.shadowColor="#ff5f55";ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.restore();
+    if(t>=1&&!f.resolved){f.resolved=true;resolveEnemyShot(f);}
+  }
+}
+function resolveEnemyShot(f){
+  if(f.hit&&f.target.hp>0){
+    const before=f.target.hp;f.target.hp=Math.max(0,f.target.hp-1);f.target.flashUntil=performance.now()+750;
+    if(before>0&&f.target.hp===0)friendliesLost++;
+    impactFx.push({x:f.target.x,z:f.target.z,start:performance.now(),duration:900,color:"#ff5f55",kind:"friendly",label:"INCOMING -1 HP"});
+    ui.status.textContent=f.source.label+" HIT "+f.target.label;
+    setCombatEvent(f.source.label+" → "+f.target.label+" // HIT // -1 HP","hit");showBanner("FRIENDLY HIT","hit");
   }else{
-    ui.status.textContent="INCOMING // hostile fire missed convoy.";showBanner("INCOMING / MISS","warn");
+    impactFx.push({x:f.target.x+3,z:f.target.z-2,start:performance.now(),duration:650,color:"#f0aa43",kind:"miss",label:"ENEMY MISS"});
+    ui.status.textContent=f.source.label+" MISSED "+f.target.label;
+    setCombatEvent(f.source.label+" → "+f.target.label+" // MISS","warn");showBanner("INCOMING / MISS","warn");
   }
   updateHud();checkMission();
 }
@@ -407,12 +448,31 @@ function checkMission(){
   const aliveF=friendlies.filter(f=>f.hp>0).length,aliveH=contacts.filter(c=>c.hp>0).length;
   if(!aliveF){
     missionOver=true;ui.missionStatus.textContent="FAILED";ui.missionStatus.className="";ui.topStatus.textContent="CONVOY LOST";
-    ui.status.textContent="MISSION FAILED // convoy lost.";showBanner("MISSION FAILED","hit");
+    ui.status.textContent="MISSION FAILED // convoy lost.";showBanner("MISSION FAILED","hit");showMissionOverlay(false);
   }else if(!aliveH){
     missionOver=true;ui.missionStatus.textContent="COMPLETE";ui.missionStatus.className="greenText";ui.topStatus.textContent="AIR CORRIDOR SECURE";
-    ui.status.textContent="MISSION COMPLETE // hostile contacts neutralized.";showBanner("MISSION COMPLETE","scan");
+    ui.status.textContent="MISSION COMPLETE // hostile contacts neutralized.";showBanner("MISSION COMPLETE","scan");showMissionOverlay(true);
   }
   ui.scanBtn.disabled=missionOver;ui.fireBtn.disabled=missionOver;
+}
+function showMissionOverlay(success){
+  ui.missionResult.textContent=success?"MISSION COMPLETE":"MISSION FAILED";
+  ui.missionSummary.textContent="Hostiles destroyed: "+hostilesDestroyed+"  //  Friendlies lost: "+friendliesLost+"  //  Shots fired: "+shotsFired;
+  ui.missionOverlay.classList.add("show");ui.missionOverlay.setAttribute("aria-hidden","false");
+}
+function resetMission(next=false){
+  scenarioIndex+=next?1:0;missionOver=false;shot=null;impactFx=[];wrecks=[];incomingFx=[];
+  readyAt=0;heat=0;stability=1;shotsFired=0;hostilesDestroyed=0;friendliesLost=0;pass=1;orbitTurns=0;
+  const offset=(scenarioIndex%4)*3;
+  contacts.forEach((c,i)=>{c.x=clamp(baseContactPositions[i].x+((i%2?1:-1)*offset),45,88);c.z=clamp(baseContactPositions[i].z+(((i+scenarioIndex)%2?1:-1)*offset),20,78);c.hp=c.maxHp;c.state=0;c.flashUntil=0;});
+  friendlies.forEach((f,i)=>{f.x=baseFriendlyPositions[i].x;f.z=baseFriendlyPositions[i].z;f.hp=f.maxHp;f.flashUntil=0;});
+  structures.forEach(o=>o.hp=o.maxHp);
+  Object.values(weaponDefs).forEach(d=>d.ammo=d.maxAmmo);
+  ui.missionStatus.textContent="IN PROGRESS";ui.missionStatus.className="amber";ui.topStatus.textContent="LINK SECURE";
+  ui.missionOverlay.classList.remove("show");ui.missionOverlay.setAttribute("aria-hidden","true");
+  ui.scanBtn.disabled=false;ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
+  ui.status.textContent=next?"NEXT MISSION // NEW CONTACT PATTERN":"MISSION RESTARTED // SENSOR SWEEP RESET";
+  setCombatEvent(next?"NEW SECTOR LOADED // IDENTIFY CONTACTS":"MISSION RESET // IDENTIFY CONTACTS","scan");updateHud();
 }
 
 function updateWeaponUi(){
@@ -422,6 +482,10 @@ function updateWeaponUi(){
   ui.damageStat.textContent=def.damageLabel;ui.radiusStat.textContent=def.radius+" m";ui.reloadStat.textContent=(def.reload/1000).toFixed(1)+" s";
   ui.weaponSilhouette.className="weaponSilhouette "+def.shape;
 }
+ui.restartBtn.addEventListener("click",()=>resetMission(false));
+ui.nextBtn.addEventListener("click",()=>resetMission(true));
+ui.overlayRestart.addEventListener("click",()=>resetMission(false));
+ui.overlayNext.addEventListener("click",()=>resetMission(true));
 weaponButtons.forEach(b=>b.addEventListener("click",()=>{
   weapon=b.dataset.weapon;updateWeaponUi();ui.status.textContent=weaponDefs[weapon].name+" SELECTED";tone(360,.04);updateHud();
 }));
@@ -463,7 +527,19 @@ function updateHud(now=performance.now()){
   ui.ammoLight.textContent=weaponDefs.light.ammo;ui.ammoMedium.textContent=weaponDefs.medium.ammo;ui.ammoHeavy.textContent=weaponDefs.heavy.ammo;
   ui.fireCtrlState.textContent=heat>.92?"HOT":"ONLINE";
   ui.fireCtrlState.style.color=heat>.92?"#ff5f55":"";
-  ui.fireBtn.disabled=missionOver||remaining>0||!!shot||def.ammo<=0||heat>.92;
+  const aimed=info.contact||null,needsScan=!!(aimed&&aimed.state<2);
+  if(needsScan){
+    ui.roeState.textContent="WEAPONS HOLD";ui.roeState.className="hold";
+    ui.scanProgress.textContent=aimed.state===0?"SCAN 1/2 REQUIRED":"SCAN 2/2 // CONFIRM HOSTILE";
+    ui.fireBtn.textContent="SCAN REQUIRED";ui.fireBtn.classList.add("held");ui.fireBtn.classList.remove("hot");
+    ui.scanBtn.classList.add("scanNeeded");
+  }else{
+    ui.roeState.textContent=aimed&&aimed.state===2?"WEAPONS FREE":"AREA FIRE";
+    ui.roeState.className="clear";ui.scanProgress.textContent=aimed&&aimed.state===2?"TARGET CONFIRMED":"NO CONTACT UNDER RETICLE";
+    ui.fireBtn.textContent="FIRE";ui.fireBtn.classList.remove("held");ui.fireBtn.classList.add("hot");
+    ui.scanBtn.classList.remove("scanNeeded");
+  }
+  ui.fireBtn.disabled=missionOver||remaining>0||!!shot||def.ammo<=0||heat>.92||needsScan;
 
   const threat=Math.min(8,aliveHostile*2+Math.ceil(aliveUnknown*.7));
   [...ui.threatMeter.children].forEach((n,i)=>n.classList.toggle("active",i<threat));
@@ -486,6 +562,7 @@ function drawScene(now){
   drawWrecks();
   drawReticle();
   drawShot(now);
+  drawIncomingFire(now);
   drawImpactEffects(now);
 }
 function frame(now){

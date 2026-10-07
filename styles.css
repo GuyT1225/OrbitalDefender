@@ -170,3 +170,43 @@ canvas{height:min(72vh,760px);min-height:600px}
   .fireButton,.scanButton{min-height:58px}
 }
 
+
+/* V0.2.2 — Thermal Command / ROE / Mission Flow */
+body{background:radial-gradient(circle at 50% -8%,rgba(38,133,69,.18),transparent 34%),#010403}
+.stage{box-shadow:inset 0 0 44px rgba(91,255,132,.035),0 0 28px rgba(33,138,71,.05)}
+canvas{filter:contrast(1.08) brightness(1.05)}
+.missionActions{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.missionActions button,.missionCardActions button{
+  border:1px solid #34764a;background:#08170d;color:#bcf7c8;padding:7px 10px;
+  font-weight:900;font-size:10px;letter-spacing:.08em
+}
+.missionActions button:hover,.missionCardActions button:hover{border-color:var(--amber);color:#ffe1a7}
+.roeStrip{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:7px;
+  border:1px solid #694d20;background:#211706;padding:8px 10px;font-size:11px;letter-spacing:.08em
+}
+.roeStrip .hold{color:#ffbf57;font-weight:900}.roeStrip .clear{color:#90ffae;font-weight:900}
+#scanProgress{color:#e8fff0}
+.fireButton.held{background:#211708;border-color:#7e5820;color:#e8b969;box-shadow:none}
+.fireButton.hot{background:#49110d;border-color:#c94d41;color:#fff0ec;box-shadow:0 0 20px rgba(255,80,67,.18)}
+.scanButton.scanNeeded{box-shadow:0 0 18px rgba(83,215,229,.18);border-color:#59b6c2}
+.thermalHot{filter:drop-shadow(0 0 8px rgba(255,120,68,.35))}
+.incomingVector{color:#ff675c}
+.missionOverlay{
+  position:fixed;inset:0;display:none;place-items:center;background:rgba(0,5,3,.78);
+  backdrop-filter:blur(3px);z-index:50;padding:20px
+}
+.missionOverlay.show{display:grid}
+.missionCard{
+  width:min(92vw,560px);border:2px solid #3a8652;background:linear-gradient(#0b1d11,#06100a);
+  box-shadow:0 0 50px rgba(57,255,111,.12);padding:24px
+}
+.missionCard small{color:var(--muted);letter-spacing:.15em}
+.missionCard h2{font-size:30px;margin:8px 0;color:#eaffef}
+.missionCard p{color:#a9d6b5;font-size:13px}
+.missionCardActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+.missionCardActions button:last-child{border-color:#8d6825;color:#ffd380}
+@media(max-width:720px){
+  .roeStrip{font-size:10px}.missionActions{flex-wrap:wrap}
+  .missionActions button{font-size:9px;padding:6px 8px}
+}
