@@ -591,15 +591,16 @@ const arcadeUi={
   chargeReadout:$("chargeReadout"),cooldownFill:$("arcadeCooldownFill"),cooldownText:$("arcadeCooldownText"),
   heatFill:$("arcadeHeatFill"),heatText:$("arcadeHeatText"),chargeFill:$("arcadeChargeFill"),chargeText:$("arcadeChargeText"),
   upgrade:$("arcadeUpgrade"),end:$("arcadeEnd"),endTitle:$("arcadeEndTitle"),endSummary:$("arcadeEndSummary"),
-  back:$("arcadeBack"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes")
+  back:$("arcadeBack"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes")
 };
 const arcadeWeaponButtons=[...document.querySelectorAll(".arcadeWeapon")];
 
-let arcadeW=1,arcadeH=1,arcadeDpr=1,arcadeLast=performance.now(),arcadeRunning=false;
+let arcadeW=1,arcadeH=1,arcadeDpr=1,arcadeLast=performance.now(),arcadeRunning=false,arcadeOrbit=-.18;
 let arcadeWeapon="cannon",arcadeHeat=0,arcadeReadyAt=0,arcadeScore=0,arcadeBase=100,arcadeWave=1;
 let arcadeEnemies=[],arcadeShots=[],arcadeFx=[],arcadeStructures=[],arcadeSpawnQueue=[],arcadeSpawnAt=0;
 let arcadePointer=null,arcadeChargeStart=0,arcadeAim={x:50,z:58},arcadeBannerTimer=null;
 let arcadeRunOver=false,arcadeWaveTransition=false,arcadeKills=0;
+let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
 const arcadeWeaponDefs={
@@ -612,6 +613,72 @@ const arcadeEnemyDefs={
   technical:{hp:3.2,speed:4.9,damage:13,size:7,color:"#ff765d",score:140},
   armor:{hp:6.8,speed:3.0,damage:22,size:9,color:"#ff4f4b",score:260}
 };
+
+function arcadeEnsureAudio(){
+  if(!arcadeAudioEnabled)return;
+  ensureAudio();
+  if(audioCtx&&audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+}
+function arcadeTone(freq,dur=.08,type="square",gain=.02,when=0){
+  if(!arcadeAudioEnabled)return;
+  arcadeEnsureAudio();if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+when;
+  o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(gain,t);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03);
+}
+function arcadeNoise(dur=.12,gain=.025){
+  if(!arcadeAudioEnabled)return;
+  arcadeEnsureAudio();if(!audioCtx)return;
+  const sr=audioCtx.sampleRate,b=audioCtx.createBuffer(1,Math.max(1,Math.floor(sr*dur)),sr),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const s=audioCtx.createBufferSource(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+  f.type="lowpass";f.frequency.value=1100;g.gain.value=gain;s.buffer=b;s.connect(f);f.connect(g);g.connect(audioCtx.destination);s.start();
+}
+function arcadeSfxLaunch(tier,weaponName){
+  const base=weaponName==="orbital"?70:weaponName==="heavy"?105:170;
+  arcadeTone(base,tier==="OVERCHARGE"?.22:.11,"sawtooth",tier==="OVERCHARGE"?.05:.03);
+  arcadeTone(base*1.8,.08,"square",.018,.035);
+  if(tier==="OVERCHARGE")arcadeTone(base*.55,.35,"sine",.028,.02);
+}
+function arcadeSfxImpact(tier,hit){
+  arcadeNoise(tier==="OVERCHARGE"?.34:.18,tier==="OVERCHARGE"?.065:.038);
+  arcadeTone(hit?58:84,tier==="OVERCHARGE"?.38:.2,"sine",tier==="OVERCHARGE"?.05:.028);
+  if(hit)arcadeTone(420,.07,"square",.016,.05);
+}
+function arcadeSfxWave(){
+  arcadeTone(220,.09,"square",.02);arcadeTone(330,.09,"square",.018,.11);arcadeTone(440,.14,"square",.016,.22);
+}
+function arcadeSfxBaseHit(){arcadeTone(92,.28,"sawtooth",.045);arcadeTone(55,.36,"sine",.035,.04);arcadeNoise(.22,.035);}
+function arcadeSfxUpgrade(){arcadeTone(330,.08,"sine",.02);arcadeTone(495,.1,"sine",.018,.08);arcadeTone(660,.14,"sine",.016,.16);}
+function arcadeSfxEnd(success){
+  const notes=success?[262,330,392,523]:[220,185,147,110];
+  notes.forEach((n,i)=>arcadeTone(n,.24,"sine",.022,i*.16));
+}
+function startArcadeMusic(){
+  if(!arcadeAudioEnabled||arcadeMusicTimer)return;
+  arcadeEnsureAudio();arcadeMusicStep=0;
+  const pulse=()=>{
+    if(!arcadeRunning||!arcadeAudioEnabled)return;
+    const roots=[55,55,65.4,49],root=roots[Math.floor(arcadeMusicStep/4)%roots.length];
+    arcadeTone(root,.5,"sine",.009);
+    if(arcadeMusicStep%2===0)arcadeTone(root*2,.16,"triangle",.006,.02);
+    if(arcadeMusicStep%4===3)arcadeTone(root*3,.09,"square",.004,.03);
+    arcadeMusicStep++;
+  };
+  pulse();arcadeMusicTimer=setInterval(pulse,520);
+}
+function stopArcadeMusic(){if(arcadeMusicTimer){clearInterval(arcadeMusicTimer);arcadeMusicTimer=null;}}
+function setArcadeAudio(enabled){
+  arcadeAudioEnabled=enabled;uiAudioUpdate();
+  if(enabled&&arcadeRunning)startArcadeMusic();else stopArcadeMusic();
+}
+function uiAudioUpdate(){
+  if(!arcadeUi.audio)return;
+  arcadeUi.audio.setAttribute("aria-pressed",arcadeAudioEnabled?"true":"false");
+  arcadeUi.audio.textContent=arcadeAudioEnabled?"🔊 AUDIO":"🔇 MUTED";
+}
+
 const arcadeWaveDefs=[
   [{type:"runner",count:6}],
   [{type:"runner",count:5},{type:"technical",count:3}],
@@ -625,16 +692,17 @@ function showMode(name){
   modeSelect.classList.add("modeHidden");
   tacticalApp.classList.toggle("modeHidden",name!=="tactical");
   arcadeApp.classList.toggle("modeHidden",name!=="arcade");
-  if(name==="arcade"){resizeArcade();startArcadeRun();}
-  else arcadeRunning=false;
+  if(name==="arcade"){resizeArcade();arcadeEnsureAudio();startArcadeRun();}
+  else {arcadeRunning=false;stopArcadeMusic();}
 }
 function returnToModes(){
-  arcadeRunning=false;tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
+  arcadeRunning=false;stopArcadeMusic();tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
 }
 chooseTactical.addEventListener("click",()=>showMode("tactical"));
 chooseArcade.addEventListener("click",()=>showMode("arcade"));
 arcadeUi.back.addEventListener("click",returnToModes);
 arcadeUi.endModes.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");returnToModes();});
+arcadeUi.audio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
 arcadeUi.restart.addEventListener("click",startArcadeRun);
 arcadeUi.endRestart.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");startArcadeRun();});
 
@@ -648,12 +716,12 @@ function resizeArcade(){
 window.addEventListener("resize",()=>{if(!arcadeApp.classList.contains("modeHidden"))resizeArcade();});
 
 function arcadeProject(x,z,y=0){
-  const dx=x-50,dz=z-50,theta=-.18,ct=Math.cos(theta),st=Math.sin(theta);
+  const dx=x-50,dz=z-50,theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
   return{x:arcadeW/2+rx*(arcadeW/120),y:arcadeH*.51+rz*(arcadeH/150)-y*(arcadeH/120),depth:rz};
 }
 function arcadeScreenToGround(sx,sy){
-  const rx=(sx-arcadeW/2)/(arcadeW/120),rz=(sy-arcadeH*.51)/(arcadeH/150),theta=-.18,ct=Math.cos(theta),st=Math.sin(theta);
+  const rx=(sx-arcadeW/2)/(arcadeW/120),rz=(sy-arcadeH*.51)/(arcadeH/150),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   return{x:clamp(rx*ct+rz*st+50,3,97),z:clamp(-rx*st+rz*ct+50,3,97)};
 }
 function arcadeLine(a,b,color,w=1,dash=null){
@@ -679,7 +747,7 @@ function startArcadeRun(){
   arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
-  updateArcadeHud(performance.now());
+  uiAudioUpdate();startArcadeMusic();arcadeSfxWave();updateArcadeHud(performance.now());
 }
 function queueArcadeWave(n){
   arcadeSpawnQueue=[];
@@ -717,7 +785,7 @@ function updateArcadeEnemies(dt,now){
     if(e.climb&&e.type==="armor"&&Math.random()<dt/2500)e.climb.hp=Math.max(0,e.climb.hp-.25);
     if(e.z>=91){
       e.dead=true;arcadeBase=Math.max(0,arcadeBase-e.damage);arcadeFx.push({x:e.x,z:92,start:now,duration:700,color:"#ff5f55",label:"BASE -"+e.damage});
-      showArcadeBanner("BASE HIT");if(arcadeBase<=0)endArcadeRun(false);
+      showArcadeBanner("BASE HIT");arcadeSfxBaseHit();if(arcadeBase<=0)endArcadeRun(false);
     }
   }
   arcadeEnemies=arcadeEnemies.filter(e=>!e.dead);
@@ -726,16 +794,16 @@ function updateArcadeEnemies(dt,now){
     if(arcadeWave>=5)endArcadeRun(true);else setTimeout(()=>{if(arcadeRunning&&!arcadeRunOver)showArcadeUpgrade();},500);
   }
 }
-function showArcadeUpgrade(){arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");}
+function showArcadeUpgrade(){arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
-  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeWave++;queueArcadeWave(arcadeWave);showArcadeBanner("WAVE "+arcadeWave+" INBOUND");
+  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
   if(arcadeRunOver)return;arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
   arcadeUi.endTitle.textContent=success?"SECTOR HELD":"BASE OVERRUN";
   arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Reached wave "+arcadeWave+"/5";
-  arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");
+  arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");arcadeSfxEnd(success);
 }
 arcadeWeaponButtons.forEach(b=>b.addEventListener("click",()=>{arcadeWeapon=b.dataset.arcadeWeapon;arcadeWeaponButtons.forEach(x=>x.classList.toggle("active",x===b));}));
 
@@ -750,7 +818,7 @@ function launchArcadeShot(hold,now){
   const start={x:12,z:12,y:58},end={x:arcadeAim.x,z:arcadeAim.z,y:0},control={x:(start.x+end.x)/2,z:(start.z+end.z)/2,y:78+(tier.label==="OVERCHARGE"?12:0)};
   arcadeShots.push({weapon:arcadeWeapon,tier,start,end,control,startTime:now,duration:def.travel});
   arcadeReadyAt=now+def.cooldown*tier.cool*arcadeMods.cooldown;arcadeHeat=clamp(arcadeHeat+def.heat*tier.heat,0,1);
-  showArcadeBanner(tier.label+" STRIKE");
+  arcadeSfxLaunch(tier.label,arcadeWeapon);showArcadeBanner(tier.label+" STRIKE");
 }
 function arcadeQuad(a,b,c,t){const u=1-t;return{x:u*u*a.x+2*u*t*b.x+t*t*c.x,z:u*u*a.z+2*u*t*b.z+t*t*c.z,y:u*u*a.y+2*u*t*b.y+t*t*c.y};}
 function updateArcadeShots(now){
@@ -770,6 +838,7 @@ function resolveArcadeImpact(s,now){
     for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*.3);}
   }
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit):"MISS",radius});
+  arcadeSfxImpact(s.tier.label,hit>0);
 }
 function drawArcadeBoard(){
   arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
@@ -844,6 +913,7 @@ arcadeCanvas.addEventListener("pointercancel",()=>arcadePointer=null);
 function arcadeFrame(now){
   const dt=Math.min(40,now-arcadeLast);arcadeLast=now;
   if(arcadeRunning&&!arcadeApp.classList.contains("modeHidden")){
+    arcadeOrbit+=dt*.000025;
     arcadeHeat=clamp(arcadeHeat-dt*.000065,0,1);
     drawArcadeBoard();drawArcadeStructures();updateArcadeEnemies(dt,now);updateArcadeShots(now);drawArcadeEnemies();drawArcadeAim(now);drawArcadeShots(now);drawArcadeFx(now);updateArcadeHud(now);
   }
