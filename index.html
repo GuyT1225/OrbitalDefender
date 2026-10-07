@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#020604">
-<title>Orbital Defender V0.2.1 — Combat Readability</title>
-<link rel="stylesheet" href="styles.css?v=021">
+<title>Orbital Defender V0.2.2 — Thermal Command</title>
+<link rel="stylesheet" href="styles.css?v=022">
 </head>
 <body>
 <div class="app">
@@ -18,8 +18,12 @@
       <p>PERSISTENT OVERWATCH // TACTICAL ORBITAL FIRE SUPPORT</p>
     </div>
     <div class="topTelemetry">
-      <span>V0.2.1 COMBAT READABILITY</span>
+      <span>V0.2.2 THERMAL COMMAND</span>
       <strong id="topStatus">LINK SECURE</strong>
+      <div class="missionActions">
+        <button id="restartBtn" type="button">↻ RESTART</button>
+        <button id="nextBtn" type="button">▶ NEXT</button>
+      </div>
     </div>
   </header>
 
@@ -85,6 +89,10 @@
         <div class="targetStrip">
           <span id="targetClass">TARGET: UNIDENTIFIED</span>
           <strong id="targetConfidence">CONFIDENCE 00%</strong>
+        </div>
+        <div class="roeStrip">
+          <span id="roeState" class="hold">WEAPONS HOLD</span>
+          <strong id="scanProgress">SCAN 1/2 REQUIRED</strong>
         </div>
         <div id="combatEvent" class="combatEvent neutral" aria-live="polite"><b>COMBAT FEED</b><span>AWAITING ENGAGEMENT</span></div>
         <div class="statusLine" id="status" aria-live="polite">MISSION START // scan contacts before weapons release.</div>
@@ -180,7 +188,7 @@
       </div>
       <div class="actionRow">
         <button id="scanBtn" class="scanButton" type="button">SCAN / ID</button>
-        <button id="fireBtn" class="fireButton" type="button">FIRE</button>
+        <button id="fireBtn" class="fireButton" type="button">SCAN REQUIRED</button>
       </div>
     </div>
 
@@ -195,6 +203,18 @@
     </div>
   </section>
 
+  <div id="missionOverlay" class="missionOverlay" aria-hidden="true">
+    <div class="missionCard">
+      <small>ORBITAL DEFENDER</small>
+      <h2 id="missionResult">MISSION COMPLETE</h2>
+      <p id="missionSummary">Hostile sector neutralized.</p>
+      <div class="missionCardActions">
+        <button id="overlayRestart" type="button">↻ RESTART MISSION</button>
+        <button id="overlayNext" type="button">▶ NEXT MISSION</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="footerLine">
     <span>LASER: STANDBY</span>
     <span>DESIGNATOR: AUTO</span>
@@ -202,6 +222,6 @@
     <span>STABILIZATION: ONLINE</span>
   </footer>
 </div>
-<script src="game.js?v=021"></script>
+<script src="game.js?v=022"></script>
 </body>
 </html>
