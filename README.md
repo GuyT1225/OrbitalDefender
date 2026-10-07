@@ -1,40 +1,45 @@
 # Orbital Defender
 
-**Orbital Defender** is a browser-based orbital gunship defense game focused on target identification, precision fire support, and protecting friendly units.
+**Orbital Defender** is a browser-based orbital fire-support game with two playable modes.
 
-It shares some targeting, impact-feedback, mobile-control, and tactical-terminal DNA with Graph War, but it is a separate game with its own core loop.
+## V0.3 — Tactical + Arcade
 
-## V0.2 — Tactical Diorama / Full Fire-Control HUD
+### Tactical
+The deliberate command-station mode:
+- scan, track and confirm contacts
+- thermal/terminal HUD
+- weapon selection, heat, cooldown and stability
+- visible hostile firing vectors
+- convoy protection
+- restart / next-mission flow
 
-Current prototype direction:
+### Arcade Overwatch
+A faster mobile-first wave-defense mode:
+- **no scanning requirement**
+- infinite ammunition
+- tap for a fast snap strike
+- tap-and-hold to charge larger splash damage
+- longer charge creates more heat and longer cooldown
+- three broad attack corridors
+- Graph War-inspired raised defensive structures
+- enemies visibly slow and climb over walls / ridges / barriers
+- heavy enemies can damage structures while crossing
+- overcharged player strikes can also damage defensive terrain
+- three enemy classes: runners, technicals and armor
+- five escalating waves
+- protected defense base with HP
+- score + kill tracking
+- three weapon profiles
+- choose one upgrade between waves:
+  - splash radius
+  - cooldown
+  - damage
+- mobile sticky combat dock keeps weapons / heat / cooldown visible while playing
 
-- orbiting oblique camera around a fixed tactical board
-- flat graph-board battlefield with raised pseudo-3D avatars and structures
-- outlined convoy, hostile vehicle, AA, radar, bunker, building, tree, crate, and barrier silhouettes
-- direct tap / drag reticle targeting
-- target identification states: **UNIDENTIFIED → TRACKING → CONFIRMED HOSTILE**
-- visible descending ordnance with near-3D projectile trails
-- distinct weapon silhouettes, ammo counts, cooldowns, heat, stability, blast radius, and impact ETA
-- three weapon classes:
-  - **40mm AUTO** — fast, precise, low damage
-  - **105mm HE** — slower, heavier area damage
-  - **GUIDED STRIKE** — long-cycle, high-damage precision ordnance
-- unmistakable result feedback for hostile hit, target destroyed, structure hit, miss, and friendly fire
-- mission, orbit, attack-window, sensor, threat, friendly, and system-status telemetry
-- incoming enemy pressure and convoy survival objective
-- mobile-first pointer controls with text-selection suppression
+## Current direction
 
-## Goal
+Tactical is the more deliberate target-identification experience.
 
-Protect the convoy while scanning, confirming, and eliminating hostile contacts. Avoid friendly fire.
+Arcade is the immediate loop: **aim → fire → defend the choke points → survive the wave → upgrade → repeat.**
 
-## Controls
-
-- **Tap / drag battlefield:** move the targeting reticle
-- **SCAN / ID:** advance the selected contact's identification state
-- **Weapon cards:** choose 40mm, 105mm, or guided strike
-- **FIRE:** launch selected ordnance toward the reticle
-
-## Status
-
-Early playable prototype.
+Sound / music will receive a dedicated pass after the V0.3 gameplay structure is validated.
