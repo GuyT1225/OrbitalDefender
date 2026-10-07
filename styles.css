@@ -268,3 +268,16 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   .arcadeMeters{grid-template-columns:1fr;gap:5px}.arcadeMeters>div{grid-template-columns:62px 1fr 46px}
   .upgradeChoices{grid-template-columns:1fr}.upgradeChoices button{min-height:72px}
 }
+
+/* V0.3.1 — Arcade pacing + charge readability */
+.chargeLegend{
+  position:absolute;left:50%;bottom:43px;transform:translateX(-50%);
+  width:min(72%,520px);display:grid;grid-template-columns:20% 36% 44%;
+  border:1px solid rgba(106,216,232,.32);background:rgba(2,8,5,.78);
+  font-size:8px;letter-spacing:.08em;color:#8eb7a0;pointer-events:none
+}
+.chargeLegend span{padding:4px 6px;border-right:1px solid rgba(106,216,232,.18)}
+.chargeLegend span:last-child{border-right:0;color:#ffd28a}
+@media(max-width:720px){
+  .chargeLegend{bottom:40px;width:82%}
+}
