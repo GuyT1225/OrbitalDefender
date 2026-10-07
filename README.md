@@ -2,35 +2,39 @@
 
 **Orbital Defender** is a browser-based orbital gunship defense game focused on target identification, precision fire support, and protecting friendly units.
 
-This project grew out of the targeting, impact-feedback, mobile-control, and tactical-terminal ideas explored in Graph War, but it is a separate game with a different core loop.
+It shares some targeting, impact-feedback, mobile-control, and tactical-terminal DNA with Graph War, but it is a separate game with its own core loop.
 
-## V0.1.0 — Sensor Sweep
+## V0.2 — Tactical Diorama / Full Fire-Control HUD
 
-The first playable baseline establishes:
+Current prototype direction:
 
-- a continuously orbiting top-down tactical view
+- orbiting oblique camera around a fixed tactical board
+- flat graph-board battlefield with raised pseudo-3D avatars and structures
+- outlined convoy, hostile vehicle, AA, radar, bunker, building, tree, crate, and barrier silhouettes
 - direct tap / drag reticle targeting
 - target identification states: **UNIDENTIFIED → TRACKING → CONFIRMED HOSTILE**
-- friendly units that must be protected
-- three ordnance classes:
-  - **LIGHT** — fast, precise, low damage
-  - **MEDIUM** — moderate reload and blast radius
-  - **HEAVY** — large impact, long reload
-- destructible cover / structures
-- synthesized browser audio with no external runtime assets
-- mobile-first controls and a retro tactical-terminal presentation
+- visible descending ordnance with near-3D projectile trails
+- distinct weapon silhouettes, ammo counts, cooldowns, heat, stability, blast radius, and impact ETA
+- three weapon classes:
+  - **40mm AUTO** — fast, precise, low damage
+  - **105mm HE** — slower, heavier area damage
+  - **GUIDED STRIKE** — long-cycle, high-damage precision ordnance
+- unmistakable result feedback for hostile hit, target destroyed, structure hit, miss, and friendly fire
+- mission, orbit, attack-window, sensor, threat, friendly, and system-status telemetry
+- incoming enemy pressure and convoy survival objective
+- mobile-first pointer controls with text-selection suppression
 
-## Current goal
+## Goal
 
-Protect the convoy while confirming and eliminating hostile contacts. Avoid friendly fire.
+Protect the convoy while scanning, confirming, and eliminating hostile contacts. Avoid friendly fire.
 
 ## Controls
 
 - **Tap / drag battlefield:** move the targeting reticle
-- **SCAN:** identify the nearest contact under the reticle
-- **LIGHT / MEDIUM / HEAVY:** select ordnance
-- **FIRE:** engage the selected point
+- **SCAN / ID:** advance the selected contact's identification state
+- **Weapon cards:** choose 40mm, 105mm, or guided strike
+- **FIRE:** launch selected ordnance toward the reticle
 
 ## Status
 
-Early prototype / proof of concept.
+Early playable prototype.
