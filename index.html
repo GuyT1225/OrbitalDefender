@@ -3,64 +3,204 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Orbital Defender V0.1.0</title>
-<link rel="stylesheet" href="styles.css">
+<meta name="theme-color" content="#020604">
+<title>Orbital Defender V0.2 — Tactical Diorama</title>
+<link rel="stylesheet" href="styles.css?v=020">
 </head>
 <body>
 <div class="app">
-  <header class="top">
+  <header class="topBar">
     <div class="brand">
-      <small>ORBITAL FIRE SUPPORT // SENSOR PLATFORM 03</small>
-      <h1>ORBITAL DEFENDER</h1>
+      <div class="brandRow">
+        <h1>ORBITAL DEFENDER</h1>
+        <span class="orbitGlyph" aria-hidden="true">◜·◝</span>
+      </div>
+      <p>PERSISTENT OVERWATCH // TACTICAL ORBITAL FIRE SUPPORT</p>
     </div>
-    <div class="meta">
-      <small>V0.1.0 SENSOR SWEEP</small>
-      ALT 12,400 // ORBIT STABLE
+    <div class="topTelemetry">
+      <span>V0.2 TACTICAL DIORAMA</span>
+      <strong id="topStatus">LINK SECURE</strong>
     </div>
   </header>
 
-  <section class="stage">
-    <canvas id="field" aria-label="Orbital tactical battlefield"></canvas>
-    <div class="hud">
-      <div class="hudTop">
-        <span>IR / GRID LINK ACTIVE</span>
-        <span>PROTECT CONVOY // CONFIRM HOSTILES</span>
-      </div>
-      <div id="reticleLabel" class="reticleLabel">F-5</div>
-    </div>
-  </section>
+  <main class="commandGrid">
+    <aside class="leftRail">
+      <section class="hudPanel missionPanel">
+        <div class="panelTitle">MISSION</div>
+        <dl class="telemetryList">
+          <div><dt>ID</dt><dd>OD-2747-A</dd></div>
+          <div><dt>OBJ</dt><dd>PROTECT CONVOY</dd></div>
+          <div><dt>ZONE</dt><dd>BRAVO-3</dd></div>
+          <div><dt>STATUS</dt><dd id="missionStatus" class="amber">IN PROGRESS</dd></div>
+        </dl>
+      </section>
 
-  <section class="controls">
-    <div class="panel">
-      <div class="panelTitle">ORDNANCE</div>
-      <div class="weapons">
-        <button class="weapon active" data-weapon="light" type="button">LIGHT</button>
-        <button class="weapon" data-weapon="medium" type="button">MEDIUM</button>
-        <button class="weapon" data-weapon="heavy" type="button">HEAVY</button>
+      <section class="hudPanel orbitPanel">
+        <div class="panelTitle">ORBIT</div>
+        <div class="orbitMini">
+          <div class="orbitRing"><span id="orbitDot"></span><b>✈</b></div>
+        </div>
+        <dl class="telemetryList compact">
+          <div><dt>PASS</dt><dd id="passReadout">1 / 6</dd></div>
+          <div><dt>DIR</dt><dd>CLOCKWISE</dd></div>
+          <div><dt>ALT</dt><dd>1,800 m</dd></div>
+          <div><dt>SPEED</dt><dd>295 m/s</dd></div>
+        </dl>
+        <div class="meterLabel"><span>ATTACK WINDOW</span><strong id="attackWindowVal">14 s</strong></div>
+        <div class="segMeter green" id="attackWindowMeter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </section>
+
+      <section class="hudPanel sensorPanel">
+        <div class="panelTitle">SENSOR / LINK</div>
+        <dl class="telemetryList compact">
+          <div><dt>MODE</dt><dd>EO / IR</dd></div>
+          <div><dt>ZOOM</dt><dd>5.0×</dd></div>
+          <div><dt>TRACK</dt><dd id="trackMode">AUTO</dd></div>
+          <div><dt>SIGNAL</dt><dd class="greenText">GOOD ▮▮▮▮</dd></div>
+        </dl>
+      </section>
+    </aside>
+
+    <section class="battleColumn">
+      <section class="stage">
+        <canvas id="field" aria-label="Orbital Defender tactical battlefield"></canvas>
+        <div class="stageHud">
+          <div class="headingTape" aria-hidden="true">
+            <span>300</span><span>330</span><b>N</b><span>030</span><span>060</span>
+          </div>
+          <div class="stageTopLeft">
+            <span id="stagePass">PASS 1/6</span>
+            <small>ORBIT STABLE // CAMERA TRACKING</small>
+          </div>
+          <div class="stageTopRight">
+            <span>WIND 3 m/s →</span>
+            <span>VIS GOOD</span>
+          </div>
+          <div id="reticleLabel" class="reticleLabel">F-5</div>
+          <div id="hitBanner" class="hitBanner" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="battleFooter">
+        <div class="targetStrip">
+          <span id="targetClass">TARGET: UNIDENTIFIED</span>
+          <strong id="targetConfidence">CONFIDENCE 00%</strong>
+        </div>
+        <div class="statusLine" id="status" aria-live="polite">MISSION START // scan contacts before weapons release.</div>
+      </section>
+    </section>
+
+    <aside class="rightRail">
+      <section class="hudPanel zoomPanel">
+        <div class="panelTitle">TARGET ZOOM <span>5.0×</span></div>
+        <div class="zoomScope">
+          <div class="scopeCross"></div>
+          <div class="scopeNoise"></div>
+          <span id="zoomTarget">NO LOCK</span>
+        </div>
+      </section>
+
+      <section class="hudPanel threatPanel">
+        <div class="panelTitle danger">THREAT LEVEL</div>
+        <div class="segMeter red" id="threatMeter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="unitStats">
+          <div><span class="unitIcon">◇</span><b id="unknownCount">4</b><small>UNKNOWN</small></div>
+          <div><span class="unitIcon hostile">◆</span><b id="hostileCount">0</b><small>HOSTILE</small></div>
+        </div>
+      </section>
+
+      <section class="hudPanel friendlyPanel">
+        <div class="panelTitle">FRIENDLIES</div>
+        <div class="unitStats">
+          <div><span class="unitIcon friendly">△</span><b id="friendlyCount">3</b><small>UNITS</small></div>
+          <div><span class="unitIcon friendly">▣</span><b id="friendlyHp">9</b><small>HP</small></div>
+        </div>
+      </section>
+
+      <section class="hudPanel systemsPanel">
+        <div class="panelTitle">SYSTEM STATUS</div>
+        <ul class="systemList">
+          <li><span>POWER</span><b>100%</b></li>
+          <li><span>SENSORS</span><b>ONLINE</b></li>
+          <li><span>COMMS</span><b>ONLINE</b></li>
+          <li><span>NAV</span><b>STABLE</b></li>
+          <li><span>FIRE CTRL</span><b id="fireCtrlState">ONLINE</b></li>
+        </ul>
+      </section>
+    </aside>
+  </main>
+
+  <section class="lowerDeck">
+    <div class="weaponDeck hudPanel">
+      <div class="panelTitle">WEAPON SYSTEMS</div>
+      <button class="weaponCard active" data-weapon="light" type="button">
+        <span class="slot">1</span><span class="projectileIcon lightIcon">••••</span>
+        <span class="weaponCopy"><b>40mm AUTO</b><small>FAST / PRECISION</small></span>
+        <span class="ammo" id="ammoLight">120</span>
+        <span class="miniBars"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+      <button class="weaponCard" data-weapon="medium" type="button">
+        <span class="slot">2</span><span class="projectileIcon mediumIcon">◆</span>
+        <span class="weaponCopy"><b>105mm HE</b><small>AREA / HEAVY</small></span>
+        <span class="ammo" id="ammoMedium">18</span>
+        <span class="miniBars"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+      <button class="weaponCard" data-weapon="heavy" type="button">
+        <span class="slot">3</span><span class="projectileIcon heavyIcon">⬢</span>
+        <span class="weaponCopy"><b>GUIDED STRIKE</b><small>PRECISION / LONG CYCLE</small></span>
+        <span class="ammo" id="ammoHeavy">6</span>
+        <span class="miniBars"><i></i><i></i><i></i><i></i><i></i></span>
+      </button>
+    </div>
+
+    <div class="weaponDetail hudPanel">
+      <div class="panelTitle">SELECTED ORDNANCE</div>
+      <div class="weaponDetailBody">
+        <div id="weaponSilhouette" class="weaponSilhouette lightShape"></div>
+        <div>
+          <strong id="weaponName">40mm AUTO</strong>
+          <span id="weaponRole">FAST / PRECISION</span>
+          <dl class="detailStats">
+            <div><dt>DAMAGE</dt><dd id="damageStat">LOW</dd></div>
+            <div><dt>RADIUS</dt><dd id="radiusStat">4 m</dd></div>
+            <div><dt>RELOAD</dt><dd id="reloadStat">0.6 s</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="fireControl hudPanel">
+      <div class="panelTitle">FIRE CONTROL</div>
+      <div class="solutionGrid">
+        <div><span>GRID</span><b id="gridReadout">F-5</b></div>
+        <div><span>RANGE</span><b id="rangeReadout">—</b></div>
+        <div><span>IMPACT ETA</span><b id="etaReadout">—</b></div>
+        <div><span>TARGET</span><b id="solutionTarget">NO LOCK</b></div>
       </div>
       <div class="actionRow">
-        <button id="scanBtn" class="scan" type="button">SCAN</button>
-        <button id="fireBtn" class="fire" type="button">FIRE</button>
-      </div>
-      <div class="legend">
-        <span><i class="dot friend"></i>Friendly</span>
-        <span><i class="dot unknown"></i>Unidentified</span>
-        <span><i class="dot hostile"></i>Confirmed hostile</span>
+        <button id="scanBtn" class="scanButton" type="button">SCAN / ID</button>
+        <button id="fireBtn" class="fireButton" type="button">FIRE</button>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="panelTitle">FIRE CONTROL</div>
-      <div class="readouts">
-        <div class="readout"><span>WEAPON</span><strong id="weaponName">LIGHT</strong></div>
-        <div class="readout"><span>RELOAD</span><strong id="reload">READY</strong></div>
-        <div class="readout"><span>CONTACTS</span><strong id="contact">4 HOSTILES</strong></div>
-        <div class="readout"><span>FRIENDLIES</span><strong id="friendlies">3/3</strong></div>
-      </div>
-      <div id="status" class="status" aria-live="polite">MISSION START // scan unknown contacts before weapons release.</div>
+    <div class="cooling hudPanel">
+      <div class="panelTitle">WEAPON / PLATFORM</div>
+      <div class="meterLabel"><span>COOLDOWN</span><strong id="reload">READY</strong></div>
+      <div class="progressTrack"><i id="cooldownFill"></i></div>
+      <div class="meterLabel"><span>WEAPON HEAT</span><strong id="heatValue">0%</strong></div>
+      <div class="progressTrack amberTrack"><i id="heatFill"></i></div>
+      <div class="meterLabel"><span>PLATFORM STABILITY</span><strong id="stabilityValue">100%</strong></div>
+      <div class="progressTrack"><i id="stabilityFill" style="width:100%"></i></div>
     </div>
   </section>
+
+  <footer class="footerLine">
+    <span>LASER: STANDBY</span>
+    <span>DESIGNATOR: AUTO</span>
+    <span>TRACKING: ENABLED</span>
+    <span>STABILIZATION: ONLINE</span>
+  </footer>
 </div>
-<script src="game.js"></script>
+<script src="game.js?v=020"></script>
 </body>
 </html>
