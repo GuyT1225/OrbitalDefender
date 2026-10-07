@@ -434,7 +434,7 @@ function updateHud(now=performance.now()){
   ui.ammoLight.textContent=weaponDefs.light.ammo;ui.ammoMedium.textContent=weaponDefs.medium.ammo;ui.ammoHeavy.textContent=weaponDefs.heavy.ammo;
   ui.fireCtrlState.textContent=heat>.92?"HOT":"ONLINE";
   ui.fireCtrlState.style.color=heat>.92?"#ff5f55":"";
-  ui.fireButton.disabled=missionOver||remaining>0||!!shot||def.ammo<=0||heat>.92;
+  ui.fireBtn.disabled=missionOver||remaining>0||!!shot||def.ammo<=0||heat>.92;
 
   const threat=Math.min(8,aliveHostile*2+Math.ceil(aliveUnknown*.7));
   [...ui.threatMeter.children].forEach((n,i)=>n.classList.toggle("active",i<threat));
