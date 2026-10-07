@@ -42,4 +42,4 @@ Tactical is the more deliberate target-identification experience.
 
 Arcade is the immediate loop: **aim → fire → defend the choke points → survive the wave → upgrade → repeat.**
 
-Sound / music will receive a dedicated pass after the V0.3 gameplay structure is validated.
+V0.3.2 restores the slow orbital camera sweep in Arcade, enlarges the battlefield, and adds a procedural tactical soundtrack plus weapon, impact, wave, base-hit, upgrade, victory and defeat effects. Audio includes an in-game mute toggle and is started from the Arcade deployment gesture for mobile browser compatibility.

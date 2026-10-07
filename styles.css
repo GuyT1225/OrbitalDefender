@@ -281,3 +281,13 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 @media(max-width:720px){
   .chargeLegend{bottom:40px;width:82%}
 }
+
+/* V0.3.2 — Orbit return + larger battlefield + audio control */
+#arcadeField{height:min(78vh,840px);min-height:590px}
+.arcadeHero{box-shadow:inset 0 0 60px rgba(70,255,120,.035)}
+#arcadeAudio[aria-pressed="false"]{color:#7c9784;border-color:#294734}
+@media(max-width:720px){
+  #arcadeField{height:72vh;min-height:560px}
+  .arcadeTopActions{gap:5px}
+  .arcadeTopActions button{padding:7px 8px;font-size:9px}
+}
