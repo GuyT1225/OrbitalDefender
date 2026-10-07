@@ -913,7 +913,7 @@ arcadeCanvas.addEventListener("pointercancel",()=>arcadePointer=null);
 function arcadeFrame(now){
   const dt=Math.min(40,now-arcadeLast);arcadeLast=now;
   if(arcadeRunning&&!arcadeApp.classList.contains("modeHidden")){
-    arcadeOrbit+=dt*.000025;
+    arcadeOrbit+=dt*.000045;
     arcadeHeat=clamp(arcadeHeat-dt*.000065,0,1);
     drawArcadeBoard();drawArcadeStructures();updateArcadeEnemies(dt,now);updateArcadeShots(now);drawArcadeEnemies();drawArcadeAim(now);drawArcadeShots(now);drawArcadeFx(now);updateArcadeHud(now);
   }
