@@ -5,7 +5,7 @@ const canvas=$("field"),ctx=canvas.getContext("2d");
 const weaponButtons=[...document.querySelectorAll(".weaponCard")];
 
 const ui={
-  status:$("status"),missionStatus:$("missionStatus"),topStatus:$("topStatus"),
+  status:$("status"),combatEvent:$("combatEvent"),missionStatus:$("missionStatus"),topStatus:$("topStatus"),
   passReadout:$("passReadout"),stagePass:$("stagePass"),attackWindowVal:$("attackWindowVal"),
   attackWindowMeter:$("attackWindowMeter"),orbitDot:$("orbitDot"),trackMode:$("trackMode"),
   unknownCount:$("unknownCount"),hostileCount:$("hostileCount"),friendlyCount:$("friendlyCount"),friendlyHp:$("friendlyHp"),
@@ -21,7 +21,7 @@ const ui={
 };
 
 let cssW=1,cssH=1,dpr=1,last=performance.now();
-let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="light",shot=null,impactFx=[];
+let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="light",shot=null,impactFx=[],wrecks=[];
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500;
 
@@ -179,9 +179,14 @@ function drawOrnament(o){
 function drawVehicle(v,isFriendly){
   if(v.hp<=0)return;
   const p=project(v.x,v.z,1.8),base=project(v.x,v.z,0),c=isFriendly?"#6ad8e8":(v.state===2?"#ff665b":"#f0aa43");
-  line(base,p,c,2);
+  const flashing=v.flashUntil&&performance.now()<v.flashUntil;
+  line(base,p,c,flashing?3.5:2);
+  if(flashing){
+    ctx.save();ctx.strokeStyle="#fff4d8";ctx.globalAlpha=.8;ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.arc(p.x,p.y,21,0,Math.PI*2);ctx.stroke();ctx.restore();
+  }
   ctx.save();ctx.translate(p.x,p.y);ctx.rotate(orbit*.18);
-  ctx.strokeStyle=c;ctx.lineWidth=1.5;ctx.fillStyle="rgba(5,15,9,.82)";
+  ctx.strokeStyle=flashing?"#fff4d8":c;ctx.lineWidth=flashing?2.7:1.5;ctx.fillStyle=flashing?"rgba(90,20,10,.9)":"rgba(5,15,9,.82)";
   if(v.kind==="apc"){
     ctx.beginPath();ctx.moveTo(-9,-5);ctx.lineTo(7,-5);ctx.lineTo(10,0);ctx.lineTo(6,5);ctx.lineTo(-9,5);ctx.closePath();ctx.fill();ctx.stroke();
     ctx.strokeRect(-3,-8,6,5);
@@ -265,11 +270,25 @@ function drawImpactEffects(now){
   for(const f of impactFx){
     const t=(now-f.start)/f.duration,p=project(f.x,f.z,.1);
     ctx.save();ctx.globalAlpha=1-t;ctx.strokeStyle=f.color;ctx.fillStyle=f.color;
-    ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(p.x,p.y,10+t*46,5+t*20,0,0,Math.PI*2);ctx.stroke();
-    ctx.globalAlpha=.16*(1-t);ctx.beginPath();ctx.arc(p.x,p.y,8+t*28,0,Math.PI*2);ctx.fill();
+    ctx.lineWidth=f.kind==="hit"?3.5:2;ctx.beginPath();ctx.ellipse(p.x,p.y,12+t*58,6+t*27,0,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=.2*(1-t);ctx.beginPath();ctx.arc(p.x,p.y,10+t*34,0,Math.PI*2);ctx.fill();
     if(f.kind==="hit"||f.kind==="friendly"){
-      ctx.globalAlpha=(1-t)*.8;ctx.beginPath();ctx.arc(p.x,p.y,6+t*10,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=(1-t)*.95;ctx.beginPath();ctx.arc(p.x,p.y,8+t*14,0,Math.PI*2);ctx.fill();
     }
+    if(f.label){
+      ctx.globalAlpha=Math.min(1,(1-t)*1.4);ctx.font="900 14px monospace";ctx.textAlign="center";
+      ctx.fillStyle=f.color;ctx.fillText(f.label,p.x,p.y-32-t*14);
+    }
+    ctx.restore();
+  }
+}
+function drawWrecks(){
+  for(const w of wrecks){
+    const p=project(w.x,w.z,1.1);
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(orbit*.18);
+    ctx.strokeStyle="#a0463c";ctx.fillStyle="rgba(55,20,16,.72)";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(-10,-6);ctx.lineTo(9,-4);ctx.lineTo(7,6);ctx.lineTo(-8,5);ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-8,-7);ctx.lineTo(8,7);ctx.moveTo(8,-7);ctx.lineTo(-8,7);ctx.stroke();
     ctx.restore();
   }
 }
@@ -292,15 +311,21 @@ function currentTargetInfo(){
 }
 function showBanner(text,type="scan"){
   ui.hitBanner.textContent=text;ui.hitBanner.className="hitBanner show "+type;
-  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>ui.hitBanner.className="hitBanner",1000);
+  clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>ui.hitBanner.className="hitBanner",1300);
+}
+function setCombatEvent(text,type="neutral"){
+  if(!ui.combatEvent)return;
+  ui.combatEvent.className="combatEvent "+type;
+  const span=ui.combatEvent.querySelector("span");
+  if(span)span.textContent=text;
 }
 function scan(){
   if(missionOver)return;
   ensureAudio();const c=nearestContact(13);
-  if(!c){ui.status.textContent="SCAN NEGATIVE // no contact inside sensor gate.";showBanner("SCAN NEGATIVE","warn");tone(280,.06);return;}
+  if(!c){ui.status.textContent="SCAN NEGATIVE // no contact inside sensor gate.";showBanner("SCAN NEGATIVE","warn");setCombatEvent("SCAN NEGATIVE // NO CONTACT","warn");tone(280,.06);return;}
   c.state=Math.min(2,c.state+1);
-  if(c.state===1){ui.status.textContent="TRACK ESTABLISHED // hold sensor on contact.";showBanner("CONTACT TRACKED","scan");tone(440,.08,"square",.025);}
-  else{ui.status.textContent="HOSTILE CONFIRMED // weapons release authorized.";showBanner("HOSTILE CONFIRMED","scan");tone(640,.08,"square",.025);}
+  if(c.state===1){ui.status.textContent="TRACK ESTABLISHED // hold sensor on contact.";showBanner("CONTACT TRACKED","scan");setCombatEvent(c.label+" // TRACK ESTABLISHED","scan");tone(440,.08,"square",.025);}
+  else{ui.status.textContent="HOSTILE CONFIRMED // weapons release authorized.";showBanner("HOSTILE CONFIRMED","scan");setCombatEvent(c.label+" // HOSTILE CONFIRMED","scan");tone(640,.08,"square",.025);}
   updateHud();
 }
 function fire(){
@@ -317,16 +342,17 @@ function fire(){
   def.ammo--;readyAt=now+def.reload;heat=clamp(heat+def.heat,0,1);stability=clamp(stability-(weapon==="heavy"?.28:weapon==="medium"?.16:.07),.35,1);
 
   ui.status.textContent="SHOT AWAY // "+def.name+" // IMPACT "+(def.travel/1000).toFixed(1)+"s";
-  showBanner("SHOT AWAY","warn");sfxFire(weapon);updateHud();
+  showBanner("SHOT AWAY","warn");setCombatEvent(def.name+" // SHOT AWAY // ETA "+(def.travel/1000).toFixed(1)+"s","warn");sfxFire(weapon);updateHud();
 }
 function resolveImpact(s){
   const def=weaponDefs[s.weapon];let hostileHit=false,friendlyHit=false,structureHit=false,destroyed=false,denied=false;
-  impactFx.push({x:s.end.x,z:s.end.z,start:performance.now(),duration:950,color:def.color,kind:"miss"});
+  let hitContact=null,hitFriendly=null;
+  impactFx.push({x:s.end.x,z:s.end.z,start:performance.now(),duration:1250,color:def.color,kind:"miss",label:""});
 
   for(const f of friendlies){
     if(f.hp<=0)continue;
     const d=Math.hypot(f.x-s.end.x,f.z-s.end.z);
-    if(d<=def.radius){f.hp=Math.max(0,f.hp-def.damage);friendlyHit=true;}
+    if(d<=def.radius){f.hp=Math.max(0,f.hp-def.damage);friendlyHit=true;hitFriendly=f;f.flashUntil=performance.now()+700;}
   }
 
   for(const c of contacts){
@@ -334,7 +360,7 @@ function resolveImpact(s){
     const d=Math.hypot(c.x-s.end.x,c.z-s.end.z);
     if(d<=def.radius){
       if(c.state<2){denied=true;continue;}
-      const before=c.hp;c.hp=Math.max(0,c.hp-def.damage);hostileHit=true;if(before>0&&c.hp===0)destroyed=true;
+      const before=c.hp;c.hp=Math.max(0,c.hp-def.damage);hostileHit=true;hitContact=c;c.flashUntil=performance.now()+700;if(before>0&&c.hp===0){destroyed=true;wrecks.push({x:c.x,z:c.z,kind:c.kind});}
     }
   }
 
@@ -346,17 +372,20 @@ function resolveImpact(s){
 
   const fx=impactFx[impactFx.length-1];
   if(friendlyHit){
-    fx.color="#ff5f55";fx.kind="friendly";ui.status.textContent="FRIENDLY FIRE // CHECK TARGET ID";showBanner("FRIENDLY HIT","hit");sfxWarn();
+    fx.color="#ff5f55";fx.kind="friendly";fx.label="FRIENDLY -"+def.damage+" HP";
+    ui.status.textContent="FRIENDLY FIRE // CHECK TARGET ID";showBanner("FRIENDLY HIT","hit");setCombatEvent((hitFriendly?hitFriendly.label:"FRIENDLY")+" // -"+def.damage+" HP // CEASE FIRE","hit");sfxWarn();
   }else if(destroyed){
-    fx.color="#ff5f55";fx.kind="hit";ui.status.textContent="TARGET DESTROYED // BATTLE DAMAGE CONFIRMED";showBanner("TARGET DESTROYED","hit");sfxHit();
+    fx.color="#ff5f55";fx.kind="hit";fx.label="DESTROYED";
+    ui.status.textContent="TARGET DESTROYED // BATTLE DAMAGE CONFIRMED";showBanner("TARGET DESTROYED","hit");setCombatEvent((hitContact?hitContact.label:"TARGET")+" // DESTROYED // BDA CONFIRMED","hit");sfxHit();
   }else if(hostileHit){
-    fx.color="#ff5f55";fx.kind="hit";ui.status.textContent="HOSTILE HIT // DAMAGE CONFIRMED";showBanner("HOSTILE HIT","hit");sfxHit();
+    fx.color="#ff5f55";fx.kind="hit";fx.label="-"+def.damage+" HP";
+    ui.status.textContent="HOSTILE HIT // DAMAGE CONFIRMED";showBanner("HOSTILE HIT","hit");setCombatEvent((hitContact?hitContact.label:"HOSTILE")+" // HIT // -"+def.damage+" HP // "+(hitContact?hitContact.hp:"?")+" HP REMAIN","hit");sfxHit();
   }else if(denied){
-    fx.color="#f0aa43";ui.status.textContent="IMPACT NEAR UNCONFIRMED CONTACT // SCAN REQUIRED";showBanner("NO ID / NO CONFIRM","warn");
+    fx.color="#f0aa43";fx.label="NO ID";ui.status.textContent="IMPACT NEAR UNCONFIRMED CONTACT // SCAN REQUIRED";showBanner("NO ID / NO CONFIRM","warn");setCombatEvent("IMPACT NEAR CONTACT // IDENTIFICATION REQUIRED","warn");
   }else if(structureHit){
-    fx.color="#f0aa43";ui.status.textContent="STRUCTURE HIT // COVER DEGRADED";showBanner("COVER DAMAGED","warn");
+    fx.color="#f0aa43";fx.label="COVER HIT";ui.status.textContent="STRUCTURE HIT // COVER DEGRADED";showBanner("COVER DAMAGED","warn");setCombatEvent("STRUCTURE HIT // COVER DEGRADED","warn");
   }else{
-    fx.color="#d9ffe3";ui.status.textContent="IMPACT // NO TARGET DAMAGE";showBanner("NO TARGET DAMAGE","warn");
+    fx.color="#d9ffe3";fx.label="MISS";ui.status.textContent="IMPACT // NO TARGET DAMAGE";showBanner("NO TARGET DAMAGE","warn");setCombatEvent("NO TARGET DAMAGE // ADJUST AIM","warn");
   }
   updateHud();checkMission();
 }
@@ -454,6 +483,7 @@ function drawScene(now){
   contacts.forEach(c=>{if(c.hp>0)drawables.push({depth:project(c.x,c.z).depth,fn:()=>drawContact(c)});});
   drawables.sort((a,b)=>a.depth-b.depth).forEach(d=>d.fn());
 
+  drawWrecks();
   drawReticle();
   drawShot(now);
   drawImpactEffects(now);
