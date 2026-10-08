@@ -291,3 +291,32 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   .arcadeTopActions{gap:5px}
   .arcadeTopActions button{padding:7px 8px;font-size:9px}
 }
+
+/* V0.4 — Camera guidance + combat variety */
+.orbitGuide{
+  position:absolute;top:48px;left:50%;transform:translateX(-50%);
+  display:flex;gap:7px;align-items:center;padding:5px 8px;border:1px solid rgba(120,239,154,.28);
+  background:rgba(2,9,5,.76);font-size:9px;letter-spacing:.08em
+}
+.orbitGuide b{color:var(--green);font-size:12px}.orbitGuide span{color:#8fb79a}
+.orbitNudge{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:48px;height:64px;
+  border:1px solid rgba(120,239,154,.38);background:rgba(3,14,8,.72);color:#d8ffe1;
+  font-size:24px;font-weight:900;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  box-shadow:0 0 20px rgba(76,255,120,.06)
+}
+.orbitNudge small{font-size:8px;color:#84ad8f;letter-spacing:.05em}
+.orbitLeft{left:8px}.orbitRight{right:8px}
+.orbitNudge:active{border-color:var(--amber);color:#ffd88a;background:rgba(30,22,6,.85)}
+.arcadeWeaponStrip{
+  grid-template-columns:repeat(5,minmax(118px,1fr));
+  overflow-x:auto;scrollbar-width:thin;padding-bottom:2px
+}
+.arcadeWeapon{min-width:118px}
+@media(max-width:720px){
+  .orbitGuide{top:44px}
+  .orbitNudge{width:42px;height:58px;font-size:21px}
+  .orbitLeft{left:4px}.orbitRight{right:4px}
+  .arcadeWeaponStrip{display:flex;overflow-x:auto;scroll-snap-type:x proximity}
+  .arcadeWeapon{flex:0 0 128px;scroll-snap-align:start}
+}
