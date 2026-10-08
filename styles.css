@@ -375,7 +375,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   #tacticalApp .cooling,
   #tacticalApp .footerLine{display:none!important}
 
-  #tacticalApp{padding-bottom:124px}
+  #tacticalApp{padding-bottom:88px}
   #tacticalApp .topBar{padding:8px 10px}
   #tacticalApp .brand p{display:none}
   #tacticalApp .brand h1{font-size:22px}
@@ -386,7 +386,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 
   #tacticalApp .commandGrid{display:block}
   #tacticalApp .battleColumn{width:100%}
-  #tacticalApp canvas{height:calc(100dvh - 190px);min-height:420px;max-height:none}
+  #tacticalApp canvas{height:calc(100dvh - 150px);min-height:440px;max-height:none;touch-action:none}
   #tacticalApp .battleFooter{padding:7px 8px 6px}
   #tacticalApp .statusLine{display:none}
   #tacticalApp .combatEvent{min-height:34px;padding:6px 8px;margin-top:5px;font-size:9px}
@@ -399,7 +399,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
     display:block;margin:0;pointer-events:none
   }
   #tacticalApp .weaponDeck{
-    pointer-events:auto;position:absolute;left:0;right:0;bottom:66px;
+    pointer-events:auto;position:absolute;left:0;right:0;bottom:38px;
     display:flex;gap:4px;padding:4px 6px;border-left:0;border-right:0;
     overflow-x:auto;scrollbar-width:none;background:rgba(3,10,6,.97);
     box-shadow:0 -8px 24px rgba(0,0,0,.42)
@@ -420,7 +420,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   /* Fire control is fixed and reduced to only what matters during combat. */
   #tacticalApp .fireControl{
     pointer-events:auto;position:fixed;left:0;right:0;bottom:0;z-index:45;
-    margin:0;padding:5px 7px 7px;border-left:0;border-right:0;border-bottom:0;
+    margin:0;padding:4px 6px;border-left:0;border-right:0;border-bottom:0;
     background:rgba(3,11,6,.985);box-shadow:0 -10px 28px rgba(0,0,0,.55)
   }
   #tacticalApp .fireControl>.panelTitle,
@@ -433,10 +433,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   }
   #tacticalApp .mobileCombatMeta b{color:#d8ffe1;font-size:10px;text-align:center}
   #tacticalApp .mobileCombatMeta strong{color:#ffd27f}
-  #tacticalApp .actionRow{display:block;margin:0}
-  #tacticalApp .fireButton{
-    width:100%;min-height:52px;font-size:16px;border-width:2px
-  }
+  #tacticalApp .actionRow{display:none!important}
 
   /* Keep target confirmation visible; trim decorative stage telemetry. */
   #tacticalApp .headingTape,
@@ -446,7 +443,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   #tacticalApp .hitBanner{top:10%;font-size:17px;padding:9px 14px}
 }
 @media(max-width:430px){
-  #tacticalApp canvas{height:calc(100dvh - 178px);min-height:390px}
+  #tacticalApp canvas{height:calc(100dvh - 142px);min-height:410px}
   #tacticalApp .weaponCard{flex-basis:82px;min-width:82px}
   #tacticalApp .mobileCombatMeta{grid-template-columns:1.25fr .8fr .7fr .7fr;font-size:7px}
 }
