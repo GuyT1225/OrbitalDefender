@@ -29,6 +29,7 @@ let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
 let tacticalHoverContact=null,tacticalHoverSince=0,tacticalFirePointer=null,tacticalChargeStart=0;
+let tacticalCanvasFireStart=0,tacticalCanvasStartX=0,tacticalCanvasStartY=0,tacticalCanvasMoved=false,tacticalCanvasArmed=false;
 let shotsFired=0,hostilesDestroyed=0,friendliesLost=0;
 
 const weaponDefs={
@@ -550,12 +551,25 @@ ui.fireBtn.addEventListener("pointercancel",()=>{tacticalFirePointer=null;ui.fir
 canvas.addEventListener("pointerdown",e=>{
   if(missionOver)return;
   pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;
+  tacticalCanvasStartX=e.clientX;tacticalCanvasStartY=e.clientY;tacticalCanvasMoved=false;tacticalCanvasFireStart=performance.now();
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
-  moveAim(e);ensureAudio();
+  moveAim(e);tacticalCanvasArmed=!!(nearestContact(13)&&nearestContact(13).state===2);ensureAudio();
 });
-canvas.addEventListener("pointermove",e=>{if(pointerId===e.pointerId)moveAim(e);});
-canvas.addEventListener("pointerup",e=>{if(pointerId===e.pointerId){moveAim(e);pointerId=null;orbitPauseUntil=performance.now()+900;}});
-canvas.addEventListener("pointercancel",()=>pointerId=null);
+canvas.addEventListener("pointermove",e=>{
+  if(e.pointerType==="mouse"&&pointerId===null){moveAim(e);return;}
+  if(pointerId===e.pointerId){
+    if(Math.hypot(e.clientX-tacticalCanvasStartX,e.clientY-tacticalCanvasStartY)>9)tacticalCanvasMoved=true;
+    moveAim(e);
+  }
+});
+canvas.addEventListener("pointerup",e=>{
+  if(pointerId===e.pointerId){
+    moveAim(e);const hold=performance.now()-tacticalCanvasFireStart,canDirect=tacticalCanvasArmed&&!tacticalCanvasMoved;
+    pointerId=null;tacticalCanvasArmed=false;orbitPauseUntil=performance.now()+900;
+    if(canDirect)fire(hold);
+  }
+});
+canvas.addEventListener("pointercancel",()=>{pointerId=null;tacticalCanvasArmed=false;});
 function moveAim(e){
   const r=canvas.getBoundingClientRect();
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
@@ -825,7 +839,7 @@ function startProceduralArcadeMusic(){
   if(!arcadeAudioEnabled||arcadeMusicTimer)return;
   arcadeEnsureAudio();arcadeMusicStep=0;
   const pulse=()=>{
-    if(!arcadeRunning||!arcadeAudioEnabled)return;
+    if((!arcadeRunning&&tacticalApp.classList.contains("modeHidden"))||!arcadeAudioEnabled)return;
     const step=arcadeMusicStep%16,wave=Math.max(1,arcadeWave),roots=[55,49,65.4,46.25],root=roots[Math.floor(arcadeMusicStep/8)%roots.length];
     const intensity=.75+wave*.12;
     arcadeTone(root,.95,"sine",.0065*intensity);
