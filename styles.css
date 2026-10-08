@@ -447,3 +447,96 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   #tacticalApp .weaponCard{flex-basis:82px;min-width:82px}
   #tacticalApp .mobileCombatMeta{grid-template-columns:1.25fr .8fr .7fr .7fr;font-size:7px}
 }
+
+/* V0.5.2 — Tactical quarter-turn targeting */
+.tacticalOrbitNudge{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:8;
+  width:48px;height:58px;border:1px solid rgba(106,216,232,.5);
+  background:rgba(3,14,10,.72);color:#b9faff;font:900 22px/1 monospace;
+  display:grid;place-items:center;gap:1px;box-shadow:0 0 18px rgba(106,216,232,.08);
+  touch-action:manipulation
+}
+.tacticalOrbitNudge small{display:block;font-size:7px;letter-spacing:.08em;color:#79a9ae}
+.tacticalOrbitLeft{left:8px}.tacticalOrbitRight{right:8px}
+.tacticalOrbitGuide{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:7;
+  display:flex;gap:6px;align-items:baseline;padding:4px 7px;border:1px solid #214b30;
+  background:rgba(3,12,7,.68);font:800 9px/1 monospace;color:#79a98a
+}
+.tacticalOrbitGuide b{font-size:12px;color:#b9faff}
+@media(max-width:720px){
+  #tacticalApp .tacticalOrbitNudge{
+    top:46%;width:42px;height:54px;font-size:20px;background:rgba(2,10,6,.78)
+  }
+  #tacticalApp .tacticalOrbitLeft{left:5px}
+  #tacticalApp .tacticalOrbitRight{right:5px}
+  #tacticalApp .tacticalOrbitGuide{top:7px;font-size:8px}
+}
+
+/* V0.5.3 — Open-field view / round navigation */
+.mainMenuChoice{border-color:#315a3c!important;background:#07120c!important}
+#tacticalApp.fieldView,#arcadeApp.fieldView{position:relative;max-width:none;width:100%;margin:0;padding:0}
+#tacticalApp.fieldView .leftRail,
+#tacticalApp.fieldView .rightRail,
+#tacticalApp.fieldView .battleFooter,
+#tacticalApp.fieldView .weaponDetail,
+#tacticalApp.fieldView .cooling,
+#tacticalApp.fieldView .fireControl,
+#tacticalApp.fieldView .footerLine{display:none!important}
+#tacticalApp.fieldView .commandGrid{display:block;margin:0}
+#tacticalApp.fieldView .battleColumn{width:100%}
+#tacticalApp.fieldView .stage{border:0}
+#tacticalApp.fieldView canvas{height:100dvh;min-height:620px;max-height:none}
+#tacticalApp.fieldView .topBar{
+  position:fixed;top:6px;left:6px;right:6px;z-index:70;
+  padding:0;border:0;background:transparent;pointer-events:none
+}
+#tacticalApp.fieldView .topBar .brand,
+#tacticalApp.fieldView .topTelemetry>span,
+#tacticalApp.fieldView .topTelemetry>strong,
+#tacticalApp.fieldView .missionActions button:not(#tacticalFieldView):not(#tacticalMain){display:none!important}
+#tacticalApp.fieldView .topTelemetry{margin-left:auto}
+#tacticalApp.fieldView .missionActions{pointer-events:auto}
+#tacticalApp.fieldView .missionActions button{
+  min-height:34px;background:rgba(3,12,7,.88);border:1px solid #2c6540;color:#baf5c8
+}
+#tacticalApp.fieldView .lowerDeck{
+  position:fixed;left:0;right:0;bottom:0;z-index:55;display:block;margin:0;pointer-events:none
+}
+#tacticalApp.fieldView .weaponDeck{
+  pointer-events:auto;display:flex;gap:4px;overflow-x:auto;padding:5px 7px;
+  background:rgba(2,9,5,.92);border-left:0;border-right:0;border-bottom:0;
+  box-shadow:0 -10px 30px rgba(0,0,0,.42)
+}
+#tacticalApp.fieldView .weaponDeck .panelTitle{display:none}
+#tacticalApp.fieldView .weaponCard{flex:1 0 112px;min-width:112px;min-height:42px}
+#tacticalApp.fieldView .stageTopRight,
+#tacticalApp.fieldView .headingTape{display:none}
+
+#arcadeApp.fieldView .arcadeTop{
+  position:fixed;top:6px;left:6px;right:6px;z-index:70;
+  padding:0;border:0;background:transparent;pointer-events:none
+}
+#arcadeApp.fieldView .arcadeTop>div:first-child,
+#arcadeApp.fieldView .arcadeTopActions button:not(#arcadeBack):not(#arcadeFieldView){display:none!important}
+#arcadeApp.fieldView .arcadeTopActions{margin-left:auto;pointer-events:auto}
+#arcadeApp.fieldView .arcadeTopActions button{
+  background:rgba(3,12,7,.88);border:1px solid #2c6540;color:#baf5c8
+}
+#arcadeApp.fieldView .arcadeHero{margin:0}
+#arcadeApp.fieldView #arcadeField{height:100dvh;min-height:620px;max-height:none}
+#arcadeApp.fieldView .arcadeCombatDock{
+  position:fixed;left:0;right:0;bottom:0;z-index:55;padding:4px 6px;
+  background:rgba(2,9,5,.9);box-shadow:0 -10px 30px rgba(0,0,0,.4)
+}
+#arcadeApp.fieldView .arcadeMeters{display:none}
+#arcadeApp.fieldView .arcadeWeaponStrip{margin:0}
+
+@media(max-width:720px){
+  #tacticalApp.fieldView{padding-bottom:0}
+  #tacticalApp.fieldView canvas,#arcadeApp.fieldView #arcadeField{height:100dvh;min-height:100dvh}
+  #tacticalApp.fieldView .weaponDeck{bottom:0;position:static}
+  #tacticalApp.fieldView .weaponCard{flex-basis:88px;min-width:88px}
+  #tacticalApp.fieldView .mobileCombatMeta{display:none}
+  #arcadeApp.fieldView .arcadeWeaponStrip{overflow-x:auto}
+}

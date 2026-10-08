@@ -22,11 +22,15 @@ const ui={
   roeState:$("roeState"),scanProgress:$("scanProgress"),
   restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
   missionResult:$("missionResult"),missionSummary:$("missionSummary"),
-  overlayRestart:$("overlayRestart"),overlayNext:$("overlayNext")
+  overlayRestart:$("overlayRestart"),overlayNext:$("overlayNext"),overlayMain:$("overlayMain"),
+  tacticalMain:$("tacticalMain"),tacticalFieldView:$("tacticalFieldView"),
+  tacticalOrbitLeft:$("tacticalOrbitLeft"),tacticalOrbitRight:$("tacticalOrbitRight"),
+  tacticalOrbitHeading:$("tacticalOrbitHeading"),tacticalOrbitDegrees:$("tacticalOrbitDegrees")
 };
 
+const TACTICAL_WORLD=120,TACTICAL_CENTER=60;
 let cssW=1,cssH=1,dpr=1,last=performance.now();
-let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null,impactFx=[],wrecks=[],incomingFx=[];
+let orbit=0.25,tacticalOrbitNudge=0,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null,impactFx=[],wrecks=[],incomingFx=[];
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
 let tacticalHoverContact=null,tacticalHoverSince=0,tacticalFirePointer=null,tacticalChargeStart=0;
@@ -102,21 +106,21 @@ function resize(){
 window.addEventListener("resize",resize);resize();
 
 function project(x,z,y=0){
-  const dx=x-50,dz=z-50,ct=Math.cos(orbit),st=Math.sin(orbit);
+  const dx=x-TACTICAL_CENTER,dz=z-TACTICAL_CENTER,ct=Math.cos(orbit),st=Math.sin(orbit);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  const sx=cssW/116,sy=cssH/186,yScale=cssH/145;
-  const perspective=1-rz/280;
-  return {x:cssW/2+rx*sx*perspective,y:cssH*.57+rz*sy-y*yScale,depth:rz};
+  const sx=cssW/138,sy=cssH/205,yScale=cssH/155;
+  const perspective=1-rz/330;
+  return {x:cssW/2+rx*sx*perspective,y:cssH*.55+rz*sy-y*yScale,depth:rz};
 }
 function screenToGround(sx,sy){
-  const rx=(sx-cssW/2)/(cssW/116),rz=(sy-cssH*.57)/(cssH/186);
+  const rx=(sx-cssW/2)/(cssW/138),rz=(sy-cssH*.55)/(cssH/205);
   const ct=Math.cos(orbit),st=Math.sin(orbit);
   const dx=rx*ct+rz*st,dz=-rx*st+rz*ct;
-  return{x:clamp(dx+50,0,100),z:clamp(dz+50,0,100)};
+  return{x:clamp(dx+TACTICAL_CENTER,0,TACTICAL_WORLD),z:clamp(dz+TACTICAL_CENTER,0,TACTICAL_WORLD)};
 }
 function gridCoord(x,z){
-  const col=String.fromCharCode(65+clamp(Math.floor(x/10),0,9));
-  return col+"-"+clamp(Math.floor(z/10),0,9);
+  const col=String.fromCharCode(65+clamp(Math.floor(x/10),0,11));
+  return col+"-"+clamp(Math.floor(z/10),0,11);
 }
 function path(points,stroke,fill,lineWidth=1){
   ctx.beginPath();
@@ -131,22 +135,23 @@ function line(a,b,color,w=1,dash=null){
 
 function drawBoard(){
   ctx.fillStyle="#020706";ctx.fillRect(0,0,cssW,cssH);
-  const q=[project(0,0),project(100,0),project(100,100),project(0,100)];
+  const q=[project(0,0),project(TACTICAL_WORLD,0),project(TACTICAL_WORLD,TACTICAL_WORLD),project(0,TACTICAL_WORLD)];
   path(q,"rgba(120,230,150,.42)","#07110b",1.5);
 
-  for(let i=0;i<=100;i+=10){
-    line(project(i,0),project(i,100),"rgba(74,151,96,.17)",1);
-    line(project(0,i),project(100,i),"rgba(74,151,96,.17)",1);
+  for(let i=0;i<=TACTICAL_WORLD;i+=10){
+    line(project(i,0),project(i,TACTICAL_WORLD),"rgba(74,151,96,.17)",1);
+    line(project(0,i),project(TACTICAL_WORLD,i),"rgba(74,151,96,.17)",1);
   }
 
-  drawRoad([{x:5,z:78},{x:28,z:68},{x:52,z:59},{x:77,z:48},{x:96,z:42}],6,"#203127");
-  drawRoad([{x:18,z:20},{x:40,z:38},{x:60,z:48},{x:87,z:60}],4,"#17261d");
+  drawRoad([{x:0,z:92},{x:28,z:72},{x:55,z:61},{x:82,z:49},{x:118,z:38}],6,"#203127");
+  drawRoad([{x:12,z:14},{x:40,z:38},{x:64,z:52},{x:91,z:69},{x:120,z:79}],4,"#17261d");
+  drawRoad([{x:18,z:111},{x:44,z:92},{x:76,z:86},{x:112,z:98}],3,"#14241b");
 
-  const zone=[project(50,21,.08),project(88,21,.08),project(88,72,.08),project(50,72,.08)];
-  path(zone,"rgba(255,95,85,.28)","rgba(255,95,85,.035)",1.2);
+  const zone=[project(48,14,.08),project(112,14,.08),project(112,91,.08),project(48,91,.08)];
+  path(zone,"rgba(255,95,85,.28)","rgba(255,95,85,.028)",1.2);
 
-  const friendlyZone=[project(8,60,.05),project(38,60,.05),project(38,84,.05),project(8,84,.05)];
-  path(friendlyZone,"rgba(106,216,232,.28)","rgba(106,216,232,.025)",1.2);
+  const friendlyZone=[project(4,59,.05),project(42,59,.05),project(42,102,.05),project(4,102,.05)];
+  path(friendlyZone,"rgba(106,216,232,.28)","rgba(106,216,232,.022)",1.2);
 }
 function drawRoad(points,width,color){
   ctx.save();ctx.strokeStyle=color;ctx.lineWidth=Math.max(2,width*cssW/130);ctx.lineCap="round";ctx.lineJoin="round";
@@ -231,6 +236,12 @@ function drawContact(c){
     drawVehicle(c,false);
   }else{
     drawVehicle(c,false);
+    if(c.moveSpeed>0){
+      const lead=project(c.x+Math.cos(c.moveAngle)*6,c.z+Math.sin(c.moveAngle)*6,1.8);
+      ctx.save();ctx.strokeStyle="rgba(255,102,91,.58)";ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(lead.x,lead.y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle="#ff9c83";ctx.font="800 7px monospace";ctx.textAlign="center";ctx.fillText("MOBILE",p.x,p.y+27);ctx.restore();
+    }
     ctx.save();ctx.strokeStyle="#ff665b";ctx.lineWidth=tacticalHoverContact===c?2.4:1.2;
     if(tacticalHoverContact===c){ctx.shadowColor="#ff665b";ctx.shadowBlur=18;ctx.globalAlpha=.92;}
     ctx.strokeRect(p.x-14,p.y-14,28,28);
@@ -379,7 +390,7 @@ function fire(hold=0){
   if(now<readyAt||heat>.92)return;
   ensureAudio();
 
-  const ang=orbit-Math.PI*.15,start={x:50+Math.cos(ang)*72,z:50+Math.sin(ang)*72,y:55};
+  const ang=orbit-Math.PI*.15,start={x:TACTICAL_CENTER+Math.cos(ang)*86,z:TACTICAL_CENTER+Math.sin(ang)*86,y:60};
   const end={x:reticle.x,z:reticle.z,y:0};
   if(weapon==="orbital"){
     const d=Math.hypot(aimed.x-end.x,aimed.z-end.z);
@@ -452,8 +463,20 @@ function resolveImpact(s){
   if(typeof arcadeSfxImpact==="function")arcadeSfxImpact(tier.label,hostileHit,s.weapon);
   updateHud();checkMission();
 }
+function updateTacticalContacts(dt){
+  if(missionOver||scenarioIndex===0||tacticalApp.classList.contains("modeHidden"))return;
+  const bounds={minX:34,maxX:112,minZ:10,maxZ:108};
+  for(const c of contacts){
+    if(c.hp<=0||!c.moveSpeed)continue;
+    const speed=c.moveSpeed*(dt/1000);
+    c.x+=Math.cos(c.moveAngle)*speed;c.z+=Math.sin(c.moveAngle)*speed;
+    if(c.x<=bounds.minX||c.x>=bounds.maxX){c.x=clamp(c.x,bounds.minX,bounds.maxX);c.moveAngle=Math.PI-c.moveAngle;}
+    if(c.z<=bounds.minZ||c.z>=bounds.maxZ){c.z=clamp(c.z,bounds.minZ,bounds.maxZ);c.moveAngle=-c.moveAngle;}
+    if(Math.random()<dt/9000)c.moveAngle+=((Math.random()-.5)*.55);
+  }
+}
 function enemyPressure(now){
-  if(missionOver||now<nextEnemyFire)return;
+  if(missionOver||tacticalApp.classList.contains("modeHidden")||now<nextEnemyFire)return;
   nextEnemyFire=now+4200+Math.random()*2600;
   const aliveF=friendlies.filter(f=>f.hp>0),aliveH=contacts.filter(c=>c.hp>0);
   if(!aliveF.length||!aliveH.length)return;
@@ -508,18 +531,25 @@ function showMissionOverlay(success){
   ui.missionOverlay.classList.add("show");ui.missionOverlay.setAttribute("aria-hidden","false");
 }
 function resetMission(next=false){
-  scenarioIndex+=next?1:0;missionOver=false;shot=null;impactFx=[];wrecks=[];incomingFx=[];
+  scenarioIndex+=next?1:0;missionOver=false;shot=null;impactFx=[];wrecks=[];incomingFx=[];tacticalOrbitNudge=0;
   readyAt=0;heat=0;stability=1;shotsFired=0;hostilesDestroyed=0;friendliesLost=0;pass=1;orbitTurns=0;
-  const offset=(scenarioIndex%4)*3;
-  contacts.forEach((c,i)=>{c.x=clamp(baseContactPositions[i].x+((i%2?1:-1)*offset),45,88);c.z=clamp(baseContactPositions[i].z+(((i+scenarioIndex)%2?1:-1)*offset),20,78);c.hp=c.maxHp;c.state=0;c.flashUntil=0;});
+  const offset=(scenarioIndex%5)*4;
+  contacts.forEach((c,i)=>{
+    c.x=clamp(baseContactPositions[i].x+((i%2?1:-1)*offset)+(scenarioIndex?8:0),38,110);
+    c.z=clamp(baseContactPositions[i].z+(((i+scenarioIndex)%2?1:-1)*offset),12,106);
+    c.hp=c.maxHp;c.state=0;c.flashUntil=0;
+    c.moveAngle=(i*1.47+scenarioIndex*.63)%(Math.PI*2);
+    c.moveSpeed=scenarioIndex===0?0:(1.05+scenarioIndex*.28+(c.kind==="technical"?.35:0));
+  });
   friendlies.forEach((f,i)=>{f.x=baseFriendlyPositions[i].x;f.z=baseFriendlyPositions[i].z;f.hp=f.maxHp;f.flashUntil=0;});
   structures.forEach(o=>o.hp=o.maxHp);
   tacticalHoverContact=null;tacticalHoverSince=0;tacticalFirePointer=null;tacticalChargeStart=0;
   ui.missionStatus.textContent="IN PROGRESS";ui.missionStatus.className="amber";ui.topStatus.textContent="LINK SECURE";
   ui.missionOverlay.classList.remove("show");ui.missionOverlay.setAttribute("aria-hidden","true");
   ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
-  ui.status.textContent=next?"NEXT MISSION // NEW CONTACT PATTERN":"MISSION RESTARTED // SENSOR SWEEP RESET";
-  setCombatEvent(next?"NEW SECTOR LOADED // IDENTIFY CONTACTS":"MISSION RESET // IDENTIFY CONTACTS","scan");updateHud();
+  const movement=scenarioIndex===0?"STATIC CONTACTS":"MOBILE CONTACTS // SPEED TIER "+scenarioIndex;
+  ui.status.textContent=(next?"NEXT MISSION // ":"MISSION READY // ")+movement;
+  setCombatEvent(movement+" // IDENTIFY BEFORE ENGAGING","scan");updateHud();
 }
 
 function updateWeaponUi(){
@@ -529,10 +559,24 @@ function updateWeaponUi(){
   ui.damageStat.textContent=def.damageLabel;ui.radiusStat.textContent=def.radius+" m";ui.reloadStat.textContent=(def.reload/1000).toFixed(1)+" s";
   ui.weaponSilhouette.className="weaponSilhouette "+def.shape;
 }
+function setFieldView(mode,enabled){
+  const app=mode==="tactical"?tacticalApp:arcadeApp;
+  app.classList.toggle("fieldView",enabled);
+  const btn=mode==="tactical"?ui.tacticalFieldView:arcadeUi.fieldView;
+  if(btn){btn.setAttribute("aria-pressed",enabled?"true":"false");btn.textContent=enabled?"× EXIT FIELD":"⛶ FIELD";}
+  requestAnimationFrame(()=>{if(mode==="tactical")resize();else resizeArcade();});
+}
+function toggleFieldView(mode){
+  const app=mode==="tactical"?tacticalApp:arcadeApp;
+  setFieldView(mode,!app.classList.contains("fieldView"));
+}
 ui.restartBtn.addEventListener("click",()=>resetMission(false));
-ui.nextBtn.addEventListener("click",()=>resetMission(true));
+ui.nextBtn.addEventListener("click",()=>{scenarioIndex++;returnToModes();});
 ui.overlayRestart.addEventListener("click",()=>resetMission(false));
-ui.overlayNext.addEventListener("click",()=>resetMission(true));
+ui.overlayNext.addEventListener("click",()=>{scenarioIndex++;returnToModes();});
+ui.overlayMain.addEventListener("click",returnToModes);
+ui.tacticalMain.addEventListener("click",returnToModes);
+ui.tacticalFieldView.addEventListener("click",()=>toggleFieldView("tactical"));
 weaponButtons.forEach(b=>b.addEventListener("click",()=>{
   weapon=b.dataset.weapon;updateWeaponUi();ui.status.textContent=weaponDefs[weapon].name+" SELECTED";tone(360,.04);updateHud();
 }));
@@ -571,6 +615,22 @@ function moveAim(e){
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
   updateHud();
 }
+function tacticalHeading(theta){
+  const deg=((theta*180/Math.PI)%360+360)%360;
+  const labels=["N","NE","E","SE","S","SW","W","NW"];
+  return{deg,heading:labels[Math.round(deg/45)%8]};
+}
+function nudgeTacticalOrbit(dir){
+  tacticalOrbitNudge+=dir*Math.PI/2;
+  orbitPauseUntil=performance.now()+1100;
+  showBanner("ORBIT SHIFT "+(dir>0?"+90°":"-90°"),"scan");
+  setCombatEvent("CAMERA ORBIT "+(dir>0?"CLOCKWISE":"COUNTERCLOCKWISE")+" 90°","scan");
+  if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
+}
+ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
+ui.tacticalOrbitRight.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
+ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
+ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
 
 function updateHud(now=performance.now()){
   updateTacticalIdentification(now);
@@ -585,7 +645,7 @@ function updateHud(now=performance.now()){
   ui.targetClass.textContent="TARGET: "+info.label;ui.targetConfidence.textContent="CONFIDENCE "+String(info.confidence).padStart(2,"0")+"%";
   ui.zoomTarget.textContent=info.label;ui.solutionTarget.textContent=info.label;
   ui.gridReadout.textContent=gridCoord(reticle.x,reticle.z);
-  ui.rangeReadout.textContent=Math.round(Math.hypot(reticle.x-50,reticle.z-50)*18)+" m";
+  ui.rangeReadout.textContent=Math.round(Math.hypot(reticle.x-TACTICAL_CENTER,reticle.z-TACTICAL_CENTER)*18)+" m";
   ui.etaReadout.textContent=(def.travel/1000).toFixed(1)+" s";
   ui.reload.textContent=remaining>0?(remaining/1000).toFixed(1)+" s":"READY";
   const cooldownPct=remaining>0?100*(1-remaining/def.reload):100;ui.cooldownFill.style.width=clamp(cooldownPct,0,100)+"%";
@@ -623,6 +683,11 @@ function updateHud(now=performance.now()){
   ui.attackWindowVal.textContent=windowSec+" s";
   [...ui.attackWindowMeter.children].forEach((n,i)=>n.classList.toggle("active",i<Math.round(windowSec/2.5)));
   ui.orbitDot.style.transform="rotate("+Math.round(phase*360)+"deg)";
+  if(ui.tacticalOrbitHeading&&ui.tacticalOrbitDegrees){
+    const hd=tacticalHeading(orbit);
+    ui.tacticalOrbitHeading.textContent=hd.heading;
+    ui.tacticalOrbitDegrees.textContent=String(Math.round(hd.deg)).padStart(3,"0")+"°";
+  }
 }
 function drawScene(now){
   drawBoard();
@@ -648,9 +713,13 @@ function frame(now){
       orbitTurns++;pass=Math.min(6,1+orbitTurns);
     }
   }
+  if(Math.abs(tacticalOrbitNudge)>.001){
+    const step=Math.sign(tacticalOrbitNudge)*Math.min(Math.abs(tacticalOrbitNudge),dt*.0032);
+    orbit+=step;tacticalOrbitNudge-=step;
+  }
   heat=clamp(heat-dt*.000045,0,1);
   stability=clamp(stability+dt*.00007,0,1);
-  drawScene(now);enemyPressure(now);updateHud(now);
+  updateTacticalContacts(dt);drawScene(now);enemyPressure(now);updateHud(now);
   requestAnimationFrame(frame);
 }
 
@@ -666,7 +735,7 @@ const arcadeUi={
   chargeReadout:$("chargeReadout"),cooldownFill:$("arcadeCooldownFill"),cooldownText:$("arcadeCooldownText"),
   heatFill:$("arcadeHeatFill"),heatText:$("arcadeHeatText"),chargeFill:$("arcadeChargeFill"),chargeText:$("arcadeChargeText"),
   upgrade:$("arcadeUpgrade"),end:$("arcadeEnd"),endTitle:$("arcadeEndTitle"),endSummary:$("arcadeEndSummary"),
-  back:$("arcadeBack"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes"),
+  back:$("arcadeBack"),fieldView:$("arcadeFieldView"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes"),upgradeMain:$("arcadeUpgradeMain"),
   orbitLeft:$("orbitLeft"),orbitRight:$("orbitRight"),orbitHeading:$("orbitHeading"),orbitDegrees:$("orbitDegrees"),
   chainChip:$("chainChip"),chainCount:$("chainCount"),chainBonus:$("chainBonus")
 };
@@ -891,14 +960,17 @@ function showMode(name){
   tacticalApp.classList.toggle("modeHidden",name!=="tactical");
   arcadeApp.classList.toggle("modeHidden",name!=="arcade");
   if(name==="arcade"){stopTacticalMusic();resizeArcade();arcadeEnsureAudio();startArcadeRun();}
-  else {arcadeRunning=false;stopArcadeMusic();resize();if(arcadeAudioEnabled)startTacticalMusic();updateHud();}
+  else {arcadeRunning=false;stopArcadeMusic();resize();resetMission(false);if(arcadeAudioEnabled)startTacticalMusic();}
 }
 function returnToModes(){
-  arcadeRunning=false;stopArcadeMusic();stopTacticalMusic();tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
+  arcadeRunning=false;stopArcadeMusic();stopTacticalMusic();setFieldView("tactical",false);setFieldView("arcade",false);
+  tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
 }
 chooseTactical.addEventListener("click",()=>showMode("tactical"));
 chooseArcade.addEventListener("click",()=>showMode("arcade"));
 arcadeUi.back.addEventListener("click",returnToModes);
+arcadeUi.fieldView.addEventListener("click",()=>toggleFieldView("arcade"));
+arcadeUi.upgradeMain.addEventListener("click",()=>{arcadeUi.upgrade.classList.remove("show");returnToModes();});
 arcadeUi.endModes.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");returnToModes();});
 arcadeUi.audio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
 ui.tacticalAudio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
