@@ -565,9 +565,9 @@ function toggleFieldView(mode){
   setFieldView(mode,!app.classList.contains("fieldView"));
 }
 ui.restartBtn.addEventListener("click",()=>resetMission(false));
-ui.nextBtn.addEventListener("click",()=>resetMission(true));
+ui.nextBtn.addEventListener("click",()=>{scenarioIndex++;returnToModes();});
 ui.overlayRestart.addEventListener("click",()=>resetMission(false));
-ui.overlayNext.addEventListener("click",()=>{scenarioIndex++;resetMission(false);returnToModes();});
+ui.overlayNext.addEventListener("click",()=>{scenarioIndex++;returnToModes();});
 ui.overlayMain.addEventListener("click",returnToModes);
 ui.tacticalMain.addEventListener("click",returnToModes);
 ui.tacticalFieldView.addEventListener("click",()=>toggleFieldView("tactical"));
@@ -954,7 +954,7 @@ function showMode(name){
   tacticalApp.classList.toggle("modeHidden",name!=="tactical");
   arcadeApp.classList.toggle("modeHidden",name!=="arcade");
   if(name==="arcade"){stopTacticalMusic();resizeArcade();arcadeEnsureAudio();startArcadeRun();}
-  else {arcadeRunning=false;stopArcadeMusic();resize();if(arcadeAudioEnabled)startTacticalMusic();updateHud();}
+  else {arcadeRunning=false;stopArcadeMusic();resize();resetMission(false);if(arcadeAudioEnabled)startTacticalMusic();}
 }
 function returnToModes(){
   arcadeRunning=false;stopArcadeMusic();stopTacticalMusic();setFieldView("tactical",false);setFieldView("arcade",false);
