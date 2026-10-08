@@ -1,0 +1,34 @@
+name: Vendor Graph War CC0 music
+on:
+  push:
+    branches: [feature/v0.5.7-audiovisual-impact]
+    paths:
+      - ".github/workflows/vendor-graph-war-music.yml"
+      - "scripts/vendor_cc0_sfx.py"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/v0.5.7-audiovisual-impact
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download and verify CC0 audio before changing playback URLs
+        run: python scripts/vendor_graph_war_music.py
+      - name: Import and verify combat SFX
+        run: python scripts/vendor_cc0_sfx.py
+      - name: Commit verified local audio and playback links
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/audio/music assets/audio/sfx game.js index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "Vendor verified Graph War CC0 music tracks locally"
+            git push
+          fi

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#020604">
 <title>Orbital Defender V0.5.6 — Portrait Combat</title>
-<link rel="stylesheet" href="styles.css?v=0560">
+<link rel="stylesheet" href="styles.css?v=0579">
 </head>
 <body>
 <section id="modeSelect" class="modeSelect">
@@ -313,6 +313,16 @@
     <div class="upgradeCard">
       <small>WAVE CLEARED</small>
       <h2>CHOOSE ONE UPGRADE</h2>
+      <div class="interWaveMusic">
+        <label for="nextWaveTrack">NEXT WAVE SOUNDTRACK</label>
+        <select id="nextWaveTrack" aria-label="Music for next wave"></select>
+        <div class="interWaveMusicRow">
+          <button type="button" id="previewNextWaveTrack">▶ PREVIEW</button>
+          <label for="nextWaveVolume">MUSIC LEVEL <output id="nextWaveVolumeValue">34%</output></label>
+          <input type="range" id="nextWaveVolume" min="0" max="70" value="34" step="1" aria-label="Music volume"/>
+        </div>
+        <small>Optional. Choosing an upgrade begins the next wave.</small>
+      </div>
       <div class="upgradeChoices">
         <button data-upgrade="splash" type="button"><b>SPLASH +20%</b><span>Larger impact radius</span></button>
         <button data-upgrade="cooldown" type="button"><b>COOLDOWN -15%</b><span>Faster weapon recycle</span></button>
@@ -335,6 +345,6 @@
   </section>
 </section>
 
-<script src="game.js?v=0560"></script>
+<script src="game.js?v=0579"></script>
 </body>
 </html>
