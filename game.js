@@ -18,6 +18,7 @@ const ui={
   stabilityValue:$("stabilityValue"),stabilityFill:$("stabilityFill"),
   ammoLight:$("ammoLight"),ammoMedium:$("ammoMedium"),ammoHeavy:$("ammoHeavy"),
   scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),tacticalAudio:$("tacticalAudio"),tacticalChargeReadout:$("tacticalChargeReadout"),threatMeter:$("threatMeter"),
+  mobileTargetState:$("mobileTargetState"),mobileWeaponName:$("mobileWeaponName"),mobileHeat:$("mobileHeat"),mobileCooldown:$("mobileCooldown"),
   roeState:$("roeState"),scanProgress:$("scanProgress"),
   restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
   missionResult:$("missionResult"),missionSummary:$("missionSummary"),
@@ -29,7 +30,7 @@ let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
 let tacticalHoverContact=null,tacticalHoverSince=0,tacticalFirePointer=null,tacticalChargeStart=0;
-let tacticalCanvasFireStart=0,tacticalCanvasStartX=0,tacticalCanvasStartY=0,tacticalCanvasMoved=false,tacticalCanvasArmed=false;
+let tacticalCanvasFireStart=0;
 let shotsFired=0,hostilesDestroyed=0,friendliesLost=0;
 
 const weaponDefs={
@@ -550,26 +551,21 @@ ui.fireBtn.addEventListener("pointercancel",()=>{tacticalFirePointer=null;ui.fir
 
 canvas.addEventListener("pointerdown",e=>{
   if(missionOver)return;
-  pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;
-  tacticalCanvasStartX=e.clientX;tacticalCanvasStartY=e.clientY;tacticalCanvasMoved=false;tacticalCanvasFireStart=performance.now();
+  pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;tacticalCanvasFireStart=performance.now();
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
-  moveAim(e);tacticalCanvasArmed=!!(nearestContact(13)&&nearestContact(13).state===2);ensureAudio();
+  moveAim(e);ensureAudio();e.preventDefault();
 });
 canvas.addEventListener("pointermove",e=>{
   if(e.pointerType==="mouse"&&pointerId===null){moveAim(e);return;}
-  if(pointerId===e.pointerId){
-    if(Math.hypot(e.clientX-tacticalCanvasStartX,e.clientY-tacticalCanvasStartY)>9)tacticalCanvasMoved=true;
-    moveAim(e);
-  }
+  if(pointerId===e.pointerId)moveAim(e);
 });
 canvas.addEventListener("pointerup",e=>{
-  if(pointerId===e.pointerId){
-    moveAim(e);const hold=performance.now()-tacticalCanvasFireStart,canDirect=tacticalCanvasArmed&&!tacticalCanvasMoved;
-    pointerId=null;tacticalCanvasArmed=false;orbitPauseUntil=performance.now()+900;
-    if(canDirect)fire(hold);
-  }
+  if(pointerId!==e.pointerId)return;
+  moveAim(e);const hold=performance.now()-tacticalCanvasFireStart;
+  pointerId=null;orbitPauseUntil=performance.now()+900;
+  fire(hold);e.preventDefault();
 });
-canvas.addEventListener("pointercancel",()=>{pointerId=null;tacticalCanvasArmed=false;});
+canvas.addEventListener("pointercancel",()=>{pointerId=null;});
 function moveAim(e){
   const r=canvas.getBoundingClientRect();
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
@@ -598,7 +594,11 @@ function updateHud(now=performance.now()){
   ui.ammoLight.textContent="∞";ui.ammoMedium.textContent="∞";ui.ammoHeavy.textContent="∞";
   ui.fireCtrlState.textContent=heat>.92?"HOT":"ONLINE";
   ui.fireCtrlState.style.color=heat>.92?"#ff5f55":"";
+  if(ui.mobileWeaponName)ui.mobileWeaponName.textContent=def.name;
+  if(ui.mobileHeat)ui.mobileHeat.textContent=Math.round(heat*100)+"%";
+  if(ui.mobileCooldown)ui.mobileCooldown.textContent=remaining>0?(remaining/1000).toFixed(1)+"s":"READY";
   const aimed=info.contact||null,confirmed=!!(aimed&&aimed.state===2),acquiring=!!(aimed&&aimed.state<2);
+  if(ui.mobileTargetState)ui.mobileTargetState.textContent=confirmed?("✓ "+aimed.label+" COMBATANT"):acquiring?"IDENTIFYING…":"NO COMBATANT";
   if(confirmed){
     ui.roeState.textContent="WEAPONS FREE";ui.roeState.className="clear";
     ui.scanProgress.textContent="COMBATANT CONFIRMED // "+aimed.label;
@@ -608,11 +608,11 @@ function updateHud(now=performance.now()){
     ui.scanProgress.textContent=acquiring?(aimed.state===1?"SIGNATURE MATCH // HOLD":"ANALYZING CONTACT // HOLD"):"ACQUIRE COMBATANT";
     ui.fireBtn.classList.add("held");ui.fireBtn.classList.remove("hot");
   }
-  const canvasCharging=pointerId!==null&&tacticalCanvasArmed&&!tacticalCanvasMoved,buttonCharging=tacticalFirePointer!==null;
+  const canvasCharging=pointerId!==null,buttonCharging=tacticalFirePointer!==null;
   const activeCharging=buttonCharging||canvasCharging,chargeStarted=buttonCharging?tacticalChargeStart:tacticalCanvasFireStart;
   const hold=activeCharging?now-chargeStarted:0,tier=tacticalChargeTier(hold);
   ui.fireBtn.textContent=buttonCharging?tier.label+" // RELEASE":"FIRE // HOLD TO CHARGE";
-  ui.tacticalChargeReadout.textContent=activeCharging?(tier.label+" // "+Math.round(def.radius*tier.radius)+"m EFFECT RADIUS // RELEASE TO FIRE"):"TAP/HOLD CONFIRMED TARGET OR FIRE CONTROL";
+  ui.tacticalChargeReadout.textContent=activeCharging?(tier.label+" // "+Math.round(def.radius*tier.radius)+"m EFFECT RADIUS // RELEASE TO FIRE"):"TAP SCREEN: SNAP // HOLD SCREEN: CHARGE";
   ui.tacticalChargeReadout.classList.toggle("charging",activeCharging);
   ui.fireBtn.disabled=missionOver||remaining>0||!!shot||heat>.92||!confirmed;
 
