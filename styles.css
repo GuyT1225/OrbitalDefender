@@ -540,3 +540,10 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   #tacticalApp.fieldView .mobileCombatMeta{display:none}
   #arcadeApp.fieldView .arcadeWeaponStrip{overflow-x:auto}
 }
+
+/* V0.5.5 — Tactical quarter-turn input fix */
+.stageHud .tacticalOrbitNudge{
+  pointer-events:auto;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
