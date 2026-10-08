@@ -17,7 +17,7 @@ const ui={
   reload:$("reload"),cooldownFill:$("cooldownFill"),heatValue:$("heatValue"),heatFill:$("heatFill"),
   stabilityValue:$("stabilityValue"),stabilityFill:$("stabilityFill"),
   ammoLight:$("ammoLight"),ammoMedium:$("ammoMedium"),ammoHeavy:$("ammoHeavy"),
-  scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),threatMeter:$("threatMeter"),
+  scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),tacticalAudio:$("tacticalAudio"),tacticalChargeReadout:$("tacticalChargeReadout"),threatMeter:$("threatMeter"),
   roeState:$("roeState"),scanProgress:$("scanProgress"),
   restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
   missionResult:$("missionResult"),missionSummary:$("missionSummary"),
@@ -25,15 +25,19 @@ const ui={
 };
 
 let cssW=1,cssH=1,dpr=1,last=performance.now();
-let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="light",shot=null,impactFx=[],wrecks=[],incomingFx=[];
+let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null,impactFx=[],wrecks=[],incomingFx=[];
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
+let tacticalHoverContact=null,tacticalHoverSince=0,tacticalFirePointer=null,tacticalChargeStart=0;
+let tacticalCanvasFireStart=0,tacticalCanvasStartX=0,tacticalCanvasStartY=0,tacticalCanvasMoved=false,tacticalCanvasArmed=false;
 let shotsFired=0,hostilesDestroyed=0,friendliesLost=0;
 
 const weaponDefs={
-  light:{name:"40mm AUTO",role:"FAST / PRECISION",reload:620,damage:1,radius:4,travel:650,color:"#78ef9a",ammo:120,maxAmmo:120,heat:.10,shape:"lightShape",damageLabel:"LOW"},
-  medium:{name:"105mm HE",role:"AREA / HEAVY",reload:2200,damage:2,radius:9,travel:1050,color:"#f0aa43",ammo:18,maxAmmo:18,heat:.24,shape:"mediumShape",damageLabel:"HIGH"},
-  heavy:{name:"GUIDED STRIKE",role:"PRECISION / LONG CYCLE",reload:5200,damage:5,radius:15,travel:1550,color:"#ff665b",ammo:6,maxAmmo:6,heat:.40,shape:"heavyShape",damageLabel:"EXTREME"}
+  cannon:{name:"CANNON",role:"FAST / PRECISION",reload:420,damage:1.25,radius:5,travel:430,color:"#7de49c",heat:.07,shape:"lightShape",damageLabel:"LOW"},
+  heavy:{name:"HEAVY",role:"SPLASH / IMPACT",reload:900,damage:2.3,radius:8,travel:620,color:"#f0aa43",heat:.15,shape:"mediumShape",damageLabel:"HIGH"},
+  orbital:{name:"ORBITAL",role:"ASSIST / MAX BLAST",reload:1700,damage:4.2,radius:12,travel:900,color:"#ff665b",heat:.27,shape:"heavyShape",damageLabel:"EXTREME"},
+  cluster:{name:"CLUSTER",role:"MULTI-HIT / AREA",reload:1350,damage:1.15,radius:4.5,travel:760,color:"#ffd36a",heat:.20,shape:"mediumShape",damageLabel:"MULTI"},
+  penetrator:{name:"PENETRATOR",role:"ARMOR / CONCENTRATED",reload:1150,damage:4.8,radius:3.2,travel:560,color:"#8ee7ff",heat:.18,shape:"lightShape",damageLabel:"PIERCE"}
 };
 
 const structures=[
@@ -226,7 +230,14 @@ function drawContact(c){
     drawVehicle(c,false);
   }else{
     drawVehicle(c,false);
-    ctx.strokeStyle="#ff665b";ctx.lineWidth=1.2;ctx.strokeRect(p.x-14,p.y-14,28,28);
+    ctx.save();ctx.strokeStyle="#ff665b";ctx.lineWidth=tacticalHoverContact===c?2.4:1.2;
+    if(tacticalHoverContact===c){ctx.shadowColor="#ff665b";ctx.shadowBlur=18;ctx.globalAlpha=.92;}
+    ctx.strokeRect(p.x-14,p.y-14,28,28);
+    if(tacticalHoverContact===c){
+      ctx.setLineDash([4,3]);ctx.beginPath();ctx.arc(p.x,p.y,24+Math.sin(performance.now()*.012)*2,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);ctx.fillStyle="#ffd7ce";ctx.font="900 8px monospace";ctx.textAlign="center";ctx.fillText("COMBATANT",p.x,p.y-30);
+    }
+    ctx.restore();
   }
 }
 function drawReticle(){
@@ -267,15 +278,16 @@ function drawShot(now){
     const tt=lerp(startT,t,k/8),w=shotPosition(shot,tt),p=project(w.x,w.z,w.y);
     pts.push({p,alpha:k/8});
   }
+  const tier=shot.tier||tacticalChargeTier(0),power=tier.label==="OVERCHARGE"?1.65:tier.label==="HEAVY"?1.3:1;
   ctx.save();
   for(let i=1;i<pts.length;i++){
-    ctx.globalAlpha=.08+.75*(i/pts.length);
-    line(pts[i-1].p,pts[i].p,def.color,1+i*.32);
+    ctx.globalAlpha=.08+.82*(i/pts.length);ctx.shadowColor=def.color;ctx.shadowBlur=6*power;
+    line(pts[i-1].p,pts[i].p,def.color,(1+i*.32)*power);
   }
   const w=shotPosition(shot,t),p=project(w.x,w.z,w.y);
-  ctx.globalAlpha=1;ctx.fillStyle="#fff8d8";ctx.shadowColor=def.color;ctx.shadowBlur=12;
-  const r=shot.weapon==="heavy"?7:shot.weapon==="medium"?5:3.5;
-  ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.globalAlpha=1;ctx.fillStyle=power>1.5?"#ffffff":"#fff8d8";ctx.shadowColor=def.color;ctx.shadowBlur=18*power;
+  const baseR=shot.weapon==="orbital"?7:shot.weapon==="heavy"?5.5:shot.weapon==="cluster"?5:shot.weapon==="penetrator"?3:3.8;
+  ctx.beginPath();ctx.arc(p.x,p.y,baseR*power,0,Math.PI*2);ctx.fill();ctx.restore();
 }
 function drawImpactEffects(now){
   impactFx=impactFx.filter(f=>now-f.start<f.duration);
@@ -314,12 +326,32 @@ function nearestContact(radius=12){
   }
   return best;
 }
+function updateTacticalIdentification(now=performance.now()){
+  const c=nearestContact(14);
+  if(!c){tacticalHoverContact=null;tacticalHoverSince=0;return;}
+  if(tacticalHoverContact!==c){
+    tacticalHoverContact=c;tacticalHoverSince=now;
+    if(c.state<2){ui.status.textContent="CONTACT ACQUIRED // HOLD RETICLE FOR COMBATANT ID";setCombatEvent(c.label+" // ANALYZING SIGNATURE","scan");}
+  }
+  if(c.state>=2)return;
+  const dwell=now-tacticalHoverSince;
+  if(dwell>=300&&c.state===0){
+    c.state=1;showBanner("SIGNATURE MATCH","scan");setCombatEvent(c.label+" // COMBATANT SIGNATURE MATCH","scan");
+    if(typeof arcadeTone==="function")arcadeTone(440,.08,"square",.018);
+  }
+  if(dwell>=760&&c.state<2){
+    c.state=2;showBanner("COMBATANT CONFIRMED","scan");setCombatEvent(c.label+" // COMBATANT CONFIRMED // WEAPONS FREE","scan");
+    ui.status.textContent="COMBATANT CONFIRMED // WEAPONS RELEASE AUTHORIZED";
+    if(typeof arcadeTone==="function"){arcadeTone(620,.09,"square",.022);arcadeTone(820,.08,"sine",.012,.08);}
+  }
+}
 function currentTargetInfo(){
   const c=nearestContact(14);
   if(!c)return{label:"NO LOCK",confidence:0,state:-1};
   const d=Math.hypot(c.x-reticle.x,c.z-reticle.z);
-  const base=c.state===0?26:c.state===1?68:94;
-  return{label:c.state===2?c.label:(c.state===1?"TRACKING":"UNIDENTIFIED"),confidence:clamp(Math.round(base+(14-d)*.4),0,99),state:c.state,contact:c};
+  const base=c.state===0?28:c.state===1?74:97;
+  const label=c.state===2?c.label+" // COMBATANT":(c.state===1?"SIGNATURE MATCH":"CONTACT");
+  return{label,confidence:clamp(Math.round(base+(14-d)*.25),0,99),state:c.state,contact:c};
 }
 function showBanner(text,type="scan"){
   ui.hitBanner.textContent=text;ui.hitBanner.className="hitBanner show "+type;
@@ -331,78 +363,92 @@ function setCombatEvent(text,type="neutral"){
   const span=ui.combatEvent.querySelector("span");
   if(span)span.textContent=text;
 }
-function scan(){
-  if(missionOver)return;
-  ensureAudio();const c=nearestContact(13);
-  if(!c){ui.status.textContent="SCAN NEGATIVE // no contact inside sensor gate.";showBanner("SCAN NEGATIVE","warn");setCombatEvent("SCAN NEGATIVE // NO CONTACT","warn");tone(280,.06);return;}
-  c.state=Math.min(2,c.state+1);
-  if(c.state===1){ui.status.textContent="TRACK ESTABLISHED // hold sensor on contact.";showBanner("CONTACT TRACKED","scan");setCombatEvent(c.label+" // TRACK ESTABLISHED","scan");tone(440,.08,"square",.025);}
-  else{ui.status.textContent="HOSTILE CONFIRMED // weapons release authorized.";showBanner("HOSTILE CONFIRMED","scan");setCombatEvent(c.label+" // HOSTILE CONFIRMED","scan");tone(640,.08,"square",.025);}
-  updateHud();
+function tacticalChargeTier(hold){
+  if(hold<450)return{label:"SNAP",mult:1,radius:1,cool:1,heat:1};
+  if(hold<1250)return{label:"HEAVY",mult:1.7,radius:1.5,cool:1.5,heat:1.45};
+  return{label:"OVERCHARGE",mult:2.6,radius:2.15,cool:2.3,heat:2.05};
 }
-function fire(){
+function fire(hold=0){
   if(missionOver||shot)return;
-  const now=performance.now(),def=weaponDefs[weapon],aimed=nearestContact(13);
-  if(aimed&&aimed.state<2){
-    ui.status.textContent="WEAPONS HOLD // SCAN AND CONFIRM CONTACT FIRST";
-    showBanner("SCAN REQUIRED","warn");setCombatEvent(aimed.label+" // IDENTIFICATION REQUIRED","warn");sfxWarn();return;
+  const now=performance.now(),def=weaponDefs[weapon],aimed=nearestContact(13),tier=tacticalChargeTier(hold);
+  if(!aimed||aimed.state<2){
+    ui.status.textContent="WEAPONS HOLD // ACQUIRE AND CONFIRM COMBATANT";
+    showBanner("COMBATANT ID REQUIRED","warn");setCombatEvent((aimed?aimed.label:"NO CONTACT")+" // FIRE CONTROL HOLD","warn");sfxWarn();return;
   }
-  if(now<readyAt||def.ammo<=0||heat>.92)return;
+  if(now<readyAt||heat>.92)return;
   ensureAudio();
 
-  const ang=orbit-Math.PI*.15;
-  const start={x:50+Math.cos(ang)*72,z:50+Math.sin(ang)*72,y:55};
+  const ang=orbit-Math.PI*.15,start={x:50+Math.cos(ang)*72,z:50+Math.sin(ang)*72,y:55};
   const end={x:reticle.x,z:reticle.z,y:0};
-  const control={x:lerp(start.x,end.x,.48),z:lerp(start.z,end.z,.48),y:75+(weapon==="heavy"?12:0)};
-  shot={weapon,start,control,end,startTime:now,duration:def.travel};
-  def.ammo--;shotsFired++;readyAt=now+def.reload;heat=clamp(heat+def.heat,0,1);stability=clamp(stability-(weapon==="heavy"?.28:weapon==="medium"?.16:.07),.35,1);
+  if(weapon==="orbital"){
+    const d=Math.hypot(aimed.x-end.x,aimed.z-end.z);
+    if(d<11){end.x=lerp(end.x,aimed.x,.38);end.z=lerp(end.z,aimed.z,.38);}
+  }
+  const control={x:lerp(start.x,end.x,.48),z:lerp(start.z,end.z,.48),y:75+(tier.label==="OVERCHARGE"?12:0)};
+  shot={weapon,tier,start,control,end,startTime:now,duration:def.travel};
+  shotsFired++;readyAt=now+def.reload*tier.cool;heat=clamp(heat+def.heat*tier.heat,0,1);
+  stability=clamp(stability-(tier.label==="OVERCHARGE"?.28:tier.label==="HEAVY"?.16:.07),.35,1);
 
-  ui.status.textContent="SHOT AWAY // "+def.name+" // IMPACT "+(def.travel/1000).toFixed(1)+"s";
-  showBanner("SHOT AWAY","warn");setCombatEvent(def.name+" // SHOT AWAY // ETA "+(def.travel/1000).toFixed(1)+"s","warn");sfxFire(weapon);updateHud();
+  ui.status.textContent=tier.label+" SHOT AWAY // "+def.name+" // IMPACT "+(def.travel/1000).toFixed(1)+"s";
+  showBanner(tier.label+" STRIKE","warn");setCombatEvent(def.name+" // "+tier.label+" // ETA "+(def.travel/1000).toFixed(1)+"s","warn");
+  if(typeof arcadeSfxLaunch==="function")arcadeSfxLaunch(tier.label,weapon);else sfxFire(weapon);
+  updateHud();
 }
 function resolveImpact(s){
-  const def=weaponDefs[s.weapon];let hostileHit=false,friendlyHit=false,structureHit=false,destroyed=false,denied=false;
-  let hitContact=null,hitFriendly=null;
-  impactFx.push({x:s.end.x,z:s.end.z,start:performance.now(),duration:1250,color:def.color,kind:"miss",label:""});
+  const def=weaponDefs[s.weapon],tier=s.tier||tacticalChargeTier(0);
+  const radius=def.radius*tier.radius,damage=def.damage*tier.mult;
+  let hostileHit=false,friendlyHit=false,structureHit=false,destroyed=false,hitContact=null,hitFriendly=null,totalHits=0;
+  const now=performance.now();
+  impactFx.push({x:s.end.x,z:s.end.z,start:now,duration:1250,color:def.color,kind:"miss",label:""});
 
-  for(const f of friendlies){
-    if(f.hp<=0)continue;
-    const d=Math.hypot(f.x-s.end.x,f.z-s.end.z);
-    if(d<=def.radius){f.hp=Math.max(0,f.hp-def.damage);friendlyHit=true;hitFriendly=f;f.flashUntil=performance.now()+700;}
-  }
+  const blastPoints=[];
+  if(s.weapon==="cluster"){
+    const pellets=tier.label==="OVERCHARGE"?8:tier.label==="HEAVY"?6:5;
+    for(let i=0;i<pellets;i++){
+      const a=i/pellets*Math.PI*2,spread=radius*(.32+.34*(i%2));
+      blastPoints.push({x:s.end.x+Math.cos(a)*spread,z:s.end.z+Math.sin(a)*spread,r:radius*.62,damage:damage*.72});
+      impactFx.push({x:s.end.x+Math.cos(a)*spread,z:s.end.z+Math.sin(a)*spread,start:now+i*35,duration:720,color:def.color,kind:"hit",label:""});
+    }
+  }else blastPoints.push({x:s.end.x,z:s.end.z,r:radius,damage});
 
-  for(const c of contacts){
-    if(c.hp<=0)continue;
-    const d=Math.hypot(c.x-s.end.x,c.z-s.end.z);
-    if(d<=def.radius){
-      if(c.state<2){denied=true;continue;}
-      const before=c.hp;c.hp=Math.max(0,c.hp-def.damage);hostileHit=true;hitContact=c;c.flashUntil=performance.now()+700;if(before>0&&c.hp===0){destroyed=true;hostilesDestroyed++;wrecks.push({x:c.x,z:c.z,kind:c.kind});}
+  for(const bp of blastPoints){
+    for(const f of friendlies){
+      if(f.hp<=0)continue;const d=Math.hypot(f.x-bp.x,f.z-bp.z);
+      if(d<=bp.r){const dealt=bp.damage*(1-clamp(d/bp.r,0,.75));f.hp=Math.max(0,f.hp-dealt);friendlyHit=true;hitFriendly=f;f.flashUntil=now+700;}
+    }
+    for(const c of contacts){
+      if(c.hp<=0||c.state<2)continue;const d=Math.hypot(c.x-bp.x,c.z-bp.z);
+      if(d<=bp.r){
+        const bonus=s.weapon==="penetrator"&&(c.kind==="apc"||c.kind==="aa")?1.7:1;
+        const dealt=bp.damage*(1-clamp(d/bp.r,0,.75))*bonus,before=c.hp;
+        c.hp=Math.max(0,c.hp-dealt);hostileHit=true;hitContact=c;totalHits++;c.flashUntil=now+700;
+        if(before>0&&c.hp===0){destroyed=true;hostilesDestroyed++;wrecks.push({x:c.x,z:c.z,kind:c.kind});}
+      }
+    }
+    for(const o of structures){
+      if(o.hp<=0)continue;const d=Math.hypot(o.x-bp.x,o.z-bp.z);
+      if(d<=bp.r){o.hp=Math.max(0,o.hp-bp.damage*(s.weapon==="penetrator"?1.4:.7));structureHit=true;}
     }
   }
 
-  for(const o of structures){
-    if(o.hp<=0)continue;
-    const d=Math.hypot(o.x-s.end.x,o.z-s.end.z);
-    if(d<=def.radius){o.hp=Math.max(0,o.hp-def.damage);structureHit=true;}
-  }
-
-  const fx=impactFx[impactFx.length-1];
+  const fx=impactFx[0+impactFx.length-blastPoints.length-(s.weapon==="cluster"?1:0)]||impactFx[impactFx.length-1];
+  const mainFx=impactFx.findLast?impactFx.findLast(x=>x.start===now):impactFx[impactFx.length-1];
+  const resultFx=mainFx||fx;
   if(friendlyHit){
-    fx.color="#ff5f55";fx.kind="friendly";fx.label="FRIENDLY -"+def.damage+" HP";
-    ui.status.textContent="FRIENDLY FIRE // CHECK TARGET ID";showBanner("FRIENDLY HIT","hit");setCombatEvent((hitFriendly?hitFriendly.label:"FRIENDLY")+" // -"+def.damage+" HP // CEASE FIRE","hit");sfxWarn();
+    resultFx.color="#ff5f55";resultFx.kind="friendly";resultFx.label="FRIENDLY HIT";
+    ui.status.textContent="FRIENDLY FIRE // CHECK TARGET ID";showBanner("FRIENDLY HIT","hit");setCombatEvent((hitFriendly?hitFriendly.label:"FRIENDLY")+" // CEASE FIRE","hit");sfxWarn();
   }else if(destroyed){
-    fx.color="#ff5f55";fx.kind="hit";fx.label="DESTROYED";
-    ui.status.textContent="TARGET DESTROYED // BATTLE DAMAGE CONFIRMED";showBanner("TARGET DESTROYED","hit");setCombatEvent((hitContact?hitContact.label:"TARGET")+" // DESTROYED // BDA CONFIRMED","hit");sfxHit();
+    resultFx.color="#ff5f55";resultFx.kind="hit";resultFx.label="DESTROYED";
+    ui.status.textContent="TARGET DESTROYED // BATTLE DAMAGE CONFIRMED";showBanner("TARGET DESTROYED","hit");setCombatEvent((hitContact?hitContact.label:"TARGET")+" // DESTROYED // BDA CONFIRMED","hit");
   }else if(hostileHit){
-    fx.color="#ff5f55";fx.kind="hit";fx.label="-"+def.damage+" HP";
-    ui.status.textContent="HOSTILE HIT // DAMAGE CONFIRMED";showBanner("HOSTILE HIT","hit");setCombatEvent((hitContact?hitContact.label:"HOSTILE")+" // HIT // -"+def.damage+" HP // "+(hitContact?hitContact.hp:"?")+" HP REMAIN","hit");sfxHit();
-  }else if(denied){
-    fx.color="#f0aa43";fx.label="NO ID";ui.status.textContent="IMPACT NEAR UNCONFIRMED CONTACT // SCAN REQUIRED";showBanner("NO ID / NO CONFIRM","warn");setCombatEvent("IMPACT NEAR CONTACT // IDENTIFICATION REQUIRED","warn");
+    resultFx.color="#ff5f55";resultFx.kind="hit";resultFx.label="HIT x"+totalHits;
+    ui.status.textContent="HOSTILE HIT // DAMAGE CONFIRMED";showBanner("HOSTILE HIT","hit");setCombatEvent((hitContact?hitContact.label:"HOSTILE")+" // "+tier.label+" HIT // "+Math.max(0,hitContact?hitContact.hp:0).toFixed(1)+" HP","hit");
   }else if(structureHit){
-    fx.color="#f0aa43";fx.label="COVER HIT";ui.status.textContent="STRUCTURE HIT // COVER DEGRADED";showBanner("COVER DAMAGED","warn");setCombatEvent("STRUCTURE HIT // COVER DEGRADED","warn");
+    resultFx.color="#f0aa43";resultFx.label="COVER HIT";ui.status.textContent="STRUCTURE HIT // COVER DEGRADED";showBanner("COVER DAMAGED","warn");setCombatEvent("STRUCTURE HIT // COVER DEGRADED","warn");
   }else{
-    fx.color="#d9ffe3";fx.label="MISS";ui.status.textContent="IMPACT // NO TARGET DAMAGE";showBanner("NO TARGET DAMAGE","warn");setCombatEvent("NO TARGET DAMAGE // ADJUST AIM","warn");
+    resultFx.color="#d9ffe3";resultFx.label="MISS";ui.status.textContent="IMPACT // NO TARGET DAMAGE";showBanner("NO TARGET DAMAGE","warn");setCombatEvent("NO TARGET DAMAGE // ADJUST AIM","warn");
   }
+  if(typeof arcadeSfxImpact==="function")arcadeSfxImpact(tier.label,hostileHit,s.weapon);
   updateHud();checkMission();
 }
 function enemyPressure(now){
@@ -467,10 +513,10 @@ function resetMission(next=false){
   contacts.forEach((c,i)=>{c.x=clamp(baseContactPositions[i].x+((i%2?1:-1)*offset),45,88);c.z=clamp(baseContactPositions[i].z+(((i+scenarioIndex)%2?1:-1)*offset),20,78);c.hp=c.maxHp;c.state=0;c.flashUntil=0;});
   friendlies.forEach((f,i)=>{f.x=baseFriendlyPositions[i].x;f.z=baseFriendlyPositions[i].z;f.hp=f.maxHp;f.flashUntil=0;});
   structures.forEach(o=>o.hp=o.maxHp);
-  Object.values(weaponDefs).forEach(d=>d.ammo=d.maxAmmo);
+  tacticalHoverContact=null;tacticalHoverSince=0;tacticalFirePointer=null;tacticalChargeStart=0;
   ui.missionStatus.textContent="IN PROGRESS";ui.missionStatus.className="amber";ui.topStatus.textContent="LINK SECURE";
   ui.missionOverlay.classList.remove("show");ui.missionOverlay.setAttribute("aria-hidden","true");
-  ui.scanBtn.disabled=false;ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
+  ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
   ui.status.textContent=next?"NEXT MISSION // NEW CONTACT PATTERN":"MISSION RESTARTED // SENSOR SWEEP RESET";
   setCombatEvent(next?"NEW SECTOR LOADED // IDENTIFY CONTACTS":"MISSION RESET // IDENTIFY CONTACTS","scan");updateHud();
 }
@@ -489,17 +535,41 @@ ui.overlayNext.addEventListener("click",()=>resetMission(true));
 weaponButtons.forEach(b=>b.addEventListener("click",()=>{
   weapon=b.dataset.weapon;updateWeaponUi();ui.status.textContent=weaponDefs[weapon].name+" SELECTED";tone(360,.04);updateHud();
 }));
-ui.scanBtn.addEventListener("click",scan);ui.fireBtn.addEventListener("click",fire);
+ui.fireBtn.addEventListener("pointerdown",e=>{
+  if(ui.fireBtn.disabled||missionOver||shot)return;
+  tacticalFirePointer=e.pointerId;tacticalChargeStart=performance.now();ui.fireBtn.classList.add("charging");
+  try{ui.fireBtn.setPointerCapture(e.pointerId);}catch(_){}
+  ensureAudio();e.preventDefault();
+});
+ui.fireBtn.addEventListener("pointerup",e=>{
+  if(tacticalFirePointer!==e.pointerId)return;
+  const hold=performance.now()-tacticalChargeStart;tacticalFirePointer=null;ui.fireBtn.classList.remove("charging");
+  fire(hold);e.preventDefault();
+});
+ui.fireBtn.addEventListener("pointercancel",()=>{tacticalFirePointer=null;ui.fireBtn.classList.remove("charging");});
 
 canvas.addEventListener("pointerdown",e=>{
   if(missionOver)return;
   pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;
+  tacticalCanvasStartX=e.clientX;tacticalCanvasStartY=e.clientY;tacticalCanvasMoved=false;tacticalCanvasFireStart=performance.now();
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
-  moveAim(e);ensureAudio();
+  moveAim(e);tacticalCanvasArmed=!!(nearestContact(13)&&nearestContact(13).state===2);ensureAudio();
 });
-canvas.addEventListener("pointermove",e=>{if(pointerId===e.pointerId)moveAim(e);});
-canvas.addEventListener("pointerup",e=>{if(pointerId===e.pointerId){moveAim(e);pointerId=null;orbitPauseUntil=performance.now()+900;}});
-canvas.addEventListener("pointercancel",()=>pointerId=null);
+canvas.addEventListener("pointermove",e=>{
+  if(e.pointerType==="mouse"&&pointerId===null){moveAim(e);return;}
+  if(pointerId===e.pointerId){
+    if(Math.hypot(e.clientX-tacticalCanvasStartX,e.clientY-tacticalCanvasStartY)>9)tacticalCanvasMoved=true;
+    moveAim(e);
+  }
+});
+canvas.addEventListener("pointerup",e=>{
+  if(pointerId===e.pointerId){
+    moveAim(e);const hold=performance.now()-tacticalCanvasFireStart,canDirect=tacticalCanvasArmed&&!tacticalCanvasMoved;
+    pointerId=null;tacticalCanvasArmed=false;orbitPauseUntil=performance.now()+900;
+    if(canDirect)fire(hold);
+  }
+});
+canvas.addEventListener("pointercancel",()=>{pointerId=null;tacticalCanvasArmed=false;});
 function moveAim(e){
   const r=canvas.getBoundingClientRect();
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
@@ -507,6 +577,7 @@ function moveAim(e){
 }
 
 function updateHud(now=performance.now()){
+  updateTacticalIdentification(now);
   const def=weaponDefs[weapon],remaining=Math.max(0,readyAt-now),info=currentTargetInfo();
   const aliveUnknown=contacts.filter(c=>c.hp>0&&c.state<2).length;
   const aliveHostile=contacts.filter(c=>c.hp>0&&c.state===2).length;
@@ -524,22 +595,26 @@ function updateHud(now=performance.now()){
   const cooldownPct=remaining>0?100*(1-remaining/def.reload):100;ui.cooldownFill.style.width=clamp(cooldownPct,0,100)+"%";
   ui.heatValue.textContent=Math.round(heat*100)+"%";ui.heatFill.style.width=Math.round(heat*100)+"%";
   ui.stabilityValue.textContent=Math.round(stability*100)+"%";ui.stabilityFill.style.width=Math.round(stability*100)+"%";
-  ui.ammoLight.textContent=weaponDefs.light.ammo;ui.ammoMedium.textContent=weaponDefs.medium.ammo;ui.ammoHeavy.textContent=weaponDefs.heavy.ammo;
+  ui.ammoLight.textContent="∞";ui.ammoMedium.textContent="∞";ui.ammoHeavy.textContent="∞";
   ui.fireCtrlState.textContent=heat>.92?"HOT":"ONLINE";
   ui.fireCtrlState.style.color=heat>.92?"#ff5f55":"";
-  const aimed=info.contact||null,needsScan=!!(aimed&&aimed.state<2);
-  if(needsScan){
-    ui.roeState.textContent="WEAPONS HOLD";ui.roeState.className="hold";
-    ui.scanProgress.textContent=aimed.state===0?"SCAN 1/2 REQUIRED":"SCAN 2/2 // CONFIRM HOSTILE";
-    ui.fireBtn.textContent="SCAN REQUIRED";ui.fireBtn.classList.add("held");ui.fireBtn.classList.remove("hot");
-    ui.scanBtn.classList.add("scanNeeded");
+  const aimed=info.contact||null,confirmed=!!(aimed&&aimed.state===2),acquiring=!!(aimed&&aimed.state<2);
+  if(confirmed){
+    ui.roeState.textContent="WEAPONS FREE";ui.roeState.className="clear";
+    ui.scanProgress.textContent="COMBATANT CONFIRMED // "+aimed.label;
+    ui.fireBtn.classList.remove("held");ui.fireBtn.classList.add("hot");
   }else{
-    ui.roeState.textContent=aimed&&aimed.state===2?"WEAPONS FREE":"AREA FIRE";
-    ui.roeState.className="clear";ui.scanProgress.textContent=aimed&&aimed.state===2?"TARGET CONFIRMED":"NO CONTACT UNDER RETICLE";
-    ui.fireBtn.textContent="FIRE";ui.fireBtn.classList.remove("held");ui.fireBtn.classList.add("hot");
-    ui.scanBtn.classList.remove("scanNeeded");
+    ui.roeState.textContent="WEAPONS HOLD";ui.roeState.className="hold";
+    ui.scanProgress.textContent=acquiring?(aimed.state===1?"SIGNATURE MATCH // HOLD":"ANALYZING CONTACT // HOLD"):"ACQUIRE COMBATANT";
+    ui.fireBtn.classList.add("held");ui.fireBtn.classList.remove("hot");
   }
-  ui.fireBtn.disabled=missionOver||remaining>0||!!shot||def.ammo<=0||heat>.92||needsScan;
+  const canvasCharging=pointerId!==null&&tacticalCanvasArmed&&!tacticalCanvasMoved,buttonCharging=tacticalFirePointer!==null;
+  const activeCharging=buttonCharging||canvasCharging,chargeStarted=buttonCharging?tacticalChargeStart:tacticalCanvasFireStart;
+  const hold=activeCharging?now-chargeStarted:0,tier=tacticalChargeTier(hold);
+  ui.fireBtn.textContent=buttonCharging?tier.label+" // RELEASE":"FIRE // HOLD TO CHARGE";
+  ui.tacticalChargeReadout.textContent=activeCharging?(tier.label+" // "+Math.round(def.radius*tier.radius)+"m EFFECT RADIUS // RELEASE TO FIRE"):"TAP/HOLD CONFIRMED TARGET OR FIRE CONTROL";
+  ui.tacticalChargeReadout.classList.toggle("charging",activeCharging);
+  ui.fireBtn.disabled=missionOver||remaining>0||!!shot||heat>.92||!confirmed;
 
   const threat=Math.min(8,aliveHostile*2+Math.ceil(aliveUnknown*.7));
   [...ui.threatMeter.children].forEach((n,i)=>n.classList.toggle("active",i<threat));
@@ -725,6 +800,24 @@ function arcadeTrackForWave(wave){
   if(wave===4)return "urgent";
   return "brute";
 }
+let tacticalMusicAudio=null,tacticalTrackIndex=0;
+const tacticalTrackRotation=["sector","searching","pulse"];
+function ensureTacticalMusicAudio(){
+  if(tacticalMusicAudio)return tacticalMusicAudio;
+  tacticalMusicAudio=new Audio();tacticalMusicAudio.preload="auto";tacticalMusicAudio.volume=.28;
+  tacticalMusicAudio.addEventListener("ended",()=>{if(!tacticalApp.classList.contains("modeHidden")&&arcadeAudioEnabled){tacticalTrackIndex=(tacticalTrackIndex+1)%tacticalTrackRotation.length;playTacticalTrack();}});
+  tacticalMusicAudio.addEventListener("error",()=>{if(!tacticalApp.classList.contains("modeHidden")&&arcadeAudioEnabled)startProceduralArcadeMusic();});
+  return tacticalMusicAudio;
+}
+function playTacticalTrack(){
+  if(!arcadeAudioEnabled)return;
+  const id=tacticalTrackRotation[tacticalTrackIndex%tacticalTrackRotation.length],track=arcadeTracks[id];if(!track)return;
+  stopProceduralArcadeMusic();
+  const a=ensureTacticalMusicAudio();a.pause();a.loop=false;a.volume=.28;a.src=track.url;a.currentTime=0;
+  const p=a.play();if(p&&p.catch)p.catch(()=>startProceduralArcadeMusic());
+}
+function startTacticalMusic(){tacticalTrackIndex=0;playTacticalTrack();}
+function stopTacticalMusic(){if(tacticalMusicAudio){tacticalMusicAudio.pause();tacticalMusicAudio.currentTime=0;}}
 function ensureArcadeMusicAudio(){
   if(arcadeMusicAudio)return arcadeMusicAudio;
   arcadeMusicAudio=new Audio();
@@ -748,7 +841,7 @@ function startProceduralArcadeMusic(){
   if(!arcadeAudioEnabled||arcadeMusicTimer)return;
   arcadeEnsureAudio();arcadeMusicStep=0;
   const pulse=()=>{
-    if(!arcadeRunning||!arcadeAudioEnabled)return;
+    if((!arcadeRunning&&tacticalApp.classList.contains("modeHidden"))||!arcadeAudioEnabled)return;
     const step=arcadeMusicStep%16,wave=Math.max(1,arcadeWave),roots=[55,49,65.4,46.25],root=roots[Math.floor(arcadeMusicStep/8)%roots.length];
     const intensity=.75+wave*.12;
     arcadeTone(root,.95,"sine",.0065*intensity);
@@ -775,12 +868,13 @@ function stopArcadeMusic(){
 }
 function setArcadeAudio(enabled){
   arcadeAudioEnabled=enabled;uiAudioUpdate();
-  if(enabled&&arcadeRunning)startArcadeMusic();else stopArcadeMusic();
+  if(!enabled){stopArcadeMusic();stopTacticalMusic();return;}
+  if(arcadeRunning)startArcadeMusic();
+  else if(!tacticalApp.classList.contains("modeHidden"))startTacticalMusic();
 }
 function uiAudioUpdate(){
-  if(!arcadeUi.audio)return;
-  arcadeUi.audio.setAttribute("aria-pressed",arcadeAudioEnabled?"true":"false");
-  arcadeUi.audio.textContent=arcadeAudioEnabled?"🔊 AUDIO":"🔇 MUTED";
+  if(arcadeUi.audio){arcadeUi.audio.setAttribute("aria-pressed",arcadeAudioEnabled?"true":"false");arcadeUi.audio.textContent=arcadeAudioEnabled?"🔊 AUDIO":"🔇 MUTED";}
+  if(ui.tacticalAudio){ui.tacticalAudio.setAttribute("aria-pressed",arcadeAudioEnabled?"true":"false");ui.tacticalAudio.textContent=arcadeAudioEnabled?"🔊 AUDIO":"🔇 MUTED";}
 }
 
 const arcadeWaveDefs=[
@@ -796,17 +890,18 @@ function showMode(name){
   modeSelect.classList.add("modeHidden");
   tacticalApp.classList.toggle("modeHidden",name!=="tactical");
   arcadeApp.classList.toggle("modeHidden",name!=="arcade");
-  if(name==="arcade"){resizeArcade();arcadeEnsureAudio();startArcadeRun();}
-  else {arcadeRunning=false;stopArcadeMusic();}
+  if(name==="arcade"){stopTacticalMusic();resizeArcade();arcadeEnsureAudio();startArcadeRun();}
+  else {arcadeRunning=false;stopArcadeMusic();resize();if(arcadeAudioEnabled)startTacticalMusic();updateHud();}
 }
 function returnToModes(){
-  arcadeRunning=false;stopArcadeMusic();tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
+  arcadeRunning=false;stopArcadeMusic();stopTacticalMusic();tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
 }
 chooseTactical.addEventListener("click",()=>showMode("tactical"));
 chooseArcade.addEventListener("click",()=>showMode("arcade"));
 arcadeUi.back.addEventListener("click",returnToModes);
 arcadeUi.endModes.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");returnToModes();});
 arcadeUi.audio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
+ui.tacticalAudio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
 function nudgeArcadeOrbit(dir){
   arcadeOrbitNudge+=dir*Math.PI/2;
   showArcadeBanner("ORBIT SHIFT "+(dir>0?"+90°":"-90°"));
