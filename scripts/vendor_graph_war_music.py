@@ -43,6 +43,6 @@ if success:
     js_path.write_text(js)
     html = Path("index.html")
     body = html.read_text()
-    body = re.sub(r'game\\.js\\?v=\\d+', 'game.js?v=0574', body)
+    body = body.replace('game.js?v=0573', 'game.js?v=0574')
     html.write_text(body)
 print(f"Localized {success}/{len(tracks)} playable Graph War music tracks.")
