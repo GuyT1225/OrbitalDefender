@@ -1127,7 +1127,7 @@ function resetArcadeStructures(){
 function startArcadeRun(){
   cancelArcadeSession();arcadePhase="PLAYING";
   arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;nextWaveTrackId=null;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
-  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
+  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeGroundScars=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
   uiAudioUpdate();startArcadeMusic();arcadeSfxWave();updateArcadeHud(performance.now());
@@ -1235,7 +1235,7 @@ function resolveArcadeImpact(s,now){
       if(d<=r){
         const fall=1-clamp(d/r,0,.78),armorBonus=def.role==="penetrator"&&e.type==="armor"?1.75:1;
         e.hp-=dam*fall*armorBonus;
-        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;kills++;}else hit++;
+        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;kills++;arcadeAddGroundScar(e.x,e.z,e.type==="armor"?5:2.7,"wreck");}else hit++;
       }
     }
     if(cluster)arcadeFx.push({x:cx,z:cz,start:now,duration:520,color:def.color,label:"",radius:r,tier:s.tier.label});
@@ -1247,22 +1247,58 @@ function resolveArcadeImpact(s,now){
   if(s.tier.label==="OVERCHARGE"){
     for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*(def.role==="penetrator"?.6:.3));}
   }
+  arcadeAddGroundScar(s.end.x,s.end.z,Math.min(radius*.58,9),"impact");
   if(hit>0){arcadeChain++;arcadeBestChain=Math.max(arcadeBestChain,arcadeChain);}else arcadeChain=Math.max(0,arcadeChain-2);
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit+" // CHAIN x"+arcadeChain):"MISS // CHAIN -",radius,tier:s.tier.label});
   arcadeSfxImpact(s.tier.label,hit>0,s.weapon);
   arcadeSfxDamage(kills,hit,s.tier.label);
 }
+// V0.6 environmental memory is visual only; combat math and lanes remain unchanged.
+let arcadeGroundScars=[];
+function arcadeAddGroundScar(x,z,r,kind="impact"){
+  arcadeGroundScars.push({x,z,r:Math.min(12,Math.max(1.8,r)),kind,seed:Math.random()});
+  if(arcadeGroundScars.length>72)arcadeGroundScars.shift();
+}
+function arcadeGroundEllipse(x,z,rx,rz,color,stroke=null){
+  const p=arcadeProject(x,z,.01),a=arcadeProject(x+rx,z,.01),b=arcadeProject(x,z+rz,.01);
+  arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),0,0,Math.PI*2);
+  arcadeCtx.fillStyle=color;arcadeCtx.fill();if(stroke){arcadeCtx.strokeStyle=stroke;arcadeCtx.lineWidth=1;arcadeCtx.stroke();}
+}
+function drawArcadeTerrain(){
+  // Dry ground, sparse variation and roadside hardscape. No random per-frame flicker.
+  for(let i=0;i<58;i++){
+    const x=9+((i*37)%83),z=((i*67)%97),shade=i%3===0?"rgba(145,126,88,.11)":"rgba(105,112,87,.09)";
+    arcadeGroundEllipse(x,z,1.1+(i%4)*.9,.7+(i%3)*.8,shade);
+  }
+  for(const x of arcadeLanes){
+    arcadeLine(arcadeProject(x,2,.02),arcadeProject(x,94,.02),"rgba(119,110,77,.27)",Math.max(9,arcadeW/65));
+    arcadeLine(arcadeProject(x,2,.04),arcadeProject(x,94,.04),"rgba(174,156,106,.22)",1.5,[4,11]);
+  }
+  for(let i=0;i<12;i++){
+    const z=8+i*7.4, x=i%2?14:88;
+    arcadeGroundEllipse(x,z,2.2,1.1,"rgba(37,49,36,.48)");
+  }
+}
+function drawArcadeGroundScars(){
+  for(const mark of arcadeGroundScars){
+    arcadeGroundEllipse(mark.x,mark.z,mark.r,mark.r*.67,mark.kind==="wreck"?"rgba(22,20,17,.84)":"rgba(27,24,18,.6)","rgba(149,118,74,.24)");
+    arcadeGroundEllipse(mark.x+.15,mark.z+.1,mark.r*.48,mark.r*.3,"rgba(8,12,10,.32)");
+    if(mark.kind==="wreck"){
+      const p=arcadeProject(mark.x,mark.z,.4);
+      arcadeCtx.fillStyle="#35362f";arcadeCtx.strokeStyle="#696952";arcadeCtx.lineWidth=1;
+      arcadeCtx.fillRect(p.x-4,p.y-2,8,4);arcadeCtx.strokeRect(p.x-4,p.y-2,8,4);
+    }
+  }
+}
 function drawArcadeBoard(){
   arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
-  const q=[arcadeProject(8,0),arcadeProject(92,0),arcadeProject(92,100),arcadeProject(8,100)];arcadePoly(q,"#315f40","#07110b",1.4);
-  for(let i=10;i<=90;i+=10)arcadeLine(arcadeProject(i,0),arcadeProject(i,100),"rgba(77,151,96,.13)",1);
-  for(let z=0;z<=100;z+=10)arcadeLine(arcadeProject(8,z),arcadeProject(92,z),"rgba(77,151,96,.13)",1);
-  for(const x of arcadeLanes){
-    arcadeLine(arcadeProject(x,2,.02),arcadeProject(x,94,.02),"rgba(240,170,67,.18)",Math.max(8,arcadeW/85));
-    arcadeLine(arcadeProject(x,2,.03),arcadeProject(x,94,.03),"rgba(255,205,100,.14)",1,[7,7]);
-  }
-  const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#143421";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
-  arcadeCtx.fillStyle="#9be7ee";arcadeCtx.font="900 11px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText("DEFENSE BASE",b.x,b.y+4);
+  const q=[arcadeProject(8,0),arcadeProject(92,0),arcadeProject(92,100),arcadeProject(8,100)];arcadePoly(q,"#64735a","#242e24",1.4);
+  for(let i=10;i<=90;i+=10)arcadeLine(arcadeProject(i,0),arcadeProject(i,100),"rgba(137,181,138,.065)",1);
+  for(let z=0;z<=100;z+=10)arcadeLine(arcadeProject(8,z),arcadeProject(92,z),"rgba(137,181,138,.065)",1);
+  drawArcadeTerrain();
+  drawArcadeGroundScars();
+  const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#394637";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
+  arcadeCtx.fillStyle="#9be7ee";arcadeCtx.font="900 11px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText("SENSOR OUTPOST",b.x,b.y+4);
 }
 function drawArcadeStructures(){
   for(const s of arcadeStructures){
