@@ -346,3 +346,21 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 .arcadeHero{transition:box-shadow .08s ease}
 .arcadeHero.impactPulse{box-shadow:inset 0 0 95px rgba(255,122,87,.12),0 0 28px rgba(255,102,91,.08)}
 .arcadeHero.wavePulse{box-shadow:inset 0 0 85px rgba(240,170,67,.10),0 0 22px rgba(240,170,67,.07)}
+
+/* V0.5 — Tactical combat treatment */
+.tacticalChargeReadout{
+  margin-top:7px;padding:7px 10px;border:1px solid #214b30;background:#041008;
+  color:#83b990;font:800 9px/1.2 monospace;letter-spacing:.08em;text-align:center
+}
+.tacticalChargeReadout.charging{border-color:var(--amber);color:#ffd27f;box-shadow:0 0 18px rgba(240,170,67,.12)}
+.autoIdButton{cursor:default;opacity:.9!important;color:#7be99a!important;border-color:#327044!important}
+.fireButton{touch-action:none;user-select:none}
+.fireButton.charging{border-color:var(--amber);box-shadow:0 0 24px rgba(240,170,67,.18);color:#fff0be}
+.weaponDeck{align-content:start}
+.weaponDeck .weaponCard{min-height:42px}
+@media(max-width:720px){
+  .fireControl{position:sticky;bottom:0;z-index:12;background:#06110a;box-shadow:0 -10px 28px rgba(0,0,0,.45)}
+  .actionRow{grid-template-columns:.72fr 1.5fr}
+  .fireButton{min-height:62px;font-size:17px}
+  .tacticalChargeReadout{font-size:8px}
+}
