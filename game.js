@@ -825,12 +825,12 @@ function arcadeChargeCue(tier){
 }
 // Temporary Graph War CC0 library: external raw links; retain synthesis as offline fallback.
 const graphWarSfx={
-  fire:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/fire_heavy.wav",
-  impact:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/impact_pen.wav",
-  splash:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/water_explode.opus",
-  laserCannon:"https://opengameart.org/sites/default/files/doomsday_laser_cannon_short.wav",
-  laserCluster:"https://opengameart.org/sites/default/files/sfx_laser_1.mp3",
-  laserPenetrator:"https://opengameart.org/sites/default/files/sfx_laser_3.mp3"
+  fire:"assets/audio/sfx/fire_heavy.wav",
+  impact:"assets/audio/sfx/impact_pen.wav",
+  splash:"assets/audio/sfx/water_explode.opus",
+  laserCannon:"assets/audio/sfx/doomsday_laser_cannon_short.wav",
+  laserCluster:"assets/audio/sfx/sfx_laser_1.mp3",
+  laserPenetrator:"assets/audio/sfx/sfx_laser_3.mp3"
 };
 function graphWarSample(key,gain=.2,rate=1){
   if(!arcadeAudioEnabled)return;
