@@ -236,6 +236,12 @@ function drawContact(c){
     drawVehicle(c,false);
   }else{
     drawVehicle(c,false);
+    if(c.moveSpeed>0){
+      const lead=project(c.x+Math.cos(c.moveAngle)*6,c.z+Math.sin(c.moveAngle)*6,1.8);
+      ctx.save();ctx.strokeStyle="rgba(255,102,91,.58)";ctx.lineWidth=1;ctx.setLineDash([3,3]);
+      ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(lead.x,lead.y);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle="#ff9c83";ctx.font="800 7px monospace";ctx.textAlign="center";ctx.fillText("MOBILE",p.x,p.y+27);ctx.restore();
+    }
     ctx.save();ctx.strokeStyle="#ff665b";ctx.lineWidth=tacticalHoverContact===c?2.4:1.2;
     if(tacticalHoverContact===c){ctx.shadowColor="#ff665b";ctx.shadowBlur=18;ctx.globalAlpha=.92;}
     ctx.strokeRect(p.x-14,p.y-14,28,28);
@@ -458,7 +464,7 @@ function resolveImpact(s){
   updateHud();checkMission();
 }
 function updateTacticalContacts(dt){
-  if(missionOver||scenarioIndex===0)return;
+  if(missionOver||scenarioIndex===0||tacticalApp.classList.contains("modeHidden"))return;
   const bounds={minX:34,maxX:112,minZ:10,maxZ:108};
   for(const c of contacts){
     if(c.hp<=0||!c.moveSpeed)continue;
@@ -470,7 +476,7 @@ function updateTacticalContacts(dt){
   }
 }
 function enemyPressure(now){
-  if(missionOver||now<nextEnemyFire)return;
+  if(missionOver||tacticalApp.classList.contains("modeHidden")||now<nextEnemyFire)return;
   nextEnemyFire=now+4200+Math.random()*2600;
   const aliveF=friendlies.filter(f=>f.hp>0),aliveH=contacts.filter(c=>c.hp>0);
   if(!aliveF.length||!aliveH.length)return;
