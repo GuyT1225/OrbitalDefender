@@ -543,3 +543,28 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 
 /* V0.5.5: independent touch controls, outside the noninteractive stage HUD. */
 #tacticalApp .stage > .tacticalOrbitNudge{pointer-events:auto;z-index:30;isolation:isolate;-webkit-tap-highlight-color:rgba(106,216,232,.35)}
+
+/* V0.5.6: portrait-only combat composition; landscape remains unchanged. */
+@media (max-width:720px) and (orientation:portrait){
+#arcadeApp .arcadeTop{min-height:42px;padding:5px 8px;align-items:center;gap:5px}
+#arcadeApp .arcadeTop small{display:none}
+#arcadeApp .arcadeTop h1{font-size:15px;margin:0}
+#arcadeApp .arcadeTopActions{gap:4px}
+#arcadeApp .arcadeTopActions button{font-size:9px;padding:7px 6px}
+#arcadeApp .arcadeHero{margin-top:0}
+#arcadeApp #arcadeField{height:clamp(390px,65dvh,760px);min-height:0}
+#arcadeApp .waveChip,#arcadeApp .baseChip,#arcadeApp .scoreChip{top:5px;padding:5px 6px;font-size:9px}
+#arcadeApp .chainChip{top:36px;min-width:112px;padding:4px 6px}
+#arcadeApp .chainChip b{font-size:12px}
+#arcadeApp .chargeReadout{bottom:7px;font-size:10px;font-weight:800;color:#e4fff0;padding:5px 7px}
+#arcadeApp .chargeLegend{bottom:35px}
+#arcadeApp .arcadeCombatDock{padding:5px 6px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+#arcadeApp .arcadeWeaponStrip{gap:4px}
+#arcadeApp .arcadeWeapon{flex:0 0 96px;min-width:96px;min-height:43px;padding:5px 6px;grid-template-columns:22px 1fr}
+#arcadeApp .arcadeWeapon span{font-size:16px}
+#arcadeApp .arcadeWeapon b{font-size:9px}
+#arcadeApp .arcadeWeapon small{font-size:7px}
+#arcadeApp .arcadeMeters{margin-top:5px;gap:3px}
+#arcadeApp .arcadeMeters>div{font-size:8px;grid-template-columns:58px 1fr 43px;gap:5px}
+#arcadeApp .arcadeBar{height:8px}
+}
