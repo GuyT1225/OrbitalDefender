@@ -647,9 +647,16 @@ function arcadeSfxLaunch(tier,weaponName){
   if(weaponName==="penetrator")arcadeTone(base*2.8,.05,"sine",.018,.025);
   if(tier==="OVERCHARGE")arcadeTone(base*.55,.35,"sine",.028,.02);
 }
-function arcadeSfxImpact(tier,hit){
-  arcadeNoise(tier==="OVERCHARGE"?.34:.18,tier==="OVERCHARGE"?.065:.038);
-  arcadeTone(hit?58:84,tier==="OVERCHARGE"?.38:.2,"sine",tier==="OVERCHARGE"?.05:.028);
+function arcadeSfxImpact(tier,hit,weaponName){
+  const big=tier==="OVERCHARGE";
+  arcadeNoise(big?.36:.18,big?.068:.038);
+  if(weaponName==="cluster"){
+    [0,.06,.12,.18].forEach((w,i)=>{arcadeNoise(.07,.018-i*.002);arcadeTone(150+i*35,.055,"square",.009,w);});
+  }else if(weaponName==="penetrator"){
+    arcadeTone(72,.34,"sine",.038);arcadeTone(620,.045,"triangle",.015,.015);arcadeNoise(.1,.022);
+  }else{
+    arcadeTone(hit?58:84,big?.38:.2,"sine",big?.05:.028);
+  }
   if(hit)arcadeTone(420,.07,"square",.016,.05);
 }
 function arcadeSfxWave(){
@@ -670,6 +677,8 @@ function startArcadeMusic(){
     arcadeTone(root,.5,"sine",.009);
     if(arcadeMusicStep%2===0)arcadeTone(root*2,.16,"triangle",.006,.02);
     if(arcadeMusicStep%4===3)arcadeTone(root*3,.09,"square",.004,.03);
+    if(arcadeMusicStep%8===0)arcadeNoise(.45,.0035);
+    if(arcadeMusicStep%8===6)arcadeTone(root*4.5,.3,"sine",.003,.04);
     arcadeMusicStep++;
   };
   pulse();arcadeMusicTimer=setInterval(pulse,520);
@@ -756,7 +765,7 @@ function resetArcadeStructures(){
   ];
 }
 function startArcadeRun(){
-  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;
+  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;
   arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
@@ -862,7 +871,7 @@ function resolveArcadeImpact(s,now){
     for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*(def.role==="penetrator"?.6:.3));}
   }
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit):"MISS",radius});
-  arcadeSfxImpact(s.tier.label,hit>0);
+  arcadeSfxImpact(s.tier.label,hit>0,s.weapon);
 }
 function drawArcadeBoard(){
   arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
