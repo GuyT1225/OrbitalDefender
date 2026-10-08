@@ -108,12 +108,12 @@ window.addEventListener("resize",resize);resize();
 function project(x,z,y=0){
   const dx=x-TACTICAL_CENTER,dz=z-TACTICAL_CENTER,ct=Math.cos(orbit),st=Math.sin(orbit);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  const sx=cssW/138,sy=cssH/205,yScale=cssH/155;
+  const sx=cssW/160,sy=cssH/235,yScale=cssH/175; // Wider Tactical framing, especially in portrait.
   const perspective=1-rz/330;
   return {x:cssW/2+rx*sx*perspective,y:cssH*.55+rz*sy-y*yScale,depth:rz};
 }
 function screenToGround(sx,sy){
-  const rx=(sx-cssW/2)/(cssW/138),rz=(sy-cssH*.55)/(cssH/205);
+  const rx=(sx-cssW/2)/(cssW/160),rz=(sy-cssH*.55)/(cssH/235);
   const ct=Math.cos(orbit),st=Math.sin(orbit);
   const dx=rx*ct+rz*st,dz=-rx*st+rz*ct;
   return{x:clamp(dx+TACTICAL_CENTER,0,TACTICAL_WORLD),z:clamp(dz+TACTICAL_CENTER,0,TACTICAL_WORLD)};
@@ -633,8 +633,9 @@ function nudgeTacticalOrbit(dir){
   setCombatEvent("CAMERA ORBIT "+(dir>0?"CLOCKWISE":"COUNTERCLOCKWISE")+" 90°","scan");
   if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
 }
-ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
-ui.tacticalOrbitRight.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
+// Do not preventDefault on pointerdown: iOS Safari may suppress the follow-up click.
+ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>e.stopPropagation());
+ui.tacticalOrbitRight.addEventListener("pointerdown",e=>e.stopPropagation());
 ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
 ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
 
