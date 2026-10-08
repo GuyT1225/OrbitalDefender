@@ -600,6 +600,13 @@ ui.fireBtn.addEventListener("lostpointercapture",()=>{tacticalFirePointer=null;u
 
 canvas.addEventListener("pointerdown",e=>{
   if(missionOver||pointerId!==null)return;
+  // Fallback for mobile browsers that hit-test the canvas beneath orbit controls.
+  const stage=canvas.getBoundingClientRect();
+  const x=e.clientX-stage.left,y=e.clientY-stage.top;
+  const controlY=stage.height*(window.innerWidth<=720?.46:.50);
+  if(Math.abs(y-controlY)<48&&(x<70||x>stage.width-70)){
+    nudgeTacticalOrbit(x<70?-1:1);e.preventDefault();return;
+  }
   pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;tacticalCanvasFireStart=performance.now();
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
   moveAim(e);ensureAudio();e.preventDefault();
@@ -634,10 +641,11 @@ function nudgeTacticalOrbit(dir){
   if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
 }
 // Do not preventDefault on pointerdown: iOS Safari may suppress the follow-up click.
-ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>e.stopPropagation());
-ui.tacticalOrbitRight.addEventListener("pointerdown",e=>e.stopPropagation());
-ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
-ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
+// Act on pointerdown rather than waiting for a synthesized Safari click.
+for(const [button,dir] of [[ui.tacticalOrbitLeft,-1],[ui.tacticalOrbitRight,1]]){
+  button.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();nudgeTacticalOrbit(dir);});
+  button.addEventListener("click",e=>{e.stopPropagation();if(e.detail===0)nudgeTacticalOrbit(dir);});
+}
 
 function updateHud(now=performance.now()){
   updateTacticalIdentification(now);
