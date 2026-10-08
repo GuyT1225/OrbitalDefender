@@ -591,11 +591,12 @@ const arcadeUi={
   chargeReadout:$("chargeReadout"),cooldownFill:$("arcadeCooldownFill"),cooldownText:$("arcadeCooldownText"),
   heatFill:$("arcadeHeatFill"),heatText:$("arcadeHeatText"),chargeFill:$("arcadeChargeFill"),chargeText:$("arcadeChargeText"),
   upgrade:$("arcadeUpgrade"),end:$("arcadeEnd"),endTitle:$("arcadeEndTitle"),endSummary:$("arcadeEndSummary"),
-  back:$("arcadeBack"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes")
+  back:$("arcadeBack"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes"),
+  orbitLeft:$("orbitLeft"),orbitRight:$("orbitRight"),orbitHeading:$("orbitHeading"),orbitDegrees:$("orbitDegrees")
 };
 const arcadeWeaponButtons=[...document.querySelectorAll(".arcadeWeapon")];
 
-let arcadeW=1,arcadeH=1,arcadeDpr=1,arcadeLast=performance.now(),arcadeRunning=false,arcadeOrbit=-.18;
+let arcadeW=1,arcadeH=1,arcadeDpr=1,arcadeLast=performance.now(),arcadeRunning=false,arcadeOrbit=-.18,arcadeOrbitNudge=0;
 let arcadeWeapon="cannon",arcadeHeat=0,arcadeReadyAt=0,arcadeScore=0,arcadeBase=100,arcadeWave=1;
 let arcadeEnemies=[],arcadeShots=[],arcadeFx=[],arcadeStructures=[],arcadeSpawnQueue=[],arcadeSpawnAt=0;
 let arcadePointer=null,arcadeChargeStart=0,arcadeAim={x:50,z:58},arcadeBannerTimer=null;
@@ -604,9 +605,11 @@ let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
 const arcadeWeaponDefs={
-  cannon:{name:"CANNON",damage:1.25,radius:5,cooldown:420,heat:.07,travel:430,color:"#7de49c"},
-  heavy:{name:"HEAVY",damage:2.3,radius:8,cooldown:900,heat:.15,travel:620,color:"#f0aa43"},
-  orbital:{name:"ORBITAL",damage:4.2,radius:12,cooldown:1700,heat:.27,travel:900,color:"#ff665b"}
+  cannon:{name:"CANNON",damage:1.25,radius:5,cooldown:420,heat:.07,travel:430,color:"#7de49c",role:"rapid"},
+  heavy:{name:"HEAVY",damage:2.3,radius:8,cooldown:900,heat:.15,travel:620,color:"#f0aa43",role:"blast"},
+  orbital:{name:"ORBITAL",damage:4.2,radius:12,cooldown:1700,heat:.27,travel:900,color:"#ff665b",role:"blast"},
+  cluster:{name:"CLUSTER",damage:1.15,radius:4.5,cooldown:1350,heat:.20,travel:760,color:"#ffd36a",role:"cluster"},
+  penetrator:{name:"PENETRATOR",damage:4.8,radius:3.2,cooldown:1150,heat:.18,travel:560,color:"#8ee7ff",role:"penetrator"}
 };
 const arcadeEnemyDefs={
   runner:{hp:1.4,speed:7.4,damage:8,size:5,color:"#ffb061",score:80},
@@ -636,9 +639,12 @@ function arcadeNoise(dur=.12,gain=.025){
   f.type="lowpass";f.frequency.value=1100;g.gain.value=gain;s.buffer=b;s.connect(f);f.connect(g);g.connect(audioCtx.destination);s.start();
 }
 function arcadeSfxLaunch(tier,weaponName){
-  const base=weaponName==="orbital"?70:weaponName==="heavy"?105:170;
-  arcadeTone(base,tier==="OVERCHARGE"?.22:.11,"sawtooth",tier==="OVERCHARGE"?.05:.03);
-  arcadeTone(base*1.8,.08,"square",.018,.035);
+  const base=weaponName==="orbital"?62:weaponName==="heavy"?96:weaponName==="cluster"?132:weaponName==="penetrator"?220:175;
+  const type=weaponName==="penetrator"?"triangle":"sawtooth";
+  arcadeTone(base,tier==="OVERCHARGE"?.24:.12,type,tier==="OVERCHARGE"?.05:.03);
+  arcadeTone(base*(weaponName==="cluster"?2.4:1.8),.08,"square",.018,.035);
+  if(weaponName==="cluster"){arcadeTone(base*3,.05,"square",.012,.07);arcadeTone(base*3.5,.05,"square",.01,.12);}
+  if(weaponName==="penetrator")arcadeTone(base*2.8,.05,"sine",.018,.025);
   if(tier==="OVERCHARGE")arcadeTone(base*.55,.35,"sine",.028,.02);
 }
 function arcadeSfxImpact(tier,hit){
@@ -703,6 +709,13 @@ chooseArcade.addEventListener("click",()=>showMode("arcade"));
 arcadeUi.back.addEventListener("click",returnToModes);
 arcadeUi.endModes.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");returnToModes();});
 arcadeUi.audio.addEventListener("click",()=>setArcadeAudio(!arcadeAudioEnabled));
+function nudgeArcadeOrbit(dir){
+  arcadeOrbitNudge+=dir*Math.PI/2;
+  showArcadeBanner("ORBIT SHIFT "+(dir>0?"+90°":"-90°"));
+  arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);
+}
+arcadeUi.orbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeArcadeOrbit(-1);});
+arcadeUi.orbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeArcadeOrbit(1);});
 arcadeUi.restart.addEventListener("click",startArcadeRun);
 arcadeUi.endRestart.addEventListener("click",()=>{arcadeUi.end.classList.remove("show");startArcadeRun();});
 
@@ -830,12 +843,23 @@ function updateArcadeShots(now){
 function resolveArcadeImpact(s,now){
   const def=arcadeWeaponDefs[s.weapon],radius=def.radius*s.tier.radius*arcadeMods.splash,damage=def.damage*s.tier.mult*arcadeMods.damage;
   let hit=0;
-  for(const e of arcadeEnemies){
-    if(e.dead)continue;const d=Math.hypot(e.x-s.end.x,e.z-s.end.z);
-    if(d<=radius){const fall=1-clamp(d/radius,0,.75);e.hp-=damage*fall;if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;}else hit++;}
-  }
+  const applyBlast=(cx,cz,r,dam,cluster=false)=>{
+    for(const e of arcadeEnemies){
+      if(e.dead)continue;const d=Math.hypot(e.x-cx,e.z-cz);
+      if(d<=r){
+        const fall=1-clamp(d/r,0,.78),armorBonus=def.role==="penetrator"&&e.type==="armor"?1.75:1;
+        e.hp-=dam*fall*armorBonus;
+        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;}else hit++;
+      }
+    }
+    if(cluster)arcadeFx.push({x:cx,z:cz,start:now,duration:520,color:def.color,label:"",radius:r});
+  };
+  if(def.role==="cluster"){
+    const pellets=s.tier.label==="OVERCHARGE"?8:s.tier.label==="HEAVY"?6:5;
+    for(let i=0;i<pellets;i++){const a=i/pellets*Math.PI*2,spread=radius*(.35+.35*(i%2));applyBlast(s.end.x+Math.cos(a)*spread,s.end.z+Math.sin(a)*spread,radius*.62,damage*.72,true);}
+  }else applyBlast(s.end.x,s.end.z,radius,damage,false);
   if(s.tier.label==="OVERCHARGE"){
-    for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*.3);}
+    for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*(def.role==="penetrator"?.6:.3));}
   }
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit):"MISS",radius});
   arcadeSfxImpact(s.tier.label,hit>0);
@@ -870,6 +894,24 @@ function drawArcadeEnemies(){
     arcadeCtx.restore();
   }
 }
+function drawArcadeThreatGuides(){
+  const margin=34,baseZ=94;
+  for(const e of arcadeEnemies){
+    if(e.dead)continue;
+    const p=arcadeProject(e.x,e.z,e.y+1.5),toward=arcadeProject(e.x,Math.min(baseZ,e.z+9),e.y+1);
+    const visible=p.x>margin&&p.x<arcadeW-margin&&p.y>margin&&p.y<arcadeH-margin;
+    if(visible){
+      arcadeCtx.save();arcadeCtx.globalAlpha=.42;arcadeCtx.strokeStyle=e.color;arcadeCtx.lineWidth=1.5;arcadeCtx.setLineDash([4,5]);
+      arcadeCtx.beginPath();arcadeCtx.moveTo(p.x,p.y);arcadeCtx.lineTo(toward.x,toward.y);arcadeCtx.stroke();arcadeCtx.setLineDash([]);arcadeCtx.restore();
+      continue;
+    }
+    const cx=arcadeW/2,cy=arcadeH/2,dx=p.x-cx,dy=p.y-cy,scale=Math.min((arcadeW/2-margin)/Math.max(1,Math.abs(dx)),(arcadeH/2-margin)/Math.max(1,Math.abs(dy)));
+    const ex=cx+dx*scale,ey=cy+dy*scale,ang=Math.atan2(dy,dx);
+    arcadeCtx.save();arcadeCtx.translate(ex,ey);arcadeCtx.rotate(ang);arcadeCtx.fillStyle=e.color;arcadeCtx.globalAlpha=.9;arcadeCtx.beginPath();arcadeCtx.moveTo(10,0);arcadeCtx.lineTo(-7,-6);arcadeCtx.lineTo(-4,0);arcadeCtx.lineTo(-7,6);arcadeCtx.closePath();arcadeCtx.fill();
+    arcadeCtx.font="900 8px monospace";arcadeCtx.fillStyle="#ffe6cb";arcadeCtx.textAlign="center";arcadeCtx.rotate(-ang);arcadeCtx.fillText(e.type.toUpperCase(),0,-11);arcadeCtx.restore();
+  }
+}
+
 function drawArcadeAim(now){
   const p=arcadeProject(arcadeAim.x,arcadeAim.z,.2),hold=arcadePointer?now-arcadeChargeStart:0,tier=arcadeChargeTier(hold),def=arcadeWeaponDefs[arcadeWeapon];
   const charge=clamp(hold/2250,0,1),worldRadius=def.radius*tier.radius*arcadeMods.splash;
@@ -901,7 +943,9 @@ function updateArcadeHud(now){
   arcadeUi.cooldownFill.style.width=(remain?100*(1-remain/(def.cooldown*2.2*arcadeMods.cooldown)):100)+"%";arcadeUi.cooldownText.textContent=remain?(remain/1000).toFixed(1)+"s":"READY";
   arcadeUi.heatFill.style.width=Math.round(arcadeHeat*100)+"%";arcadeUi.heatText.textContent=Math.round(arcadeHeat*100)+"%";
   arcadeUi.chargeFill.style.width=Math.round(charge*100)+"%";arcadeUi.chargeText.textContent=tier.label;
-  arcadeUi.chargeReadout.textContent=arcadePointer?(tier.label+" // "+Math.round(arcadeWeaponDefs[arcadeWeapon].radius*tier.radius*arcadeMods.splash)+"m SPLASH // RELEASE TO FIRE"):"TAP: SNAP // HOLD: CHARGE";
+  arcadeUi.chargeReadout.textContent=arcadePointer?(tier.label+" // "+Math.round(arcadeWeaponDefs[arcadeWeapon].radius*tier.radius*arcadeMods.splash)+"m "+(def.role==="penetrator"?"PENETRATION":"SPLASH")+" // RELEASE TO FIRE"):"TAP: SNAP // HOLD: CHARGE";
+  const deg=((arcadeOrbit*180/Math.PI)%360+360)%360,dirs=["N","NE","E","SE","S","SW","W","NW"];
+  arcadeUi.orbitDegrees.textContent=String(Math.round(deg)).padStart(3,"0")+"°";arcadeUi.orbitHeading.textContent=dirs[Math.round(deg/45)%8];
 }
 arcadeCanvas.addEventListener("pointerdown",e=>{
   if(!arcadeRunning||arcadeRunOver||arcadeWaveTransition)return;const r=arcadeCanvas.getBoundingClientRect();arcadeAim=arcadeScreenToGround(e.clientX-r.left,e.clientY-r.top);arcadePointer=e.pointerId;arcadeChargeStart=performance.now();try{arcadeCanvas.setPointerCapture(e.pointerId);}catch(_){}
@@ -914,8 +958,9 @@ function arcadeFrame(now){
   const dt=Math.min(40,now-arcadeLast);arcadeLast=now;
   if(arcadeRunning&&!arcadeApp.classList.contains("modeHidden")){
     arcadeOrbit+=dt*.000045;
+    if(Math.abs(arcadeOrbitNudge)>.001){const step=Math.sign(arcadeOrbitNudge)*Math.min(Math.abs(arcadeOrbitNudge),dt*.0032);arcadeOrbit+=step;arcadeOrbitNudge-=step;}
     arcadeHeat=clamp(arcadeHeat-dt*.000065,0,1);
-    drawArcadeBoard();drawArcadeStructures();updateArcadeEnemies(dt,now);updateArcadeShots(now);drawArcadeEnemies();drawArcadeAim(now);drawArcadeShots(now);drawArcadeFx(now);updateArcadeHud(now);
+    drawArcadeBoard();drawArcadeStructures();updateArcadeEnemies(dt,now);updateArcadeShots(now);drawArcadeEnemies();drawArcadeThreatGuides();drawArcadeAim(now);drawArcadeShots(now);drawArcadeFx(now);updateArcadeHud(now);
   }
   requestAnimationFrame(arcadeFrame);
 }
