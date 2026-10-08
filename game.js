@@ -18,6 +18,7 @@ const ui={
   stabilityValue:$("stabilityValue"),stabilityFill:$("stabilityFill"),
   ammoLight:$("ammoLight"),ammoMedium:$("ammoMedium"),ammoHeavy:$("ammoHeavy"),
   scanBtn:$("scanBtn"),fireBtn:$("fireBtn"),tacticalAudio:$("tacticalAudio"),tacticalChargeReadout:$("tacticalChargeReadout"),threatMeter:$("threatMeter"),
+  mobileTargetState:$("mobileTargetState"),mobileWeaponName:$("mobileWeaponName"),mobileHeat:$("mobileHeat"),mobileCooldown:$("mobileCooldown"),
   roeState:$("roeState"),scanProgress:$("scanProgress"),
   restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
   missionResult:$("missionResult"),missionSummary:$("missionSummary"),
@@ -598,7 +599,11 @@ function updateHud(now=performance.now()){
   ui.ammoLight.textContent="∞";ui.ammoMedium.textContent="∞";ui.ammoHeavy.textContent="∞";
   ui.fireCtrlState.textContent=heat>.92?"HOT":"ONLINE";
   ui.fireCtrlState.style.color=heat>.92?"#ff5f55":"";
+  if(ui.mobileWeaponName)ui.mobileWeaponName.textContent=def.name;
+  if(ui.mobileHeat)ui.mobileHeat.textContent=Math.round(heat*100)+"%";
+  if(ui.mobileCooldown)ui.mobileCooldown.textContent=remaining>0?(remaining/1000).toFixed(1)+"s":"READY";
   const aimed=info.contact||null,confirmed=!!(aimed&&aimed.state===2),acquiring=!!(aimed&&aimed.state<2);
+  if(ui.mobileTargetState)ui.mobileTargetState.textContent=confirmed?("✓ "+aimed.label+" COMBATANT"):acquiring?"IDENTIFYING…":"NO COMBATANT";
   if(confirmed){
     ui.roeState.textContent="WEAPONS FREE";ui.roeState.className="clear";
     ui.scanProgress.textContent="COMBATANT CONFIRMED // "+aimed.label;
