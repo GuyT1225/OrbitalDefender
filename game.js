@@ -823,14 +823,29 @@ function arcadeChargeCue(tier){
   if(tier==="HEAVY"){arcadeSweep(320,145,.18,"triangle",.024);arcadeTone(90,.22,"sine",.019);}
   if(tier==="OVERCHARGE"){arcadeSweep(160,560,.30,"sawtooth",.02);arcadeTone(52,.38,"sine",.032);arcadeNoise(.22,.018,650,"lowpass");}
 }
+// Temporary Graph War CC0 library: external raw links; retain synthesis as offline fallback.
+const graphWarSfx={
+  fire:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/fire_heavy.wav",
+  impact:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/impact_pen.wav",
+  splash:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/water_explode.opus"
+};
+function graphWarSample(key,gain=.2,rate=1){
+  if(!arcadeAudioEnabled)return;
+  try{
+    const a=new Audio(graphWarSfx[key]);a.volume=Math.min(.75,Math.max(0,gain));a.playbackRate=rate;
+    const p=a.play();if(p&&p.catch)p.catch(()=>{});
+  }catch(_){}
+}
 function arcadeSfxDamage(kills,hits,tier){
   if(!hits)return;
+  graphWarSample(kills?"impact":"splash",kills?.22:.13,tier==="OVERCHARGE"?.82:tier==="HEAVY"?1:1.14);
   const strong=tier==="OVERCHARGE",down=Math.min(kills,3);
   arcadeNoise(strong?.2:.12,strong?.025:.014,strong?650:1300,"bandpass",.035);
   arcadeSweep(kills?390:260,kills?95:150,strong?.24:.13,"triangle",strong?.024:.013,.05);
   for(let i=0;i<down;i++)arcadeTone(280-i*55,.07,"square",.009,.09+i*.055);
 }
 function arcadeSfxLaunch(tier,weaponName){
+  graphWarSample("fire",tier==="OVERCHARGE"?.27:tier==="HEAVY"?.22:.14,tier==="OVERCHARGE"?.82:tier==="HEAVY"?.98:1.24);
   const over=tier==="OVERCHARGE",heavyTier=tier==="HEAVY";
   if(weaponName==="cannon"){
     arcadeNoise(.055,.018,2600,"highpass");arcadeSweep(260,150,.08,"square",.028);
@@ -868,6 +883,7 @@ function arcadeSfxImpact(tier,hit,weaponName){
   if(tier==="HEAVY"){arcadeKick(.02,.038);arcadeNoise(.23,.036,480,"lowpass",.04);}
   if(big){arcadeKick(.02,.07);arcadeSweep(110,32,.55,"sine",.055,.02);arcadeNoise(.42,.055,330,"lowpass",.045);arcadeNoise(.18,.025,2400,"highpass",.08);}
   if(hit){arcadeTone(420,.06,"square",.014,.05);arcadeNoise(.075,.012,2200,"bandpass",.06);}
+  if(!hit&&tier==="OVERCHARGE")graphWarSample("splash",.14,.8);
   arcadeImpactPulse("impact");
 }
 function arcadeSfxWave(){
@@ -891,17 +907,23 @@ const arcadeTracks={
   pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse_0.mp3"},
   urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent_0.mp3"},
   brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/brute_force_loop.mp3"},
-  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission_1.mp3"}
+  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission_1.mp3"},
+  synthwave:{title:"Synthwave House Loop",artist:"Fupi",license:"CC0",url:"https://opengameart.org/sites/default/files/synthwavehouse_0.ogg"},
+  mindstream:{title:"MindStream",artist:"DST",license:"CC0",url:"https://opengameart.org/sites/default/files/DST-MindStream.mp3"},
+  technological:{title:"Technological Messup",artist:"Centurion_of_war",license:"CC0",url:"https://opengameart.org/sites/default/files/tecnological_messup_v2.ogg"},
+  void:{title:"Claimed by the Void",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/claimed_by_the_void_loop.mp3"},
+  bilwe:{title:"Bilwe",artist:"cinameng / James Gargette",license:"CC0",url:"https://opengameart.org/sites/default/files/bilwe.mp3"},
+  calm:{title:"Calm Loop",artist:"wipics",license:"CC0",url:"https://opengameart.org/sites/default/files/Relaxing_0.mp3"}
 };
 function arcadeTrackForWave(wave){
-  if(wave<=1)return "sector";
-  if(wave===2)return Math.random()<.5?"searching":"pulse";
-  if(wave===3)return "pulse";
-  if(wave===4)return "urgent";
-  return "brute";
+  if(wave<=1)return Math.random()<.5?"mindstream":"technological";
+  if(wave===2)return Math.random()<.5?"bilwe":"pulse";
+  if(wave===3)return Math.random()<.5?"void":"technological";
+  if(wave===4)return Math.random()<.5?"urgent":"brute";
+  return Math.random()<.5?"brute":"void";
 }
 let tacticalMusicAudio=null,tacticalTrackIndex=0;
-const tacticalTrackRotation=["sector","searching","pulse"];
+const tacticalTrackRotation=["calm","mindstream","sector","searching","synthwave"];
 function ensureTacticalMusicAudio(){
   if(tacticalMusicAudio)return tacticalMusicAudio;
   tacticalMusicAudio=new Audio();tacticalMusicAudio.preload="auto";tacticalMusicAudio.volume=.28;
