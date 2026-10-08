@@ -454,7 +454,7 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   width:48px;height:58px;border:1px solid rgba(106,216,232,.5);
   background:rgba(3,14,10,.72);color:#b9faff;font:900 22px/1 monospace;
   display:grid;place-items:center;gap:1px;box-shadow:0 0 18px rgba(106,216,232,.08);
-  touch-action:manipulation
+  touch-action:manipulation;pointer-events:auto
 }
 .tacticalOrbitNudge small{display:block;font-size:7px;letter-spacing:.08em;color:#79a9ae}
 .tacticalOrbitLeft{left:8px}.tacticalOrbitRight{right:8px}
@@ -540,3 +540,6 @@ canvas{filter:contrast(1.08) brightness(1.05)}
   #tacticalApp.fieldView .mobileCombatMeta{display:none}
   #arcadeApp.fieldView .arcadeWeaponStrip{overflow-x:auto}
 }
+
+/* V0.5.5: independent touch controls, outside the noninteractive stage HUD. */
+#tacticalApp .stage > .tacticalOrbitNudge{pointer-events:auto;z-index:30;isolation:isolate;-webkit-tap-highlight-color:rgba(106,216,232,.35)}

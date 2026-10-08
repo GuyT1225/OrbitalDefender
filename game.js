@@ -108,12 +108,12 @@ window.addEventListener("resize",resize);resize();
 function project(x,z,y=0){
   const dx=x-TACTICAL_CENTER,dz=z-TACTICAL_CENTER,ct=Math.cos(orbit),st=Math.sin(orbit);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  const sx=cssW/138,sy=cssH/205,yScale=cssH/155;
+  const sx=cssW/160,sy=cssH/235,yScale=cssH/175; // Wider Tactical framing, especially in portrait.
   const perspective=1-rz/330;
   return {x:cssW/2+rx*sx*perspective,y:cssH*.55+rz*sy-y*yScale,depth:rz};
 }
 function screenToGround(sx,sy){
-  const rx=(sx-cssW/2)/(cssW/138),rz=(sy-cssH*.55)/(cssH/205);
+  const rx=(sx-cssW/2)/(cssW/160),rz=(sy-cssH*.55)/(cssH/235);
   const ct=Math.cos(orbit),st=Math.sin(orbit);
   const dx=rx*ct+rz*st,dz=-rx*st+rz*ct;
   return{x:clamp(dx+TACTICAL_CENTER,0,TACTICAL_WORLD),z:clamp(dz+TACTICAL_CENTER,0,TACTICAL_WORLD)};
@@ -489,6 +489,10 @@ function enemyPressure(now){
   setCombatEvent(src.label+" → "+tgt.label+" // INCOMING FIRE","hit");
   showBanner("INCOMING FIRE","hit");sfxWarn();updateHud();
 }
+function updateIncomingFire(now){
+  incomingFx=incomingFx.filter(f=>now-f.start<f.duration+350);
+  for(const f of incomingFx){if(now-f.start>=f.duration&&!f.resolved){f.resolved=true;resolveEnemyShot(f);}}
+}
 function drawIncomingFire(now){
   incomingFx=incomingFx.filter(f=>now-f.start<f.duration+350);
   for(const f of incomingFx){
@@ -497,7 +501,7 @@ function drawIncomingFire(now){
     ctx.save();ctx.strokeStyle="#ff5f55";ctx.lineWidth=2.3;ctx.setLineDash([7,5]);ctx.globalAlpha=.78;
     ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(x,y);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle="#fff2d2";ctx.shadowColor="#ff5f55";ctx.shadowBlur=12;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.restore();
-    if(t>=1&&!f.resolved){f.resolved=true;resolveEnemyShot(f);}
+    // Outcome is resolved in updateIncomingFire, independent of rendering.
   }
 }
 function resolveEnemyShot(f){
@@ -546,7 +550,7 @@ function resetMission(next=false){
   tacticalHoverContact=null;tacticalHoverSince=0;tacticalFirePointer=null;tacticalChargeStart=0;
   ui.missionStatus.textContent="IN PROGRESS";ui.missionStatus.className="amber";ui.topStatus.textContent="LINK SECURE";
   ui.missionOverlay.classList.remove("show");ui.missionOverlay.setAttribute("aria-hidden","true");
-  ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
+  ui.scanBtn.disabled=false;ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
   const movement=scenarioIndex===0?"STATIC CONTACTS":"MOBILE CONTACTS // SPEED TIER "+scenarioIndex;
   ui.status.textContent=(next?"NEXT MISSION // ":"MISSION READY // ")+movement;
   setCombatEvent(movement+" // IDENTIFY BEFORE ENGAGING","scan");updateHud();
@@ -581,7 +585,7 @@ weaponButtons.forEach(b=>b.addEventListener("click",()=>{
   weapon=b.dataset.weapon;updateWeaponUi();ui.status.textContent=weaponDefs[weapon].name+" SELECTED";tone(360,.04);updateHud();
 }));
 ui.fireBtn.addEventListener("pointerdown",e=>{
-  if(ui.fireBtn.disabled||missionOver||shot)return;
+  if(ui.fireBtn.disabled||missionOver||shot||tacticalFirePointer!==null)return;
   tacticalFirePointer=e.pointerId;tacticalChargeStart=performance.now();ui.fireBtn.classList.add("charging");
   try{ui.fireBtn.setPointerCapture(e.pointerId);}catch(_){}
   ensureAudio();e.preventDefault();
@@ -592,9 +596,17 @@ ui.fireBtn.addEventListener("pointerup",e=>{
   fire(hold);e.preventDefault();
 });
 ui.fireBtn.addEventListener("pointercancel",()=>{tacticalFirePointer=null;ui.fireBtn.classList.remove("charging");});
+ui.fireBtn.addEventListener("lostpointercapture",()=>{tacticalFirePointer=null;ui.fireBtn.classList.remove("charging");});
 
 canvas.addEventListener("pointerdown",e=>{
-  if(missionOver)return;
+  if(missionOver||pointerId!==null)return;
+  // Fallback for mobile browsers that hit-test the canvas beneath orbit controls.
+  const stage=canvas.getBoundingClientRect();
+  const x=e.clientX-stage.left,y=e.clientY-stage.top;
+  const controlY=stage.height*(window.innerWidth<=720?.46:.50);
+  if(Math.abs(y-controlY)<48&&(x<70||x>stage.width-70)){
+    nudgeTacticalOrbit(x<70?-1:1);e.preventDefault();return;
+  }
   pointerId=e.pointerId;orbitPauseUntil=performance.now()+1200;tacticalCanvasFireStart=performance.now();
   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
   moveAim(e);ensureAudio();e.preventDefault();
@@ -610,6 +622,7 @@ canvas.addEventListener("pointerup",e=>{
   fire(hold);e.preventDefault();
 });
 canvas.addEventListener("pointercancel",()=>{pointerId=null;});
+canvas.addEventListener("lostpointercapture",()=>{pointerId=null;});
 function moveAim(e){
   const r=canvas.getBoundingClientRect();
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
@@ -627,10 +640,12 @@ function nudgeTacticalOrbit(dir){
   setCombatEvent("CAMERA ORBIT "+(dir>0?"CLOCKWISE":"COUNTERCLOCKWISE")+" 90°","scan");
   if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
 }
-ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
-ui.tacticalOrbitRight.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
-ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
-ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
+// Do not preventDefault on pointerdown: iOS Safari may suppress the follow-up click.
+// Act on pointerdown rather than waiting for a synthesized Safari click.
+for(const [button,dir] of [[ui.tacticalOrbitLeft,-1],[ui.tacticalOrbitRight,1]]){
+  button.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();nudgeTacticalOrbit(dir);});
+  button.addEventListener("click",e=>{e.stopPropagation();if(e.detail===0)nudgeTacticalOrbit(dir);});
+}
 
 function updateHud(now=performance.now()){
   updateTacticalIdentification(now);
@@ -719,7 +734,7 @@ function frame(now){
   }
   heat=clamp(heat-dt*.000045,0,1);
   stability=clamp(stability+dt*.00007,0,1);
-  updateTacticalContacts(dt);drawScene(now);enemyPressure(now);updateHud(now);
+  updateTacticalContacts(dt);enemyPressure(now);updateIncomingFire(now);drawScene(now);updateHud(now);
   requestAnimationFrame(frame);
 }
 
@@ -960,15 +975,29 @@ const arcadeWaveDefs=[
 ];
 const arcadeLanes=[28,50,72];
 
+// Invalidate callbacks from older Arcade runs and prevent stale upgrade dialogs.
+let arcadeSessionId=0;
+let arcadePhase="MENU";
+function cancelArcadeSession(){
+  arcadeSessionId++;
+  arcadeRunning=false;
+  arcadePhase="MENU";
+  arcadeWaveTransition=false;
+  arcadePointer=null;
+  arcadeUi.upgrade.classList.remove("show");
+  arcadeUi.upgrade.setAttribute("aria-hidden","true");
+  arcadeUi.end.classList.remove("show");
+  arcadeUi.end.setAttribute("aria-hidden","true");
+}
 function showMode(name){
   modeSelect.classList.add("modeHidden");
   tacticalApp.classList.toggle("modeHidden",name!=="tactical");
   arcadeApp.classList.toggle("modeHidden",name!=="arcade");
   if(name==="arcade"){stopTacticalMusic();resizeArcade();arcadeEnsureAudio();startArcadeRun();}
-  else {arcadeRunning=false;stopArcadeMusic();resize();resetMission(false);if(arcadeAudioEnabled)startTacticalMusic();}
+  else {cancelArcadeSession();stopArcadeMusic();resize();resetMission(false);if(arcadeAudioEnabled)startTacticalMusic();}
 }
 function returnToModes(){
-  arcadeRunning=false;stopArcadeMusic();stopTacticalMusic();setFieldView("tactical",false);setFieldView("arcade",false);
+  cancelArcadeSession();stopArcadeMusic();stopTacticalMusic();setFieldView("tactical",false);setFieldView("arcade",false);
   tacticalApp.classList.add("modeHidden");arcadeApp.classList.add("modeHidden");modeSelect.classList.remove("modeHidden");
 }
 chooseTactical.addEventListener("click",()=>showMode("tactical"));
@@ -1026,6 +1055,7 @@ function resetArcadeStructures(){
   ];
 }
 function startArcadeRun(){
+  cancelArcadeSession();arcadePhase="PLAYING";
   arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
   arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
@@ -1074,16 +1104,18 @@ function updateArcadeEnemies(dt,now){
   arcadeEnemies=arcadeEnemies.filter(e=>!e.dead);
   if(!arcadeRunOver&&!arcadeWaveTransition&&!arcadeSpawnQueue.length&&!arcadeEnemies.length){
     arcadeWaveTransition=true;
-    if(arcadeWave>=5)endArcadeRun(true);else setTimeout(()=>{if(arcadeRunning&&!arcadeRunOver)showArcadeUpgrade();},500);
+    if(arcadeWave>=5)endArcadeRun(true);else {const session=arcadeSessionId;setTimeout(()=>{if(session===arcadeSessionId&&arcadeRunning&&!arcadeRunOver&&arcadePhase==="PLAYING")showArcadeUpgrade();},500);}
   }
 }
-function showArcadeUpgrade(){arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
+function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;arcadePhase="UPGRADE";arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
+  if(arcadePhase!=="UPGRADE"||!arcadeRunning||arcadeRunOver)return;
+  arcadePhase="PLAYING";
   const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
   arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);syncArcadeTrackToWave();showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
-  if(arcadeRunOver)return;arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
+  if(arcadeRunOver)return;arcadePhase=success?"VICTORY":"DEFEAT";arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
   arcadeUi.endTitle.textContent=success?"SECTOR HELD":"BASE OVERRUN";
   arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Best chain x"+arcadeBestChain+" // Reached wave "+arcadeWave+"/5";
   arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");arcadeSfxEnd(success);
@@ -1230,12 +1262,14 @@ function updateArcadeHud(now){
   arcadeUi.orbitDegrees.textContent=String(Math.round(deg)).padStart(3,"0")+"°";arcadeUi.orbitHeading.textContent=dirs[Math.round(deg/45)%8];
 }
 arcadeCanvas.addEventListener("pointerdown",e=>{
-  if(!arcadeRunning||arcadeRunOver||arcadeWaveTransition)return;const r=arcadeCanvas.getBoundingClientRect();arcadeAim=arcadeScreenToGround(e.clientX-r.left,e.clientY-r.top);arcadePointer=e.pointerId;arcadeChargeStart=performance.now();try{arcadeCanvas.setPointerCapture(e.pointerId);}catch(_){}
+  if(!arcadeRunning||arcadeRunOver||arcadeWaveTransition||arcadePhase!=="PLAYING"||arcadePointer!==null)return;const r=arcadeCanvas.getBoundingClientRect();arcadeAim=arcadeScreenToGround(e.clientX-r.left,e.clientY-r.top);arcadePointer=e.pointerId;arcadeChargeStart=performance.now();try{arcadeCanvas.setPointerCapture(e.pointerId);}catch(_){}
 });
 arcadeCanvas.addEventListener("pointermove",e=>{if(arcadePointer!==e.pointerId)return;const r=arcadeCanvas.getBoundingClientRect();arcadeAim=arcadeScreenToGround(e.clientX-r.left,e.clientY-r.top);});
 arcadeCanvas.addEventListener("pointerup",e=>{if(arcadePointer!==e.pointerId)return;const now=performance.now(),hold=now-arcadeChargeStart;const r=arcadeCanvas.getBoundingClientRect();arcadeAim=arcadeScreenToGround(e.clientX-r.left,e.clientY-r.top);arcadePointer=null;launchArcadeShot(hold,now);});
 arcadeCanvas.addEventListener("pointercancel",()=>arcadePointer=null);
+arcadeCanvas.addEventListener("lostpointercapture",()=>arcadePointer=null);
 
+window.addEventListener("blur",()=>{pointerId=null;tacticalFirePointer=null;ui.fireBtn.classList.remove("charging");arcadePointer=null;});
 function arcadeFrame(now){
   const dt=Math.min(40,now-arcadeLast);arcadeLast=now;
   if(arcadeRunning&&!arcadeApp.classList.contains("modeHidden")){
