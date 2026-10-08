@@ -921,11 +921,12 @@ const arcadeTracks={
   calm:{title:"Calm Loop",artist:"wipics",license:"CC0",url:"assets/audio/music/Relaxing_0.mp3"}
 };
 function arcadeTrackForWave(wave){
-  if(wave<=1)return Math.random()<.5?"mindstream":"technological";
-  if(wave===2)return Math.random()<.5?"bilwe":"pulse";
-  if(wave===3)return Math.random()<.5?"void":"technological";
-  if(wave===4)return Math.random()<.5?"urgent":"brute";
-  return Math.random()<.5?"brute":"void";
+  // One identifiable, locally bundled cue per wave; no ambient random starts.
+  if(wave<=1)return "synthwave";
+  if(wave===2)return "bilwe";
+  if(wave===3)return "technological";
+  if(wave===4)return "void";
+  return "brute";
 }
 let tacticalMusicAudio=null,tacticalTrackIndex=0;
 const tacticalTrackRotation=["calm","mindstream","sector","searching","synthwave"];
