@@ -763,6 +763,7 @@ let arcadePointer=null,arcadeChargeStart=0,arcadeChargeCued=0,arcadeAim={x:50,z:
 let arcadeRunOver=false,arcadeWaveTransition=false,arcadeKills=0;
 let arcadeChain=0,arcadeBestChain=0;
 let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0,arcadeMusicAudio=null,arcadeMusicTrackId=null,arcadeMusicFallback=false;
+let arcadeMusicVolume=.34, nextWaveTrackId=null;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
 const arcadeWeaponDefs={
@@ -960,7 +961,7 @@ function ensureArcadeMusicAudio(){
   });
   return arcadeMusicAudio;
 }
-function playArcadeTrack(id,{loop=true,volume=.34}={}){
+function playArcadeTrack(id,{loop=true,volume=arcadeMusicVolume}={}){
   if(!arcadeAudioEnabled)return;
   const track=arcadeTracks[id];if(!track)return;
   const a=ensureArcadeMusicAudio();
@@ -969,7 +970,30 @@ function playArcadeTrack(id,{loop=true,volume=.34}={}){
   a.pause();a.loop=loop;a.volume=volume;a.src=track.url;a.currentTime=0;
   const p=a.play();if(p&&p.catch)p.catch(()=>{arcadeMusicFallback=true;arcadeMusicTrackId=null;startProceduralArcadeMusic();});
 }
-function syncArcadeTrackToWave(){playArcadeTrack(arcadeTrackForWave(arcadeWave));}
+function syncArcadeTrackToWave(){playArcadeTrack(nextWaveTrackId||arcadeTrackForWave(arcadeWave));nextWaveTrackId=null;}
+const nextWaveTrackSelect=document.getElementById("nextWaveTrack");
+const nextWaveVolumeInput=document.getElementById("nextWaveVolume");
+const nextWaveVolumeValue=document.getElementById("nextWaveVolumeValue");
+const nextWavePreview=document.getElementById("previewNextWaveTrack");
+const playableWaveTracks=["synthwave","bilwe","technological","void","brute","mindstream","calm"];
+for(const id of playableWaveTracks){
+  const track=arcadeTracks[id],option=document.createElement("option");
+  option.value=id;option.textContent=track.title+" — "+track.artist;nextWaveTrackSelect.append(option);
+}
+nextWaveVolumeInput.addEventListener("input",()=>{
+  arcadeMusicVolume=Number(nextWaveVolumeInput.value)/100;
+  nextWaveVolumeValue.textContent=nextWaveVolumeInput.value+"%";
+  if(arcadeMusicAudio)arcadeMusicAudio.volume=arcadeMusicVolume;
+});
+nextWavePreview.addEventListener("click",()=>{
+  if(arcadePhase!=="UPGRADE")return;
+  nextWaveTrackId=nextWaveTrackSelect.value;
+  if(!arcadeAudioEnabled)return;
+  playArcadeTrack(nextWaveTrackId,{loop:true});
+});
+nextWaveTrackSelect.addEventListener("change",()=>{
+  if(arcadePhase==="UPGRADE")nextWaveTrackId=nextWaveTrackSelect.value;
+});
 function startProceduralArcadeMusic(){
   if(!arcadeAudioEnabled||arcadeMusicTimer)return;
   arcadeEnsureAudio();arcadeMusicStep=0;
@@ -1002,7 +1026,7 @@ function stopArcadeMusic(){
 function setArcadeAudio(enabled){
   arcadeAudioEnabled=enabled;uiAudioUpdate();
   if(!enabled){stopArcadeMusic();stopTacticalMusic();return;}
-  if(arcadeRunning)startArcadeMusic();
+  if(arcadeRunning){if(arcadePhase==="UPGRADE")playArcadeTrack(nextWaveTrackId||arcadeTrackForWave(arcadeWave));else startArcadeMusic();}
   else if(!tacticalApp.classList.contains("modeHidden"))startTacticalMusic();
 }
 function uiAudioUpdate(){
@@ -1102,7 +1126,7 @@ function resetArcadeStructures(){
 }
 function startArcadeRun(){
   cancelArcadeSession();arcadePhase="PLAYING";
-  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
+  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;nextWaveTrackId=null;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
   arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
@@ -1153,7 +1177,12 @@ function updateArcadeEnemies(dt,now){
     if(arcadeWave>=5)endArcadeRun(true);else {const session=arcadeSessionId;setTimeout(()=>{if(session===arcadeSessionId&&arcadeRunning&&!arcadeRunOver&&arcadePhase==="PLAYING")showArcadeUpgrade();},500);}
   }
 }
-function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;arcadePhase="UPGRADE";arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
+function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;
+  nextWaveTrackId=arcadeTrackForWave(arcadeWave+1);
+  nextWaveTrackSelect.value=nextWaveTrackId;
+  nextWaveVolumeInput.value=String(Math.round(arcadeMusicVolume*100));
+  nextWaveVolumeValue.textContent=nextWaveVolumeInput.value+"%";
+  arcadePhase="UPGRADE";arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   if(arcadePhase!=="UPGRADE"||!arcadeRunning||arcadeRunOver)return;
   arcadePhase="PLAYING";
