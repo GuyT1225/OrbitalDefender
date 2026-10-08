@@ -823,6 +823,13 @@ function arcadeChargeCue(tier){
   if(tier==="HEAVY"){arcadeSweep(320,145,.18,"triangle",.024);arcadeTone(90,.22,"sine",.019);}
   if(tier==="OVERCHARGE"){arcadeSweep(160,560,.30,"sawtooth",.02);arcadeTone(52,.38,"sine",.032);arcadeNoise(.22,.018,650,"lowpass");}
 }
+function arcadeSfxDamage(kills,hits,tier){
+  if(!hits)return;
+  const strong=tier==="OVERCHARGE",down=Math.min(kills,3);
+  arcadeNoise(strong?.2:.12,strong?.025:.014,strong?650:1300,"bandpass",.035);
+  arcadeSweep(kills?390:260,kills?95:150,strong?.24:.13,"triangle",strong?.024:.013,.05);
+  for(let i=0;i<down;i++)arcadeTone(280-i*55,.07,"square",.009,.09+i*.055);
+}
 function arcadeSfxLaunch(tier,weaponName){
   const over=tier==="OVERCHARGE",heavyTier=tier==="HEAVY";
   if(weaponName==="cannon"){
@@ -839,6 +846,9 @@ function arcadeSfxLaunch(tier,weaponName){
   }else if(weaponName==="penetrator"){
     arcadeNoise(.045,.022,3200,"highpass");arcadeSweep(760,180,.11,"triangle",.026);arcadeTone(82,.2,"sine",.025,.02);
   }
+  // Shared transient makes the actual trigger audible even for short SNAP shots.
+  arcadeNoise(.035,over?.04:heavyTier?.029:.02,3200,"highpass",0);
+  arcadeSweep(over?160:heavyTier?215:340,over?58:heavyTier?85:190,over?.3:heavyTier?.19:.09,"triangle",over?.04:heavyTier?.03:.019,.01);
   if(heavyTier){arcadeTone(72,.22,"sine",.032,.015);arcadeNoise(.13,.025,850,"lowpass",.02);}
   if(over){arcadeNoise(.30,.045,500,"lowpass",.03);arcadeSweep(340,55,.46,"sawtooth",.042,.015);}
 }
@@ -1161,14 +1171,14 @@ function resolveArcadeImpact(s,now){
   const def=arcadeWeaponDefs[s.weapon],radius=def.radius*s.tier.radius*arcadeMods.splash;
   const chainBonus=1+Math.min(arcadeChain,8)*.05;
   const damage=def.damage*s.tier.mult*arcadeMods.damage*chainBonus;
-  let hit=0;
+  let hit=0,kills=0;
   const applyBlast=(cx,cz,r,dam,cluster=false)=>{
     for(const e of arcadeEnemies){
       if(e.dead)continue;const d=Math.hypot(e.x-cx,e.z-cz);
       if(d<=r){
         const fall=1-clamp(d/r,0,.78),armorBonus=def.role==="penetrator"&&e.type==="armor"?1.75:1;
         e.hp-=dam*fall*armorBonus;
-        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;}else hit++;
+        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;kills++;}else hit++;
       }
     }
     if(cluster)arcadeFx.push({x:cx,z:cz,start:now,duration:520,color:def.color,label:"",radius:r,tier:s.tier.label});
@@ -1183,6 +1193,7 @@ function resolveArcadeImpact(s,now){
   if(hit>0){arcadeChain++;arcadeBestChain=Math.max(arcadeBestChain,arcadeChain);}else arcadeChain=Math.max(0,arcadeChain-2);
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit+" // CHAIN x"+arcadeChain):"MISS // CHAIN -",radius,tier:s.tier.label});
   arcadeSfxImpact(s.tier.label,hit>0,s.weapon);
+  arcadeSfxDamage(kills,hit,s.tier.label);
 }
 function drawArcadeBoard(){
   arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
@@ -1255,7 +1266,16 @@ function drawArcadeShots(now){
 }
 function drawArcadeFx(now){
   arcadeFx=arcadeFx.filter(f=>now-f.start<f.duration);
-  for(const f of arcadeFx){const t=(now-f.start)/f.duration,p=arcadeProject(f.x,f.z,.3),power=f.tier==="OVERCHARGE"?2.25:f.tier==="HEAVY"?1.5:1;arcadeCtx.save();arcadeCtx.globalAlpha=1-t;arcadeCtx.strokeStyle=f.color;arcadeCtx.fillStyle=f.color;arcadeCtx.lineWidth=power*2.5;arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,(12+t*50)*power,(6+t*24)*power,0,0,Math.PI*2);arcadeCtx.stroke();if(power>1){arcadeCtx.strokeStyle="#fff3c7";arcadeCtx.lineWidth=1.5;arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,(8+t*33)*power,(4+t*15)*power,0,0,Math.PI*2);arcadeCtx.stroke();}arcadeCtx.globalAlpha=.18*(1-t);arcadeCtx.beginPath();arcadeCtx.arc(p.x,p.y,(8+t*30)*power,0,Math.PI*2);arcadeCtx.fill();arcadeCtx.globalAlpha=1-t;arcadeCtx.font="900 13px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText(f.label,p.x,p.y-30-t*12);arcadeCtx.restore();}
+  for(const f of arcadeFx){const t=(now-f.start)/f.duration,p=arcadeProject(f.x,f.z,.3),power=f.tier==="OVERCHARGE"?2.25:f.tier==="HEAVY"?1.5:1;arcadeCtx.save();arcadeCtx.globalAlpha=1-t;arcadeCtx.strokeStyle=f.color;arcadeCtx.fillStyle=f.color;arcadeCtx.lineWidth=power*2.5;arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,(6+t*36)*power,(3+t*18)*power,0,0,Math.PI*2);arcadeCtx.stroke();if(power>1){arcadeCtx.strokeStyle="#fff3c7";arcadeCtx.lineWidth=1.5;arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,(4+t*28)*power,(2+t*13)*power,0,0,Math.PI*2);arcadeCtx.stroke();}arcadeCtx.globalAlpha=.085*(1-t);arcadeCtx.beginPath();arcadeCtx.arc(p.x,p.y,(5+t*24)*power,0,Math.PI*2);arcadeCtx.fill();// Low, luminous expanding ground shockwave; radius derives from the actual shot blast.
+    if(f.radius&&f.label){
+      const edge=arcadeProject(f.x+f.radius,f.z,.3);
+      const radiusPx=Math.max(5,Math.abs(edge.x-p.x));
+      arcadeCtx.globalAlpha=.62*(1-t)*(1-t);
+      arcadeCtx.strokeStyle=f.tier==="OVERCHARGE"?"#f8ffec":f.tier==="HEAVY"?"#d8faff":"#a6ead0";
+      arcadeCtx.lineWidth=f.tier==="OVERCHARGE"?2.4:1.4;
+      arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,Math.max(3,radiusPx*(.18+.82*t)),Math.max(2,radiusPx*(.13+.55*t)),0,0,Math.PI*2);arcadeCtx.stroke();
+    }
+    arcadeCtx.globalAlpha=1-t;arcadeCtx.font="900 13px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText(f.label,p.x,p.y-30-t*12);arcadeCtx.restore();}
 }
 function updateArcadeHud(now){
   const def=arcadeWeaponDefs[arcadeWeapon],remain=Math.max(0,arcadeReadyAt-now),hold=arcadePointer?now-arcadeChargeStart:0,tier=arcadeChargeTier(hold),charge=clamp(hold/2250,0,1);
