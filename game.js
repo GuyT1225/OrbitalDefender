@@ -592,7 +592,8 @@ const arcadeUi={
   heatFill:$("arcadeHeatFill"),heatText:$("arcadeHeatText"),chargeFill:$("arcadeChargeFill"),chargeText:$("arcadeChargeText"),
   upgrade:$("arcadeUpgrade"),end:$("arcadeEnd"),endTitle:$("arcadeEndTitle"),endSummary:$("arcadeEndSummary"),
   back:$("arcadeBack"),audio:$("arcadeAudio"),restart:$("arcadeRestart"),endRestart:$("arcadeEndRestart"),endModes:$("arcadeEndModes"),
-  orbitLeft:$("orbitLeft"),orbitRight:$("orbitRight"),orbitHeading:$("orbitHeading"),orbitDegrees:$("orbitDegrees")
+  orbitLeft:$("orbitLeft"),orbitRight:$("orbitRight"),orbitHeading:$("orbitHeading"),orbitDegrees:$("orbitDegrees"),
+  chainChip:$("chainChip"),chainCount:$("chainCount"),chainBonus:$("chainBonus")
 };
 const arcadeWeaponButtons=[...document.querySelectorAll(".arcadeWeapon")];
 
@@ -601,6 +602,7 @@ let arcadeWeapon="cannon",arcadeHeat=0,arcadeReadyAt=0,arcadeScore=0,arcadeBase=
 let arcadeEnemies=[],arcadeShots=[],arcadeFx=[],arcadeStructures=[],arcadeSpawnQueue=[],arcadeSpawnAt=0;
 let arcadePointer=null,arcadeChargeStart=0,arcadeAim={x:50,z:58},arcadeBannerTimer=null;
 let arcadeRunOver=false,arcadeWaveTransition=false,arcadeKills=0;
+let arcadeChain=0,arcadeBestChain=0;
 let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
@@ -674,11 +676,12 @@ function startArcadeMusic(){
   const pulse=()=>{
     if(!arcadeRunning||!arcadeAudioEnabled)return;
     const roots=[55,55,65.4,49],root=roots[Math.floor(arcadeMusicStep/4)%roots.length];
-    arcadeTone(root,.5,"sine",.009);
-    if(arcadeMusicStep%2===0)arcadeTone(root*2,.16,"triangle",.006,.02);
-    if(arcadeMusicStep%4===3)arcadeTone(root*3,.09,"square",.004,.03);
-    if(arcadeMusicStep%8===0)arcadeNoise(.45,.0035);
-    if(arcadeMusicStep%8===6)arcadeTone(root*4.5,.3,"sine",.003,.04);
+    arcadeTone(root,.72,"sine",.008);
+    if(arcadeMusicStep%2===0)arcadeTone(root*1.5,.24,"triangle",.0045,.03);
+    if(arcadeMusicStep%4===3)arcadeTone(root*2.5,.12,"square",.003,.05);
+    if(arcadeMusicStep%8===0)arcadeNoise(.7,.004);
+    if(arcadeMusicStep%8===2)arcadeTone(root*.5,.9,"sine",.004,.02);
+    if(arcadeMusicStep%8===6)arcadeTone(root*4.5,.38,"sine",.003,.04);
     arcadeMusicStep++;
   };
   pulse();arcadeMusicTimer=setInterval(pulse,520);
@@ -765,7 +768,7 @@ function resetArcadeStructures(){
   ];
 }
 function startArcadeRun(){
-  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;
+  arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
   arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
@@ -824,7 +827,7 @@ document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("c
 function endArcadeRun(success){
   if(arcadeRunOver)return;arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
   arcadeUi.endTitle.textContent=success?"SECTOR HELD":"BASE OVERRUN";
-  arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Reached wave "+arcadeWave+"/5";
+  arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Best chain x"+arcadeBestChain+" // Reached wave "+arcadeWave+"/5";
   arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");arcadeSfxEnd(success);
 }
 arcadeWeaponButtons.forEach(b=>b.addEventListener("click",()=>{arcadeWeapon=b.dataset.arcadeWeapon;arcadeWeaponButtons.forEach(x=>x.classList.toggle("active",x===b));}));
@@ -837,8 +840,14 @@ function arcadeChargeTier(hold){
 function launchArcadeShot(hold,now){
   const def=arcadeWeaponDefs[arcadeWeapon],tier=arcadeChargeTier(hold);
   if(now<arcadeReadyAt||arcadeHeat>.94){showArcadeBanner(arcadeHeat>.94?"WEAPON HOT":"COOLDOWN");return;}
-  const start={x:12,z:12,y:58},end={x:arcadeAim.x,z:arcadeAim.z,y:0},control={x:(start.x+end.x)/2,z:(start.z+end.z)/2,y:78+(tier.label==="OVERCHARGE"?12:0)};
-  arcadeShots.push({weapon:arcadeWeapon,tier,start,end,control,startTime:now,duration:def.travel});
+  const start={x:12,z:12,y:58},end={x:arcadeAim.x,z:arcadeAim.z,y:0};
+  if(arcadeWeapon==="orbital"){
+    let best=null,bestD=11;
+    for(const e of arcadeEnemies){if(e.dead)continue;const d=Math.hypot(e.x-end.x,e.z-end.z);if(d<bestD){best=e;bestD=d;}}
+    if(best){end.x=lerp(end.x,best.x,.38);end.z=lerp(end.z,best.z,.38);}
+  }
+  const control={x:(start.x+end.x)/2,z:(start.z+end.z)/2,y:78+(tier.label==="OVERCHARGE"?12:0)};
+  arcadeShots.push({weapon:arcadeWeapon,tier,start,end,control,startTime:now,duration:def.travel,chainAtFire:arcadeChain});
   arcadeReadyAt=now+def.cooldown*tier.cool*arcadeMods.cooldown;arcadeHeat=clamp(arcadeHeat+def.heat*tier.heat,0,1);
   arcadeSfxLaunch(tier.label,arcadeWeapon);showArcadeBanner(tier.label+" STRIKE");
 }
@@ -850,7 +859,9 @@ function updateArcadeShots(now){
   arcadeShots=arcadeShots.filter(s=>!s.done||now-s.startTime<s.duration+120);
 }
 function resolveArcadeImpact(s,now){
-  const def=arcadeWeaponDefs[s.weapon],radius=def.radius*s.tier.radius*arcadeMods.splash,damage=def.damage*s.tier.mult*arcadeMods.damage;
+  const def=arcadeWeaponDefs[s.weapon],radius=def.radius*s.tier.radius*arcadeMods.splash;
+  const chainBonus=1+Math.min(arcadeChain,8)*.05;
+  const damage=def.damage*s.tier.mult*arcadeMods.damage*chainBonus;
   let hit=0;
   const applyBlast=(cx,cz,r,dam,cluster=false)=>{
     for(const e of arcadeEnemies){
@@ -870,7 +881,8 @@ function resolveArcadeImpact(s,now){
   if(s.tier.label==="OVERCHARGE"){
     for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*(def.role==="penetrator"?.6:.3));}
   }
-  arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit):"MISS",radius});
+  if(hit>0){arcadeChain++;arcadeBestChain=Math.max(arcadeBestChain,arcadeChain);}else arcadeChain=Math.max(0,arcadeChain-2);
+  arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit+" // CHAIN x"+arcadeChain):"MISS // CHAIN -",radius});
   arcadeSfxImpact(s.tier.label,hit>0,s.weapon);
 }
 function drawArcadeBoard(){
@@ -936,10 +948,10 @@ function drawArcadeAim(now){
 }
 function drawArcadeShots(now){
   for(const s of arcadeShots){
-    const t=clamp((now-s.startTime)/s.duration,0,1),def=arcadeWeaponDefs[s.weapon],pts=[],startT=Math.max(0,t-.28);
+    const t=clamp((now-s.startTime)/s.duration,0,1),def=arcadeWeaponDefs[s.weapon],pts=[],startT=Math.max(0,t-.28),intensity=1+Math.min(s.chainAtFire||0,8)*.12;
     for(let k=0;k<10;k++){const tt=startT+(t-startT)*(k/9),w=arcadeQuad(s.start,s.control,s.end,tt);pts.push(arcadeProject(w.x,w.z,w.y));}
-    for(let i=1;i<pts.length;i++){arcadeCtx.save();arcadeCtx.globalAlpha=.1+.85*i/pts.length;arcadeLine(pts[i-1],pts[i],def.color,1+i*.35);arcadeCtx.restore();}
-    const w=arcadeQuad(s.start,s.control,s.end,t),p=arcadeProject(w.x,w.z,w.y);arcadeCtx.save();arcadeCtx.fillStyle="#fff5cf";arcadeCtx.shadowColor=def.color;arcadeCtx.shadowBlur=16;arcadeCtx.beginPath();arcadeCtx.arc(p.x,p.y,s.tier.label==="OVERCHARGE"?7:4,0,Math.PI*2);arcadeCtx.fill();arcadeCtx.restore();
+    for(let i=1;i<pts.length;i++){arcadeCtx.save();arcadeCtx.globalAlpha=.1+.85*i/pts.length;arcadeCtx.shadowColor=def.color;arcadeCtx.shadowBlur=6*intensity;arcadeLine(pts[i-1],pts[i],def.color,(1+i*.35)*intensity);arcadeCtx.restore();}
+    const w=arcadeQuad(s.start,s.control,s.end,t),p=arcadeProject(w.x,w.z,w.y);arcadeCtx.save();arcadeCtx.fillStyle=intensity>1.55?"#ffffff":"#fff5cf";arcadeCtx.shadowColor=def.color;arcadeCtx.shadowBlur=16*intensity;arcadeCtx.beginPath();arcadeCtx.arc(p.x,p.y,(s.tier.label==="OVERCHARGE"?7:4)*Math.min(1.6,intensity),0,Math.PI*2);arcadeCtx.fill();arcadeCtx.restore();
   }
 }
 function drawArcadeFx(now){
@@ -952,6 +964,8 @@ function updateArcadeHud(now){
   arcadeUi.cooldownFill.style.width=(remain?100*(1-remain/(def.cooldown*2.2*arcadeMods.cooldown)):100)+"%";arcadeUi.cooldownText.textContent=remain?(remain/1000).toFixed(1)+"s":"READY";
   arcadeUi.heatFill.style.width=Math.round(arcadeHeat*100)+"%";arcadeUi.heatText.textContent=Math.round(arcadeHeat*100)+"%";
   arcadeUi.chargeFill.style.width=Math.round(charge*100)+"%";arcadeUi.chargeText.textContent=tier.label;
+  const chainBonusPct=Math.min(arcadeChain,8)*5,chainTier=arcadeChain>=7?3:arcadeChain>=4?2:arcadeChain>=1?1:0;
+  arcadeUi.chainChip.dataset.tier=String(chainTier);arcadeUi.chainCount.textContent="x"+arcadeChain;arcadeUi.chainBonus.textContent="+"+chainBonusPct+"% DMG";
   arcadeUi.chargeReadout.textContent=arcadePointer?(tier.label+" // "+Math.round(arcadeWeaponDefs[arcadeWeapon].radius*tier.radius*arcadeMods.splash)+"m "+(def.role==="penetrator"?"PENETRATION":"SPLASH")+" // RELEASE TO FIRE"):"TAP: SNAP // HOLD: CHARGE";
   const deg=((arcadeOrbit*180/Math.PI)%360+360)%360,dirs=["N","NE","E","SE","S","SW","W","NW"];
   arcadeUi.orbitDegrees.textContent=String(Math.round(deg)).padStart(3,"0")+"°";arcadeUi.orbitHeading.textContent=dirs[Math.round(deg/45)%8];
