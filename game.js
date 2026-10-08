@@ -855,12 +855,12 @@ function arcadeSfxEnd(success){
   arcadeNoise(success?.16:.35,success?.012:.026,success?1800:500,success?"bandpass":"lowpass",.04);
 }
 const arcadeTracks={
-  sector:{title:"Sector",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/sector.mp3"},
+  sector:{title:"Sector",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/sector_0.mp3"},
   searching:{title:"Searching",artist:"yd",license:"CC0",url:"https://opengameart.org/sites/default/files/Searching.ogg"},
-  pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse.mp3"},
-  urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent.mp3"},
+  pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse_0.mp3"},
+  urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent_0.mp3"},
   brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/brute_force_loop.mp3"},
-  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission.mp3"}
+  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission_1.mp3"}
 };
 function arcadeTrackForWave(wave){
   if(wave<=1)return "sector";
@@ -875,7 +875,10 @@ function ensureTacticalMusicAudio(){
   if(tacticalMusicAudio)return tacticalMusicAudio;
   tacticalMusicAudio=new Audio();tacticalMusicAudio.preload="auto";tacticalMusicAudio.volume=.28;
   tacticalMusicAudio.addEventListener("ended",()=>{if(!tacticalApp.classList.contains("modeHidden")&&arcadeAudioEnabled){tacticalTrackIndex=(tacticalTrackIndex+1)%tacticalTrackRotation.length;playTacticalTrack();}});
-  tacticalMusicAudio.addEventListener("error",()=>{if(!tacticalApp.classList.contains("modeHidden")&&arcadeAudioEnabled)startProceduralArcadeMusic();});
+  tacticalMusicAudio.addEventListener("error",()=>{
+    try{tacticalMusicAudio.pause();tacticalMusicAudio.removeAttribute("src");tacticalMusicAudio.load();}catch(_){}
+    if(!tacticalApp.classList.contains("modeHidden")&&arcadeAudioEnabled)startProceduralArcadeMusic();
+  });
   return tacticalMusicAudio;
 }
 function playTacticalTrack(){
@@ -892,7 +895,9 @@ function ensureArcadeMusicAudio(){
   arcadeMusicAudio=new Audio();
   arcadeMusicAudio.preload="auto";arcadeMusicAudio.loop=true;arcadeMusicAudio.volume=.34;
   arcadeMusicAudio.addEventListener("error",()=>{
-    arcadeMusicFallback=true;startProceduralArcadeMusic();
+    arcadeMusicFallback=true;arcadeMusicTrackId=null;
+    try{arcadeMusicAudio.pause();arcadeMusicAudio.removeAttribute("src");arcadeMusicAudio.load();}catch(_){}
+    startProceduralArcadeMusic();
   });
   return arcadeMusicAudio;
 }
@@ -903,7 +908,7 @@ function playArcadeTrack(id,{loop=true,volume=.34}={}){
   if(arcadeMusicTrackId===id&&!a.paused)return;
   arcadeMusicTrackId=id;arcadeMusicFallback=false;stopProceduralArcadeMusic();
   a.pause();a.loop=loop;a.volume=volume;a.src=track.url;a.currentTime=0;
-  const p=a.play();if(p&&p.catch)p.catch(()=>{arcadeMusicFallback=true;startProceduralArcadeMusic();});
+  const p=a.play();if(p&&p.catch)p.catch(()=>{arcadeMusicFallback=true;arcadeMusicTrackId=null;startProceduralArcadeMusic();});
 }
 function syncArcadeTrackToWave(){playArcadeTrack(arcadeTrackForWave(arcadeWave));}
 function startProceduralArcadeMusic(){
