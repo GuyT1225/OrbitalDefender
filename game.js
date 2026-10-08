@@ -22,11 +22,13 @@ const ui={
   roeState:$("roeState"),scanProgress:$("scanProgress"),
   restartBtn:$("restartBtn"),nextBtn:$("nextBtn"),missionOverlay:$("missionOverlay"),
   missionResult:$("missionResult"),missionSummary:$("missionSummary"),
-  overlayRestart:$("overlayRestart"),overlayNext:$("overlayNext")
+  overlayRestart:$("overlayRestart"),overlayNext:$("overlayNext"),
+  tacticalOrbitLeft:$("tacticalOrbitLeft"),tacticalOrbitRight:$("tacticalOrbitRight"),
+  tacticalOrbitHeading:$("tacticalOrbitHeading"),tacticalOrbitDegrees:$("tacticalOrbitDegrees")
 };
 
 let cssW=1,cssH=1,dpr=1,last=performance.now();
-let orbit=0.25,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null,impactFx=[],wrecks=[],incomingFx=[];
+let orbit=0.25,tacticalOrbitNudge=0,orbitTurns=0,pass=1,reticle={x:57,z:48},weapon="cannon",shot=null,impactFx=[],wrecks=[],incomingFx=[];
 let readyAt=0,heat=0,stability=1,audioCtx=null,bannerTimer=null,missionOver=false;
 let orbitPauseUntil=0,pointerId=null,nextEnemyFire=performance.now()+4500,scenarioIndex=0;
 let tacticalHoverContact=null,tacticalHoverSince=0,tacticalFirePointer=null,tacticalChargeStart=0;
@@ -508,7 +510,7 @@ function showMissionOverlay(success){
   ui.missionOverlay.classList.add("show");ui.missionOverlay.setAttribute("aria-hidden","false");
 }
 function resetMission(next=false){
-  scenarioIndex+=next?1:0;missionOver=false;shot=null;impactFx=[];wrecks=[];incomingFx=[];
+  scenarioIndex+=next?1:0;missionOver=false;shot=null;impactFx=[];wrecks=[];incomingFx=[];tacticalOrbitNudge=0;
   readyAt=0;heat=0;stability=1;shotsFired=0;hostilesDestroyed=0;friendliesLost=0;pass=1;orbitTurns=0;
   const offset=(scenarioIndex%4)*3;
   contacts.forEach((c,i)=>{c.x=clamp(baseContactPositions[i].x+((i%2?1:-1)*offset),45,88);c.z=clamp(baseContactPositions[i].z+(((i+scenarioIndex)%2?1:-1)*offset),20,78);c.hp=c.maxHp;c.state=0;c.flashUntil=0;});
@@ -571,6 +573,22 @@ function moveAim(e){
   reticle=screenToGround(e.clientX-r.left,e.clientY-r.top);
   updateHud();
 }
+function tacticalHeading(theta){
+  const deg=((theta*180/Math.PI)%360+360)%360;
+  const labels=["N","NE","E","SE","S","SW","W","NW"];
+  return{deg,heading:labels[Math.round(deg/45)%8]};
+}
+function nudgeTacticalOrbit(dir){
+  tacticalOrbitNudge+=dir*Math.PI/2;
+  orbitPauseUntil=performance.now()+1100;
+  showBanner("ORBIT SHIFT "+(dir>0?"+90°":"-90°"),"scan");
+  setCombatEvent("CAMERA ORBIT "+(dir>0?"CLOCKWISE":"COUNTERCLOCKWISE")+" 90°","scan");
+  if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
+}
+ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
+ui.tacticalOrbitRight.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
+ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
+ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
 
 function updateHud(now=performance.now()){
   updateTacticalIdentification(now);
@@ -623,6 +641,11 @@ function updateHud(now=performance.now()){
   ui.attackWindowVal.textContent=windowSec+" s";
   [...ui.attackWindowMeter.children].forEach((n,i)=>n.classList.toggle("active",i<Math.round(windowSec/2.5)));
   ui.orbitDot.style.transform="rotate("+Math.round(phase*360)+"deg)";
+  if(ui.tacticalOrbitHeading&&ui.tacticalOrbitDegrees){
+    const hd=tacticalHeading(orbit);
+    ui.tacticalOrbitHeading.textContent=hd.heading;
+    ui.tacticalOrbitDegrees.textContent=String(Math.round(hd.deg)).padStart(3,"0")+"°";
+  }
 }
 function drawScene(now){
   drawBoard();
@@ -647,6 +670,10 @@ function frame(now){
     if(Math.floor(before/(Math.PI*2))!==Math.floor(orbit/(Math.PI*2))){
       orbitTurns++;pass=Math.min(6,1+orbitTurns);
     }
+  }
+  if(Math.abs(tacticalOrbitNudge)>.001){
+    const step=Math.sign(tacticalOrbitNudge)*Math.min(Math.abs(tacticalOrbitNudge),dt*.0032);
+    orbit+=step;tacticalOrbitNudge-=step;
   }
   heat=clamp(heat-dt*.000045,0,1);
   stability=clamp(stability+dt*.00007,0,1);
