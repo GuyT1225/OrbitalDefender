@@ -627,10 +627,22 @@ function nudgeTacticalOrbit(dir){
   setCombatEvent("CAMERA ORBIT "+(dir>0?"CLOCKWISE":"COUNTERCLOCKWISE")+" 90°","scan");
   if(typeof arcadeTone==="function"){arcadeTone(dir>0?330:260,.08,"square",.015);arcadeTone(dir>0?440:196,.1,"square",.012,.08);}
 }
-ui.tacticalOrbitLeft.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
-ui.tacticalOrbitRight.addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();});
-ui.tacticalOrbitLeft.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(-1);});
-ui.tacticalOrbitRight.addEventListener("click",e=>{e.stopPropagation();nudgeTacticalOrbit(1);});
+function bindTacticalOrbitButton(btn,dir){
+  btn.addEventListener("pointerdown",e=>{
+    e.stopPropagation();
+    try{btn.setPointerCapture(e.pointerId);}catch(_){}
+    e.preventDefault();
+  });
+  btn.addEventListener("pointerup",e=>{
+    e.stopPropagation();
+    nudgeTacticalOrbit(dir);
+    try{btn.releasePointerCapture(e.pointerId);}catch(_){}
+    e.preventDefault();
+  });
+  btn.addEventListener("pointercancel",e=>{e.stopPropagation();});
+}
+bindTacticalOrbitButton(ui.tacticalOrbitLeft,-1);
+bindTacticalOrbitButton(ui.tacticalOrbitRight,1);
 
 function updateHud(now=performance.now()){
   updateTacticalIdentification(now);
