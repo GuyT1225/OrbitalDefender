@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#020604">
 <title>Orbital Defender V0.4.2 — Audio Impact</title>
-<link rel="stylesheet" href="styles.css?v=051">
+<link rel="stylesheet" href="styles.css?v=052">
 </head>
 <body>
 <section id="modeSelect" class="modeSelect">
@@ -37,7 +37,7 @@
       <p>PERSISTENT OVERWATCH // TACTICAL ORBITAL FIRE SUPPORT</p>
     </div>
     <div class="topTelemetry">
-      <span>V0.5.1 MOBILE TACTICAL</span>
+      <span>V0.5.2 TACTICAL ORBIT</span>
       <strong id="topStatus">LINK SECURE</strong>
       <div class="missionActions">
         <button id="tacticalAudio" type="button" aria-pressed="true">🔊 AUDIO</button>
@@ -100,6 +100,9 @@
             <span>WIND 3 m/s →</span>
             <span>VIS GOOD</span>
           </div>
+          <div class="tacticalOrbitGuide" aria-hidden="true"><b id="tacticalOrbitHeading">N</b><span id="tacticalOrbitDegrees">000°</span></div>
+          <button id="tacticalOrbitLeft" class="tacticalOrbitNudge tacticalOrbitLeft" type="button" aria-label="Rotate tactical view 90 degrees counterclockwise">↶<small>-90°</small></button>
+          <button id="tacticalOrbitRight" class="tacticalOrbitNudge tacticalOrbitRight" type="button" aria-label="Rotate tactical view 90 degrees clockwise">↷<small>+90°</small></button>
           <div id="reticleLabel" class="reticleLabel">F-5</div>
           <div id="hitBanner" class="hitBanner" aria-live="polite"></div>
         </div>
@@ -326,6 +329,6 @@
   </section>
 </section>
 
-<script src="game.js?v=051"></script>
+<script src="game.js?v=052"></script>
 </body>
 </html>
