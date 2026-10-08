@@ -906,14 +906,14 @@ const arcadeTracks={
   searching:{title:"Searching",artist:"yd",license:"CC0",url:"https://opengameart.org/sites/default/files/Searching.ogg"},
   pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse_0.mp3"},
   urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent_0.mp3"},
-  brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/brute_force_loop.mp3"},
+  brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"assets/audio/music/brute_force_loop.mp3"},
   transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission_1.mp3"},
-  synthwave:{title:"Synthwave House Loop",artist:"Fupi",license:"CC0",url:"https://opengameart.org/sites/default/files/synthwavehouse_0.ogg"},
-  mindstream:{title:"MindStream",artist:"DST",license:"CC0",url:"https://opengameart.org/sites/default/files/DST-MindStream.mp3"},
-  technological:{title:"Technological Messup",artist:"Centurion_of_war",license:"CC0",url:"https://opengameart.org/sites/default/files/tecnological_messup_v2.ogg"},
-  void:{title:"Claimed by the Void",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/claimed_by_the_void_loop.mp3"},
-  bilwe:{title:"Bilwe",artist:"cinameng / James Gargette",license:"CC0",url:"https://opengameart.org/sites/default/files/bilwe.mp3"},
-  calm:{title:"Calm Loop",artist:"wipics",license:"CC0",url:"https://opengameart.org/sites/default/files/Relaxing_0.mp3"}
+  synthwave:{title:"Synthwave House Loop",artist:"Fupi",license:"CC0",url:"assets/audio/music/synthwavehouse_0.ogg"},
+  mindstream:{title:"MindStream",artist:"DST",license:"CC0",url:"assets/audio/music/DST-MindStream.mp3"},
+  technological:{title:"Technological Messup",artist:"Centurion_of_war",license:"CC0",url:"assets/audio/music/tecnological_messup_v2.ogg"},
+  void:{title:"Claimed by the Void",artist:"vitalezzz",license:"CC0",url:"assets/audio/music/claimed_by_the_void_loop.mp3"},
+  bilwe:{title:"Bilwe",artist:"cinameng / James Gargette",license:"CC0",url:"assets/audio/music/bilwe.mp3"},
+  calm:{title:"Calm Loop",artist:"wipics",license:"CC0",url:"assets/audio/music/Relaxing_0.mp3"}
 };
 function arcadeTrackForWave(wave){
   if(wave<=1)return Math.random()<.5?"mindstream":"technological";
