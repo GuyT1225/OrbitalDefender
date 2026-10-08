@@ -603,7 +603,7 @@ let arcadeEnemies=[],arcadeShots=[],arcadeFx=[],arcadeStructures=[],arcadeSpawnQ
 let arcadePointer=null,arcadeChargeStart=0,arcadeAim={x:50,z:58},arcadeBannerTimer=null;
 let arcadeRunOver=false,arcadeWaveTransition=false,arcadeKills=0;
 let arcadeChain=0,arcadeBestChain=0;
-let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0;
+let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0,arcadeMusicAudio=null,arcadeMusicTrackId=null,arcadeMusicFallback=false;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
 const arcadeWeaponDefs={
@@ -632,61 +632,147 @@ function arcadeTone(freq,dur=.08,type="square",gain=.02,when=0){
   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
   o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03);
 }
-function arcadeNoise(dur=.12,gain=.025){
+function arcadeNoise(dur=.12,gain=.025,filterFreq=1100,filterType="lowpass",when=0){
   if(!arcadeAudioEnabled)return;
   arcadeEnsureAudio();if(!audioCtx)return;
   const sr=audioCtx.sampleRate,b=audioCtx.createBuffer(1,Math.max(1,Math.floor(sr*dur)),sr),d=b.getChannelData(0);
   for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
-  const s=audioCtx.createBufferSource(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
-  f.type="lowpass";f.frequency.value=1100;g.gain.value=gain;s.buffer=b;s.connect(f);f.connect(g);g.connect(audioCtx.destination);s.start();
+  const s=audioCtx.createBufferSource(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter(),t=audioCtx.currentTime+when;
+  f.type=filterType;f.frequency.value=filterFreq;g.gain.value=gain;s.buffer=b;s.connect(f);f.connect(g);g.connect(audioCtx.destination);s.start(t);
+}
+function arcadeSweep(startFreq,endFreq,dur=.2,type="sawtooth",gain=.025,when=0){
+  if(!arcadeAudioEnabled)return;
+  arcadeEnsureAudio();if(!audioCtx)return;
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain(),t=audioCtx.currentTime+when;
+  o.type=type;o.frequency.setValueAtTime(startFreq,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,endFreq),t+dur);
+  g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(audioCtx.destination);o.start(t);o.stop(t+dur+.03);
+}
+function arcadeKick(when=0,gain=.035){
+  arcadeSweep(120,45,.18,"sine",gain,when);arcadeNoise(.045,gain*.35,160,"lowpass",when);
+}
+function arcadeSnare(when=0,gain=.014){
+  arcadeNoise(.11,gain,1800,"bandpass",when);arcadeTone(190,.06,"triangle",gain*.5,when);
+}
+function arcadeImpactPulse(kind="impact"){
+  const hero=document.querySelector(".arcadeHero");if(!hero)return;
+  hero.classList.remove("impactPulse","wavePulse");void hero.offsetWidth;
+  hero.classList.add(kind==="wave"?"wavePulse":"impactPulse");
+  setTimeout(()=>hero.classList.remove("impactPulse","wavePulse"),120);
 }
 function arcadeSfxLaunch(tier,weaponName){
-  const base=weaponName==="orbital"?62:weaponName==="heavy"?96:weaponName==="cluster"?132:weaponName==="penetrator"?220:175;
-  const type=weaponName==="penetrator"?"triangle":"sawtooth";
-  arcadeTone(base,tier==="OVERCHARGE"?.24:.12,type,tier==="OVERCHARGE"?.05:.03);
-  arcadeTone(base*(weaponName==="cluster"?2.4:1.8),.08,"square",.018,.035);
-  if(weaponName==="cluster"){arcadeTone(base*3,.05,"square",.012,.07);arcadeTone(base*3.5,.05,"square",.01,.12);}
-  if(weaponName==="penetrator")arcadeTone(base*2.8,.05,"sine",.018,.025);
-  if(tier==="OVERCHARGE")arcadeTone(base*.55,.35,"sine",.028,.02);
+  const over=tier==="OVERCHARGE",heavyTier=tier==="HEAVY";
+  if(weaponName==="cannon"){
+    arcadeNoise(.055,.018,2600,"highpass");arcadeSweep(260,150,.08,"square",.028);
+    if(over){arcadeTone(95,.18,"sine",.026,.015);arcadeNoise(.11,.022,900,"bandpass",.02);}
+  }else if(weaponName==="heavy"){
+    arcadeKick(0,.055);arcadeNoise(.12,.035,700,"lowpass");arcadeSweep(115,62,.24,"sawtooth",.04,.015);
+    if(over)arcadeTone(48,.42,"sine",.04,.02);
+  }else if(weaponName==="orbital"){
+    arcadeSweep(420,72,over?.55:.38,"sawtooth",over?.045:.032);
+    arcadeTone(42,over?.72:.48,"sine",over?.05:.035,.02);arcadeNoise(.18,.025,1200,"bandpass",.06);
+  }else if(weaponName==="cluster"){
+    arcadeTone(145,.12,"sawtooth",.028);[.04,.09,.14].forEach((w,i)=>arcadeTone(390+i*70,.045,"square",.012,w));
+  }else if(weaponName==="penetrator"){
+    arcadeNoise(.045,.022,3200,"highpass");arcadeSweep(760,180,.11,"triangle",.026);arcadeTone(82,.2,"sine",.025,.02);
+  }
+  if(heavyTier)arcadeTone(72,.22,"sine",.018,.015);
+  if(over)arcadeNoise(.16,.02,500,"lowpass",.03);
 }
 function arcadeSfxImpact(tier,hit,weaponName){
   const big=tier==="OVERCHARGE";
-  arcadeNoise(big?.36:.18,big?.068:.038);
-  if(weaponName==="cluster"){
-    [0,.06,.12,.18].forEach((w,i)=>{arcadeNoise(.07,.018-i*.002);arcadeTone(150+i*35,.055,"square",.009,w);});
+  if(weaponName==="cannon"){
+    arcadeNoise(.09,big?.032:.022,1800,"bandpass");arcadeTone(hit?145:105,.1,"square",.018);
+  }else if(weaponName==="heavy"){
+    arcadeNoise(big?.38:.25,big?.07:.05,650,"lowpass");arcadeKick(.015,big?.06:.045);arcadeTone(48,big?.5:.32,"sine",big?.05:.035,.02);
+  }else if(weaponName==="orbital"){
+    arcadeNoise(big?.5:.34,big?.08:.058,520,"lowpass");arcadeSweep(180,38,big?.6:.42,"sine",big?.06:.045);arcadeNoise(.16,.026,2600,"highpass",.04);
+  }else if(weaponName==="cluster"){
+    [0,.05,.1,.16,.23].forEach((w,i)=>{arcadeNoise(.08,.021-i*.0015,1200+i*180,"bandpass",w);arcadeTone(155+i*32,.055,"square",.01,w);});
   }else if(weaponName==="penetrator"){
-    arcadeTone(72,.34,"sine",.038);arcadeTone(620,.045,"triangle",.015,.015);arcadeNoise(.1,.022);
-  }else{
-    arcadeTone(hit?58:84,big?.38:.2,"sine",big?.05:.028);
+    arcadeNoise(.055,.03,3400,"highpass");arcadeTone(880,.04,"triangle",.018,.01);arcadeSweep(110,54,.28,"sine",.038,.015);
   }
-  if(hit)arcadeTone(420,.07,"square",.016,.05);
+  if(hit){arcadeTone(420,.06,"square",.014,.05);arcadeNoise(.075,.012,2200,"bandpass",.06);}
+  arcadeImpactPulse("impact");
 }
 function arcadeSfxWave(){
-  arcadeTone(220,.09,"square",.02);arcadeTone(330,.09,"square",.018,.11);arcadeTone(440,.14,"square",.016,.22);
+  arcadeImpactPulse("wave");arcadeNoise(.32,.022,900,"bandpass");
+  arcadeTone(110,.35,"sawtooth",.026);arcadeTone(220,.1,"square",.018,.12);arcadeTone(330,.1,"square",.016,.24);arcadeTone(440,.16,"square",.014,.36);
 }
-function arcadeSfxBaseHit(){arcadeTone(92,.28,"sawtooth",.045);arcadeTone(55,.36,"sine",.035,.04);arcadeNoise(.22,.035);}
-function arcadeSfxUpgrade(){arcadeTone(330,.08,"sine",.02);arcadeTone(495,.1,"sine",.018,.08);arcadeTone(660,.14,"sine",.016,.16);}
+function arcadeSfxBaseHit(){
+  arcadeKick(0,.065);arcadeSweep(105,42,.42,"sawtooth",.048);arcadeNoise(.3,.052,520,"lowpass");arcadeNoise(.1,.018,2600,"highpass",.05);arcadeImpactPulse("impact");
+}
+function arcadeSfxUpgrade(){
+  arcadeTone(330,.08,"sine",.02);arcadeTone(495,.1,"sine",.018,.08);arcadeTone(660,.14,"sine",.016,.16);arcadeNoise(.08,.008,2200,"bandpass",.1);
+}
 function arcadeSfxEnd(success){
-  const notes=success?[262,330,392,523]:[220,185,147,110];
-  notes.forEach((n,i)=>arcadeTone(n,.24,"sine",.022,i*.16));
+  const notes=success?[262,330,392,523,659]:[220,185,147,110,82];
+  notes.forEach((n,i)=>arcadeTone(n,.28,"sine",.024,i*.16));
+  arcadeNoise(success?.16:.35,success?.012:.026,success?1800:500,success?"bandpass":"lowpass",.04);
 }
-function startArcadeMusic(){
+const arcadeTracks={
+  sector:{title:"Sector",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/sector.mp3"},
+  searching:{title:"Searching",artist:"yd",license:"CC0",url:"https://opengameart.org/sites/default/files/Searching.ogg"},
+  pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse.mp3"},
+  urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent.mp3"},
+  brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/brute_force_loop.mp3"},
+  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission.mp3"}
+};
+function arcadeTrackForWave(wave){
+  if(wave<=1)return "sector";
+  if(wave===2)return Math.random()<.5?"searching":"pulse";
+  if(wave===3)return "pulse";
+  if(wave===4)return "urgent";
+  return "brute";
+}
+function ensureArcadeMusicAudio(){
+  if(arcadeMusicAudio)return arcadeMusicAudio;
+  arcadeMusicAudio=new Audio();
+  arcadeMusicAudio.preload="auto";arcadeMusicAudio.loop=true;arcadeMusicAudio.volume=.34;
+  arcadeMusicAudio.addEventListener("error",()=>{
+    arcadeMusicFallback=true;startProceduralArcadeMusic();
+  });
+  return arcadeMusicAudio;
+}
+function playArcadeTrack(id,{loop=true,volume=.34}={}){
+  if(!arcadeAudioEnabled)return;
+  const track=arcadeTracks[id];if(!track)return;
+  const a=ensureArcadeMusicAudio();
+  if(arcadeMusicTrackId===id&&!a.paused)return;
+  arcadeMusicTrackId=id;arcadeMusicFallback=false;stopProceduralArcadeMusic();
+  a.pause();a.loop=loop;a.volume=volume;a.src=track.url;a.currentTime=0;
+  const p=a.play();if(p&&p.catch)p.catch(()=>{arcadeMusicFallback=true;startProceduralArcadeMusic();});
+}
+function syncArcadeTrackToWave(){playArcadeTrack(arcadeTrackForWave(arcadeWave));}
+function startProceduralArcadeMusic(){
   if(!arcadeAudioEnabled||arcadeMusicTimer)return;
   arcadeEnsureAudio();arcadeMusicStep=0;
   const pulse=()=>{
     if(!arcadeRunning||!arcadeAudioEnabled)return;
-    const roots=[55,55,65.4,49],root=roots[Math.floor(arcadeMusicStep/4)%roots.length];
-    arcadeTone(root,.72,"sine",.008);
-    if(arcadeMusicStep%2===0)arcadeTone(root*1.5,.24,"triangle",.0045,.03);
-    if(arcadeMusicStep%4===3)arcadeTone(root*2.5,.12,"square",.003,.05);
-    if(arcadeMusicStep%8===0)arcadeNoise(.7,.004);
-    if(arcadeMusicStep%8===2)arcadeTone(root*.5,.9,"sine",.004,.02);
-    if(arcadeMusicStep%8===6)arcadeTone(root*4.5,.38,"sine",.003,.04);
+    const step=arcadeMusicStep%16,wave=Math.max(1,arcadeWave),roots=[55,49,65.4,46.25],root=roots[Math.floor(arcadeMusicStep/8)%roots.length];
+    const intensity=.75+wave*.12;
+    arcadeTone(root,.95,"sine",.0065*intensity);
+    if(step%4===0)arcadeKick(0,.018*intensity);
+    if(wave>=2&&step%4===2)arcadeSnare(.02,.008*intensity);
+    if(step%2===0)arcadeTone(root*2,.12,"triangle",.0035*intensity,.025);
+    if(wave>=3&&(step===3||step===11))arcadeTone(root*3,.08,"square",.0038*intensity,.03);
+    if(wave>=4&&(step===6||step===14))arcadeNoise(.12,.0065*intensity,1800,"bandpass",.01);
+    if(wave>=5&&step%4===1)arcadeTone(root*4,.06,"square",.0038*intensity,.015);
+    if(step===0){arcadeNoise(1.05,.0038*intensity,780,"bandpass");arcadeTone(root*.5,1.15,"sine",.0035*intensity,.02);}
     arcadeMusicStep++;
   };
-  pulse();arcadeMusicTimer=setInterval(pulse,520);
+  pulse();arcadeMusicTimer=setInterval(pulse,420);
 }
-function stopArcadeMusic(){if(arcadeMusicTimer){clearInterval(arcadeMusicTimer);arcadeMusicTimer=null;}}
+function stopProceduralArcadeMusic(){if(arcadeMusicTimer){clearInterval(arcadeMusicTimer);arcadeMusicTimer=null;}}
+function startArcadeMusic(){
+  if(!arcadeAudioEnabled)return;
+  syncArcadeTrackToWave();
+}
+function stopArcadeMusic(){
+  stopProceduralArcadeMusic();
+  if(arcadeMusicAudio){arcadeMusicAudio.pause();arcadeMusicAudio.currentTime=0;}
+  arcadeMusicTrackId=null;
+}
 function setArcadeAudio(enabled){
   arcadeAudioEnabled=enabled;uiAudioUpdate();
   if(enabled&&arcadeRunning)startArcadeMusic();else stopArcadeMusic();
@@ -822,13 +908,14 @@ function updateArcadeEnemies(dt,now){
 function showArcadeUpgrade(){arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
-  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
+  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);syncArcadeTrackToWave();showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
   if(arcadeRunOver)return;arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
   arcadeUi.endTitle.textContent=success?"SECTOR HELD":"BASE OVERRUN";
   arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Best chain x"+arcadeBestChain+" // Reached wave "+arcadeWave+"/5";
   arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");arcadeSfxEnd(success);
+  if(success)playArcadeTrack("transmission",{loop:false,volume:.38});
 }
 arcadeWeaponButtons.forEach(b=>b.addEventListener("click",()=>{arcadeWeapon=b.dataset.arcadeWeapon;arcadeWeaponButtons.forEach(x=>x.classList.toggle("active",x===b));}));
 
