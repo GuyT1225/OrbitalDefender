@@ -827,7 +827,10 @@ function arcadeChargeCue(tier){
 const graphWarSfx={
   fire:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/fire_heavy.wav",
   impact:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/impact_pen.wav",
-  splash:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/water_explode.opus"
+  splash:"https://raw.githubusercontent.com/GuyT1225/graph-war/main/assets/audio/water_explode.opus",
+  laserCannon:"https://opengameart.org/sites/default/files/doomsday_laser_cannon_short.wav",
+  laserCluster:"https://opengameart.org/sites/default/files/sfx_laser_1.mp3",
+  laserPenetrator:"https://opengameart.org/sites/default/files/sfx_laser_3.mp3"
 };
 function graphWarSample(key,gain=.2,rate=1){
   if(!arcadeAudioEnabled)return;
@@ -845,7 +848,9 @@ function arcadeSfxDamage(kills,hits,tier){
   for(let i=0;i<down;i++)arcadeTone(280-i*55,.07,"square",.009,.09+i*.055);
 }
 function arcadeSfxLaunch(tier,weaponName){
-  graphWarSample("fire",tier==="OVERCHARGE"?.27:tier==="HEAVY"?.22:.14,tier==="OVERCHARGE"?.82:tier==="HEAVY"?.98:1.24);
+  const weaponSamples={cannon:"fire",heavy:"fire",orbital:"laserCannon",cluster:"laserCluster",penetrator:"laserPenetrator"};
+  const sample=weaponSamples[weaponName]||"fire";
+  graphWarSample(sample,tier==="OVERCHARGE"?.27:tier==="HEAVY"?.22:.14,tier==="OVERCHARGE"?.82:tier==="HEAVY"?.98:1.24);
   const over=tier==="OVERCHARGE",heavyTier=tier==="HEAVY";
   if(weaponName==="cannon"){
     arcadeNoise(.055,.018,2600,"highpass");arcadeSweep(260,150,.08,"square",.028);
