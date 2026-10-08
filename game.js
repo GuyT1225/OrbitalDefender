@@ -608,10 +608,12 @@ function updateHud(now=performance.now()){
     ui.scanProgress.textContent=acquiring?(aimed.state===1?"SIGNATURE MATCH // HOLD":"ANALYZING CONTACT // HOLD"):"ACQUIRE COMBATANT";
     ui.fireBtn.classList.add("held");ui.fireBtn.classList.remove("hot");
   }
-  const hold=tacticalFirePointer!==null?now-tacticalChargeStart:0,tier=tacticalChargeTier(hold);
-  ui.fireBtn.textContent=tacticalFirePointer!==null?tier.label+" // RELEASE":"FIRE // HOLD TO CHARGE";
-  ui.tacticalChargeReadout.textContent=tacticalFirePointer!==null?(tier.label+" // "+Math.round(def.radius*tier.radius)+"m EFFECT RADIUS // RELEASE TO FIRE"):"TAP FIRE: SNAP // HOLD FIRE: CHARGE";
-  ui.tacticalChargeReadout.classList.toggle("charging",tacticalFirePointer!==null);
+  const canvasCharging=pointerId!==null&&tacticalCanvasArmed&&!tacticalCanvasMoved,buttonCharging=tacticalFirePointer!==null;
+  const activeCharging=buttonCharging||canvasCharging,chargeStarted=buttonCharging?tacticalChargeStart:tacticalCanvasFireStart;
+  const hold=activeCharging?now-chargeStarted:0,tier=tacticalChargeTier(hold);
+  ui.fireBtn.textContent=buttonCharging?tier.label+" // RELEASE":"FIRE // HOLD TO CHARGE";
+  ui.tacticalChargeReadout.textContent=activeCharging?(tier.label+" // "+Math.round(def.radius*tier.radius)+"m EFFECT RADIUS // RELEASE TO FIRE"):"TAP/HOLD CONFIRMED TARGET OR FIRE CONTROL";
+  ui.tacticalChargeReadout.classList.toggle("charging",activeCharging);
   ui.fireBtn.disabled=missionOver||remaining>0||!!shot||heat>.92||!confirmed;
 
   const threat=Math.min(8,aliveHostile*2+Math.ceil(aliveUnknown*.7));
