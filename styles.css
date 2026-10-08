@@ -568,3 +568,14 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 #arcadeApp .arcadeMeters>div{font-size:8px;grid-template-columns:58px 1fr 43px;gap:5px}
 #arcadeApp .arcadeBar{height:8px}
 }
+
+/* V0.5.7: optional between-wave soundtrack selector */
+.interWaveMusic{display:grid;gap:8px;margin:0 0 14px;padding:11px;border:1px solid #356449;background:#08170f}
+.interWaveMusic>label{color:#c7fbd4;font-size:10px;font-weight:900;letter-spacing:.12em}
+.interWaveMusic select{width:100%;min-height:42px;padding:9px;border:1px solid #3a8052;background:#08120b;color:#e3ffeb;font-size:13px}
+.interWaveMusicRow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.interWaveMusicRow button{min-height:39px;padding:8px 14px;border:1px solid #4a8b66;background:#102b1c;color:#e3ffeb;font-weight:800}
+.interWaveMusicRow label{font-size:10px;color:#adceba;white-space:nowrap}
+.interWaveMusicRow input{flex:1;min-width:90px;accent-color:#88dfa1}
+.interWaveMusic small{font-size:10px;color:#8eae9a}
+@media(max-width:720px){.interWaveMusic{padding:9px;gap:7px;margin-bottom:10px}.interWaveMusicRow{gap:8px}.upgradeCard{max-height:92dvh;overflow-y:auto}.interWaveMusic select{font-size:12px}}
