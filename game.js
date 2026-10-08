@@ -603,7 +603,7 @@ let arcadeEnemies=[],arcadeShots=[],arcadeFx=[],arcadeStructures=[],arcadeSpawnQ
 let arcadePointer=null,arcadeChargeStart=0,arcadeAim={x:50,z:58},arcadeBannerTimer=null;
 let arcadeRunOver=false,arcadeWaveTransition=false,arcadeKills=0;
 let arcadeChain=0,arcadeBestChain=0;
-let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0;
+let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0,arcadeMusicAudio=null,arcadeMusicTrackId=null,arcadeMusicFallback=false;
 const arcadeMods={splash:1,cooldown:1,damage:1};
 
 const arcadeWeaponDefs={
@@ -710,7 +710,41 @@ function arcadeSfxEnd(success){
   notes.forEach((n,i)=>arcadeTone(n,.28,"sine",.024,i*.16));
   arcadeNoise(success?.16:.35,success?.012:.026,success?1800:500,success?"bandpass":"lowpass",.04);
 }
-function startArcadeMusic(){
+const arcadeTracks={
+  sector:{title:"Sector",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/sector.mp3"},
+  searching:{title:"Searching",artist:"yd",license:"CC0",url:"https://opengameart.org/sites/default/files/Searching.ogg"},
+  pulse:{title:"Pulse",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/pulse.mp3"},
+  urgent:{title:"Urgent",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/urgent.mp3"},
+  brute:{title:"Brute Force",artist:"vitalezzz",license:"CC0",url:"https://opengameart.org/sites/default/files/brute_force_loop.mp3"},
+  transmission:{title:"Transmission",artist:"SRG774",license:"CC0",url:"https://opengameart.org/sites/default/files/transmission.mp3"}
+};
+function arcadeTrackForWave(wave){
+  if(wave<=1)return "sector";
+  if(wave===2)return Math.random()<.5?"searching":"pulse";
+  if(wave===3)return "pulse";
+  if(wave===4)return "urgent";
+  return "brute";
+}
+function ensureArcadeMusicAudio(){
+  if(arcadeMusicAudio)return arcadeMusicAudio;
+  arcadeMusicAudio=new Audio();
+  arcadeMusicAudio.preload="auto";arcadeMusicAudio.loop=true;arcadeMusicAudio.volume=.34;
+  arcadeMusicAudio.addEventListener("error",()=>{
+    arcadeMusicFallback=true;startProceduralArcadeMusic();
+  });
+  return arcadeMusicAudio;
+}
+function playArcadeTrack(id,{loop=true,volume=.34}={}){
+  if(!arcadeAudioEnabled)return;
+  const track=arcadeTracks[id];if(!track)return;
+  const a=ensureArcadeMusicAudio();
+  if(arcadeMusicTrackId===id&&!a.paused)return;
+  arcadeMusicTrackId=id;arcadeMusicFallback=false;stopProceduralArcadeMusic();
+  a.pause();a.loop=loop;a.volume=volume;a.src=track.url;a.currentTime=0;
+  const p=a.play();if(p&&p.catch)p.catch(()=>{arcadeMusicFallback=true;startProceduralArcadeMusic();});
+}
+function syncArcadeTrackToWave(){playArcadeTrack(arcadeTrackForWave(arcadeWave));}
+function startProceduralArcadeMusic(){
   if(!arcadeAudioEnabled||arcadeMusicTimer)return;
   arcadeEnsureAudio();arcadeMusicStep=0;
   const pulse=()=>{
@@ -729,7 +763,16 @@ function startArcadeMusic(){
   };
   pulse();arcadeMusicTimer=setInterval(pulse,420);
 }
-function stopArcadeMusic(){if(arcadeMusicTimer){clearInterval(arcadeMusicTimer);arcadeMusicTimer=null;}}
+function stopProceduralArcadeMusic(){if(arcadeMusicTimer){clearInterval(arcadeMusicTimer);arcadeMusicTimer=null;}}
+function startArcadeMusic(){
+  if(!arcadeAudioEnabled)return;
+  syncArcadeTrackToWave();
+}
+function stopArcadeMusic(){
+  stopProceduralArcadeMusic();
+  if(arcadeMusicAudio){arcadeMusicAudio.pause();arcadeMusicAudio.currentTime=0;}
+  arcadeMusicTrackId=null;
+}
 function setArcadeAudio(enabled){
   arcadeAudioEnabled=enabled;uiAudioUpdate();
   if(enabled&&arcadeRunning)startArcadeMusic();else stopArcadeMusic();
@@ -865,13 +908,14 @@ function updateArcadeEnemies(dt,now){
 function showArcadeUpgrade(){arcadeUi.upgrade.classList.add("show");arcadeUi.upgrade.setAttribute("aria-hidden","false");arcadeSfxUpgrade();}
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
-  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
+  arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);syncArcadeTrackToWave();showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
   if(arcadeRunOver)return;arcadeRunOver=true;arcadeEnemies=[];arcadeSpawnQueue=[];
   arcadeUi.endTitle.textContent=success?"SECTOR HELD":"BASE OVERRUN";
   arcadeUi.endSummary.textContent="Score "+Math.round(arcadeScore)+" // Kills "+arcadeKills+" // Best chain x"+arcadeBestChain+" // Reached wave "+arcadeWave+"/5";
   arcadeUi.end.classList.add("show");arcadeUi.end.setAttribute("aria-hidden","false");arcadeSfxEnd(success);
+  if(success)playArcadeTrack("transmission",{loop:false,volume:.38});
 }
 arcadeWeaponButtons.forEach(b=>b.addEventListener("click",()=>{arcadeWeapon=b.dataset.arcadeWeapon;arcadeWeaponButtons.forEach(x=>x.classList.toggle("active",x===b));}));
 
