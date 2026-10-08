@@ -1027,13 +1027,15 @@ function resizeArcade(){
 }
 window.addEventListener("resize",()=>{if(!arcadeApp.classList.contains("modeHidden"))resizeArcade();});
 
+function arcadePortrait(){return window.innerWidth<=720&&window.innerHeight>window.innerWidth;}
+function arcadeCamera(){return arcadePortrait()?{x:154,z:164,center:.46,height:145}:{x:120,z:150,center:.51,height:120};}
 function arcadeProject(x,z,y=0){
   const dx=x-50,dz=z-50,theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  return{x:arcadeW/2+rx*(arcadeW/120),y:arcadeH*.51+rz*(arcadeH/150)-y*(arcadeH/120),depth:rz};
+  const cam=arcadeCamera();return{x:arcadeW/2+rx*(arcadeW/cam.x),y:arcadeH*cam.center+rz*(arcadeH/cam.z)-y*(arcadeH/cam.height),depth:rz};
 }
 function arcadeScreenToGround(sx,sy){
-  const rx=(sx-arcadeW/2)/(arcadeW/120),rz=(sy-arcadeH*.51)/(arcadeH/150),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
+  const cam=arcadeCamera(),rx=(sx-arcadeW/2)/(arcadeW/cam.x),rz=(sy-arcadeH*cam.center)/(arcadeH/cam.z),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   return{x:clamp(rx*ct+rz*st+50,3,97),z:clamp(-rx*st+rz*ct+50,3,97)};
 }
 function arcadeLine(a,b,color,w=1,dash=null){
@@ -1235,7 +1237,7 @@ function drawArcadeAim(now){
     arcadeCtx.globalAlpha=.18+.18*charge;arcadeCtx.fillStyle=def.color;arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,blastPx,blastPx*.55,0,0,Math.PI*2);arcadeCtx.fill();
     arcadeCtx.globalAlpha=.85;arcadeCtx.setLineDash([5,4]);arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,blastPx,blastPx*.55,0,0,Math.PI*2);arcadeCtx.stroke();arcadeCtx.setLineDash([]);
   }
-  arcadeCtx.globalAlpha=1;arcadeCtx.fillStyle=def.color;arcadeCtx.font="900 10px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText(tier.label,p.x,p.y-r-8);arcadeCtx.restore();
+  arcadeCtx.globalAlpha=1;arcadeCtx.fillStyle=def.color;arcadeCtx.font="900 10px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText(arcadePointer?(tier.label==="SNAP"?"HOLD TO CHARGE":tier.label+" // RELEASE"):"SNAP READY",p.x,Math.max(20,p.y-r-12));arcadeCtx.restore();
 }
 function drawArcadeShots(now){
   for(const s of arcadeShots){
