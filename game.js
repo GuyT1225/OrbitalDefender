@@ -550,7 +550,7 @@ function resetMission(next=false){
   tacticalHoverContact=null;tacticalHoverSince=0;tacticalFirePointer=null;tacticalChargeStart=0;
   ui.missionStatus.textContent="IN PROGRESS";ui.missionStatus.className="amber";ui.topStatus.textContent="LINK SECURE";
   ui.missionOverlay.classList.remove("show");ui.missionOverlay.setAttribute("aria-hidden","true");
-  ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
+  ui.scanBtn.disabled=false;ui.fireBtn.disabled=false;nextEnemyFire=performance.now()+4200;
   const movement=scenarioIndex===0?"STATIC CONTACTS":"MOBILE CONTACTS // SPEED TIER "+scenarioIndex;
   ui.status.textContent=(next?"NEXT MISSION // ":"MISSION READY // ")+movement;
   setCombatEvent(movement+" // IDENTIFY BEFORE ENGAGING","scan");updateHud();
