@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#020604">
-<title>Orbital Defender V0.3.2 — Orbit + Audio</title>
-<link rel="stylesheet" href="styles.css?v=032">
+<title>Orbital Defender V0.4 — Combat Guidance</title>
+<link rel="stylesheet" href="styles.css?v=040">
 </head>
 <body>
 <section id="modeSelect" class="modeSelect">
@@ -261,6 +261,9 @@
       <div class="waveChip">WAVE <b id="arcadeWave">1</b>/5</div>
       <div class="baseChip">BASE <b id="arcadeBaseHp">100</b>%</div>
       <div class="scoreChip">SCORE <b id="arcadeScore">0</b></div>
+      <div class="orbitGuide"><b id="orbitHeading">N</b><span id="orbitDegrees">000°</span></div>
+      <button id="orbitLeft" class="orbitNudge orbitLeft" type="button" aria-label="Rotate view 90 degrees counterclockwise">↶<small>-90°</small></button>
+      <button id="orbitRight" class="orbitNudge orbitRight" type="button" aria-label="Rotate view 90 degrees clockwise">↷<small>+90°</small></button>
       <div id="arcadeBanner" class="arcadeBanner">WAVE 1 INBOUND</div>
       <div id="chargeReadout" class="chargeReadout">TAP: SNAP // HOLD: CHARGE</div>
       <div class="chargeLegend" aria-hidden="true"><span>SNAP</span><span>HEAVY</span><span>OVERCHARGE</span></div>
@@ -272,6 +275,8 @@
       <button class="arcadeWeapon active" data-arcade-weapon="cannon" type="button"><span>●</span><b>CANNON</b><small>FAST</small></button>
       <button class="arcadeWeapon" data-arcade-weapon="heavy" type="button"><span>◆</span><b>HEAVY</b><small>SPLASH</small></button>
       <button class="arcadeWeapon" data-arcade-weapon="orbital" type="button"><span>⬢</span><b>ORBITAL</b><small>MAX BLAST</small></button>
+      <button class="arcadeWeapon" data-arcade-weapon="cluster" type="button"><span>✣</span><b>CLUSTER</b><small>MULTI-HIT</small></button>
+      <button class="arcadeWeapon" data-arcade-weapon="penetrator" type="button"><span>▸</span><b>PENETRATOR</b><small>ARMOR</small></button>
     </div>
     <div class="arcadeMeters">
       <div><span>COOLDOWN</span><div class="arcadeBar"><i id="arcadeCooldownFill"></i></div><b id="arcadeCooldownText">READY</b></div>
@@ -305,6 +310,6 @@
   </section>
 </section>
 
-<script src="game.js?v=032"></script>
+<script src="game.js?v=040"></script>
 </body>
 </html>
