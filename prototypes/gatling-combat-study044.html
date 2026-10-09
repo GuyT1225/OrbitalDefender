@@ -225,9 +225,9 @@ function drawMagnifier(){
  ctx.beginPath();ctx.rect(x,y,size,h);ctx.clip();
  // Draw captured canvas image using its backing pixel dimensions.
  const d=canvas.width/width;
- const sx=Math.max(0,(p.x-source/2)*d),sy=Math.max(0,(p.y-source/2)*d);
+ const sx=Math.max(0,Math.min(canvas.width-source*d,(p.x-source/2)*d)),sy=Math.max(0,Math.min(canvas.height-source*d,(p.y-source/2)*d));
  const sw=Math.min(source*d,canvas.width-sx),sh=Math.min(source*d,canvas.height-sy);
- if(sw>0&&sh>0)ctx.drawImage(canvas,sx,sy,sw,sh,x,y,sw/d*mag,sh/d*mag);
+ if(sw>0&&sh>0)ctx.drawImage(canvas,sx,sy,sw,sh,x+(size-sw/d*mag)/2,y+(h-sh/d*mag)/2,sw/d*mag,sh/d*mag);
  ctx.restore();ctx.strokeStyle="#c0e8c9";ctx.lineWidth=1.5;ctx.strokeRect(x-2,y-2,size+4,h+4);
  ctx.strokeStyle="#ddf5dd";ctx.beginPath();ctx.moveTo(x+size/2-10,y+h/2);ctx.lineTo(x+size/2+10,y+h/2);ctx.moveTo(x+size/2,y+h/2-10);ctx.lineTo(x+size/2,y+h/2+10);ctx.stroke();
  ctx.fillStyle="#ddf5dd";ctx.font="10px monospace";ctx.textAlign="left";ctx.fillText("IMPACT OPTIC 2.8X",x,y-9);
