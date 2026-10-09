@@ -1284,8 +1284,8 @@ function drawArcadeTerrain(){
     arcadeGroundEllipse(x,z,1.1+(i%4)*.9,.7+(i%3)*.8,shade);
   }
   for(const x of arcadeLanes){
-    arcadeLine(arcadeProject(x,2,.02),arcadeProject(x,94,.02),"rgba(119,110,77,.27)",Math.max(9,arcadeW/65));
-    arcadeLine(arcadeProject(x,2,.04),arcadeProject(x,94,.04),"rgba(174,156,106,.22)",1.5,[4,11]);
+    arcadeLine(arcadeProject(x,-75,.02),arcadeProject(x,135,.02),"rgba(119,110,77,.27)",Math.max(9,arcadeW/65));
+    arcadeLine(arcadeProject(x,-75,.04),arcadeProject(x,135,.04),"rgba(174,156,106,.22)",1.5,[4,11]);
   }
   for(let i=0;i<12;i++){
     const z=8+i*7.4, x=i%2?14:88;
@@ -1304,10 +1304,18 @@ function drawArcadeGroundScars(){
   }
 }
 function drawArcadeBoard(){
-  arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
-  const q=[arcadeProject(8,0),arcadeProject(92,0),arcadeProject(92,100),arcadeProject(8,100)];arcadePoly(q,"#64735a","#242e24",1.4);
-  for(let i=10;i<=90;i+=10)arcadeLine(arcadeProject(i,0),arcadeProject(i,100),"rgba(137,181,138,.065)",1);
-  for(let z=0;z<=100;z+=10)arcadeLine(arcadeProject(8,z),arcadeProject(92,z),"rgba(137,181,138,.065)",1);
+  // The camera observes a continuous site; logical gameplay bounds are not drawn as a board edge.
+  arcadeCtx.fillStyle="#222b24";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
+  const ground=[arcadeProject(-120,-130),arcadeProject(220,-130),arcadeProject(220,230),arcadeProject(-120,230)];
+  arcadePoly(ground,null,"#30382c");
+  // Muted survey contours cross the entire environment without delineating a playfield.
+  for(let i=-100;i<=200;i+=20)arcadeLine(arcadeProject(i,-130),arcadeProject(i,230),"rgba(149,168,125,.035)",1);
+  for(let z=-120;z<=220;z+=20)arcadeLine(arcadeProject(-120,z),arcadeProject(220,z),"rgba(149,168,125,.035)",1);
+  for(let i=0;i<145;i++){
+    const x=-102+((i*53)%305),z=-115+((i*83)%325);
+    const shade=i%4===0?"rgba(157,138,95,.09)":"rgba(60,71,49,.12)";
+    arcadeGroundEllipse(x,z,1.8+(i%6),1+(i%4)*1.5,shade);
+  }
   drawArcadeTerrain();
   drawArcadeGroundScars();
   const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#394637";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
