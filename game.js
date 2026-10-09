@@ -765,6 +765,7 @@ let arcadeChain=0,arcadeBestChain=0;
 let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0,arcadeMusicAudio=null,arcadeMusicTrackId=null,arcadeMusicFallback=false;
 let arcadeMusicVolume=.34, nextWaveTrackId=null;
 const arcadeMods={splash:1,cooldown:1,damage:1};
+const arcadeUpgradeCounts={splash:0,cooldown:0,damage:0};
 
 const arcadeWeaponDefs={
   cannon:{name:"CANNON",damage:1.25,radius:5,cooldown:420,heat:.07,travel:430,color:"#7de49c",role:"rapid"},
@@ -1127,7 +1128,7 @@ function resetArcadeStructures(){
 function startArcadeRun(){
   cancelArcadeSession();arcadePhase="PLAYING";
   arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;nextWaveTrackId=null;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
-  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeGroundScars=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
+  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeGroundScars=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;arcadeUpgradeCounts.splash=0;arcadeUpgradeCounts.cooldown=0;arcadeUpgradeCounts.damage=0;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
   uiAudioUpdate();startArcadeMusic();arcadeSfxWave();updateArcadeHud(performance.now());
@@ -1177,7 +1178,19 @@ function updateArcadeEnemies(dt,now){
     if(arcadeWave>=5)endArcadeRun(true);else {const session=arcadeSessionId;setTimeout(()=>{if(session===arcadeSessionId&&arcadeRunning&&!arcadeRunOver&&arcadePhase==="PLAYING")showArcadeUpgrade();},500);}
   }
 }
-function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;
+function refreshArcadeUpgradeChoices(){
+  for(const key of ["splash","cooldown","damage"]){
+    const btn=document.querySelector('[data-upgrade="'+key+'"]');
+    if(!btn)continue;
+    const count=btn.querySelector(".upgradeCount"),total=btn.querySelector(".upgradeTotal");
+    if(count)count.textContent="OWNED x"+arcadeUpgradeCounts[key];
+    if(total){
+      const value=key==="cooldown"?(100*(1-arcadeMods.cooldown)).toFixed(0)+"% faster":key==="splash"?(arcadeMods.splash*100).toFixed(0)+"% radius":(arcadeMods.damage*100).toFixed(0)+"% damage";
+      total.textContent="Current: "+value;
+    }
+  }
+}
+function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;refreshArcadeUpgradeChoices();
   nextWaveTrackId=arcadeTrackForWave(arcadeWave+1);
   nextWaveTrackSelect.value=nextWaveTrackId;
   nextWaveVolumeInput.value=String(Math.round(arcadeMusicVolume*100));
@@ -1186,7 +1199,7 @@ function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   if(arcadePhase!=="UPGRADE"||!arcadeRunning||arcadeRunOver)return;
   arcadePhase="PLAYING";
-  const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
+  const k=btn.dataset.upgrade;arcadeUpgradeCounts[k]++;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
   arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);syncArcadeTrackToWave();showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
