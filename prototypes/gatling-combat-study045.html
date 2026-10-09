@@ -314,7 +314,7 @@ function updateCombat(dt,t){
   }
   if(combat.heat>=1){combat.holding=false;charging=false;radioCall("Gun overheating",t);}
  }else combat.fireTimer=0;
- if(!combat.holding&&combat.heat<.35)document.getElementById("gatling").textContent="HOLD GATLING";
+
  for(const u of combat.units){
   u.age+=dt;
   if(u.down){
