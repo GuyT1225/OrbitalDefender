@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Defender — Fortified Plateau Concept</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08110d;color:#c5efcf;font-family:system-ui,-apple-system,sans-serif}
+main{max-width:900px;margin:auto;padding:12px}.heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:17px;letter-spacing:.07em;margin:4px 0}.eyebrow{font:11px monospace;color:#76b98d;letter-spacing:.19em}
+#scene{display:block;width:100%;height:min(77dvh,760px);min-height:440px;background:#1e241d;border:1px solid #42604e;touch-action:pan-y}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px}
+button{border:1px solid #51785d;background:#14251b;color:#e2ffe9;padding:12px 15px;font-weight:800;border-radius:4px;touch-action:manipulation}
+button:active{background:#31503a}.status{font:11px/1.6 monospace;color:#a9c8ae;max-width:510px}
+.note{color:#86a491;font-size:12px;line-height:1.4;margin-top:10px}
+</style></head>
+<body><main><div class="heading"><div><span class="eyebrow">V0.6 // TERRAIN STUDY 01</span><h1>OPERATION: FORTIFIED PLATEAU</h1></div><span class="eyebrow">CONCEPT ONLY</span></div>
+<canvas id="scene" aria-label="Rotatable concept of a fortified plateau with a defended mesa summit and surrounding assault routes"></canvas>
+<div class="toolbar"><button id="left" aria-label="Rotate counterclockwise">↶ ROTATE</button><button id="right" aria-label="Rotate clockwise">ROTATE ↷</button><button id="reset">RESET VIEW</button><span class="status" id="status">CAMERA 030° // HEIGHT 34 // APPROACH ROUTES 4</span></div>
+<p class="note">Standalone visual prototype. Rotate to inspect cliff faces and the summit. No enemies, targeting, damage or existing game rules have been changed.</p></main>
+<script>
+"use strict";
+const canvas=document.getElementById("scene"),ctx=canvas.getContext("2d"),status=document.getElementById("status");
+let width=1,height=1,angle=.52,targetAngle=.52;
+function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);width=r.width;height=r.height;canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);ctx.setTransform(d,0,0,d,0,0);}
+addEventListener("resize",resize);resize();
+function project(x,z,y=0){const c=Math.cos(angle),s=Math.sin(angle),rx=x*c-z*s,rz=x*s+z*c,scale=Math.min(width/205,height/140);return{x:width*.5+rx*scale,y:height*.48+rz*scale*.54-y*scale*.94,depth:rz};}
+function poly(points,fill,stroke=null,lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(a,b,color,w=1){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function ellipse(x,z,rx,rz,color,y=0){const p=project(x,z,y),a=project(x+rx,z,y),b=project(x,z+rz,y);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),angle,0,Math.PI*2);ctx.fill();}
+function box(x,z,w,d,h,side,roof){const q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];const b=q.map(v=>project(v[0],v[1],34)),t=q.map(v=>project(v[0],v[1],34+h));poly([b[1],b[2],t[2],t[1]],side);poly([b[2],b[3],t[3],t[2]],side);poly(t,roof,"#8f9275");}
+function path(points,color,widthLine){for(let i=1;i<points.length;i++)line(project(...points[i-1]),project(...points[i]),color,widthLine);}
+function terrain(){
+ctx.fillStyle="#252d26";ctx.fillRect(0,0,width,height);
+for(let i=0;i<150;i++){const x=((i*83)%245)-122,z=((i*59)%225)-112;ellipse(x,z,3+i%6,2+i%4,i%3===0?"rgba(162,131,78,.13)":"rgba(91,113,79,.13)");}
+for(const d of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const dx=Math.cos(d),dz=Math.sin(d);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#6f6650",8);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#918368",2);}
+}
+function plateau(){
+const n=12,outer=[],upper=[],lip=[];
+for(let i=0;i<n;i++){const a=i/n*Math.PI*2,variation=1+Math.sin(a*5)*.065+Math.cos(a*7)*.045;outer.push([Math.cos(a)*48*variation,Math.sin(a)*39*variation]);upper.push([Math.cos(a)*42*variation,Math.sin(a)*34*variation]);lip.push([Math.cos(a)*44*variation,Math.sin(a)*36*variation]);}
+const order=Array.from({length:n},(_,i)=>i).sort((a,b)=>{const A=outer[a],B=outer[b];return project(A[0],A[1]).depth-project(B[0],B[1]).depth;});
+ellipse(1,4,59,46,"rgba(9,13,10,.58)");
+for(const i of order){const j=(i+1)%n;const v=[project(...outer[i],0),project(...outer[j],0),project(...upper[j],34),project(...upper[i],34)];poly(v,i%2===0?"#66543d":"#7e6746","#453e31");for(let k=1;k<=5;k++){const t=k/6;line(project(outer[i][0]*(1-t)+outer[j][0]*t,outer[i][1]*(1-t)+outer[j][1]*t,2),project(upper[i][0]*(1-t)+upper[j][0]*t,upper[i][1]*(1-t)+upper[j][1]*t,34),k%2?"rgba(29,31,25,.45)":"rgba(192,154,93,.4)",1.2);}}
+poly(upper.map(v=>project(v[0],v[1],34)),"#766e50","#a99b69",2);
+poly(lip.map(v=>project(v[0],v[1],34)),"rgba(98,100,70,.45)");
+for(let i=0;i<27;i++){const x=((i*19)%76)-38,z=((i*31)%54)-27;ellipse(x,z,2+i%4,1.1+i%3,i%3===0?"rgba(173,147,84,.22)":"rgba(48,69,44,.32)",34);}
+for(const az of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const dx=Math.cos(az),dz=Math.sin(az);path([[dx*39,dz*31,34],[dx*29,dz*24,34]],"#a49870",4);}
+for(const z of [-25,25]){path([[-28,z,34],[28,z,34]],"#8b8065",2);}
+for(const x of [-28,28]){path([[x,-25,34],[x,25,34]],"#8b8065",2);}
+const things=[[-15,-8,18,13,8,"#525c52","#929c82"],[15,10,14,10,7,"#4b554e","#9d9d7c"],[12,-17,7,7,15,"#47564c","#a8b29c"],[-18,17,11,8,5,"#514f42","#9b916b"]];
+things.sort((a,b)=>project(a[0],a[1]).depth-project(b[0],b[1]).depth).forEach(t=>box(...t));
+const center=project(0,1,46);ctx.textAlign="center";ctx.font="bold 11px monospace";ctx.fillStyle="#d7fce4";ctx.fillText("ALLIED COMMAND",center.x,center.y-18);
+}
+function overlay(){const g=ctx.createLinearGradient(0,0,0,height);g.addColorStop(0,"rgba(4,17,11,.21)");g.addColorStop(1,"rgba(4,17,11,.05)");ctx.fillStyle=g;ctx.fillRect(0,0,width,height);ctx.strokeStyle="rgba(109,235,162,.2)";ctx.strokeRect(12,12,width-24,height-24);ctx.font="11px monospace";ctx.fillStyle="#9ff4ba";ctx.fillText("ORBITAL OBSERVATION // PLATEAU SITE",22,32);ctx.fillText("ELEVATION +34 // 360° DEFENSE",22,49);}
+function frame(){angle+=(targetAngle-angle)*.11;terrain();plateau();overlay();status.textContent="CAMERA "+String((Math.round(angle*180/Math.PI)%360+360)%360).padStart(3,"0")+"° // HEIGHT 34 // APPROACH ROUTES 4";requestAnimationFrame(frame);}
+document.getElementById("left").addEventListener("click",()=>targetAngle-=Math.PI/2);
+document.getElementById("right").addEventListener("click",()=>targetAngle+=Math.PI/2);
+document.getElementById("reset").addEventListener("click",()=>targetAngle=.52);
+frame();
+</script></body></html>
