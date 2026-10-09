@@ -1303,6 +1303,40 @@ function drawArcadeGroundScars(){
     }
   }
 }
+// Early RTS-inspired environmental landmarks, not interactive units.
+function drawArcadeWorldDetails(){
+  const patches=[
+    [18,17,15,9,"#424634"],[78,32,18,11,"#474936"],[17,72,12,14,"#3b4435"],
+    [89,85,13,10,"#484a36"],[48,45,14,8,"#414735"],[62,7,12,6,"#4c4a36"]
+  ];
+  for(const [x,z,rx,rz,color] of patches){
+    arcadeGroundEllipse(x,z,rx,rz,color);
+    arcadeGroundEllipse(x+2,z+1,rx*.72,rz*.62,"rgba(90,82,58,.2)");
+  }
+  // Distinct silhouettes at the periphery: scattered rocks, scrub and supply points.
+  for(let i=0;i<44;i++){
+    const x=11+(i*47)%78,z=5+(i*71)%91;
+    if(arcadeLanes.some(lane=>Math.abs(x-lane)<7))continue;
+    const p=arcadeProject(x,z,.2);
+    const w=1.8+(i%3)*1.1,h=1.4+(i%4)*.7;
+    arcadeCtx.fillStyle=i%5===0?"#6c6950":"#48513a";
+    arcadeCtx.strokeStyle="rgba(16,25,19,.55)";arcadeCtx.lineWidth=1;
+    arcadeCtx.beginPath();arcadeCtx.moveTo(p.x-w,p.y+h);
+    arcadeCtx.lineTo(p.x-w*.45,p.y-h);arcadeCtx.lineTo(p.x+w,p.y-h*.3);
+    arcadeCtx.lineTo(p.x+w*.7,p.y+h);arcadeCtx.closePath();arcadeCtx.fill();arcadeCtx.stroke();
+  }
+  // Service depot and abandoned equipment, outside combat corridors.
+  for(const [x,z] of [[14,37],[86,58],[15,88]]){
+    const p=arcadeProject(x,z,.3);
+    arcadeCtx.save();arcadeCtx.fillStyle="#4c523f";arcadeCtx.strokeStyle="#85886b";arcadeCtx.lineWidth=1.2;
+    arcadeCtx.fillRect(p.x-7,p.y-4,14,8);arcadeCtx.strokeRect(p.x-7,p.y-4,14,8);
+    arcadeCtx.fillStyle="#69735c";arcadeCtx.fillRect(p.x-4,p.y-7,8,3);
+    arcadeCtx.restore();
+  }
+  // Concrete approach and marked perimeter give the defended outpost a site identity.
+  arcadePoly([arcadeProject(32,88,.1),arcadeProject(68,88,.1),arcadeProject(73,106,.1),arcadeProject(27,106,.1)],"rgba(162,165,132,.38)","rgba(85,89,72,.57)",1.3);
+  for(let x=35;x<=65;x+=10)arcadeLine(arcadeProject(x,89,.14),arcadeProject(x,102,.14),"rgba(178,183,146,.28)",1);
+}
 function drawArcadeBoard(){
   // The camera observes a continuous site; logical gameplay bounds are not drawn as a board edge.
   arcadeCtx.fillStyle="#222b24";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
@@ -1317,6 +1351,7 @@ function drawArcadeBoard(){
     arcadeGroundEllipse(x,z,1.8+(i%6),1+(i%4)*1.5,shade);
   }
   drawArcadeTerrain();
+  drawArcadeWorldDetails();
   drawArcadeGroundScars();
   const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#394637";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
   arcadeCtx.fillStyle="#9be7ee";arcadeCtx.font="900 11px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText("SENSOR OUTPOST",b.x,b.y+4);
