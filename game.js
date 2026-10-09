@@ -1097,7 +1097,7 @@ function resizeArcade(){
 window.addEventListener("resize",()=>{if(!arcadeApp.classList.contains("modeHidden"))resizeArcade();});
 
 function arcadePortrait(){return window.innerWidth<=720&&window.innerHeight>window.innerWidth;}
-function arcadeCamera(){return arcadePortrait()?{x:117,z:176,center:.405,height:145,perspective:.0044}:{x:120,z:150,center:.51,height:120,perspective:0};}
+function arcadeCamera(){return arcadePortrait()?{x:101,z:159,center:.425,height:145,perspective:.0048}:{x:120,z:150,center:.51,height:120,perspective:0};}
 function arcadeProject(x,z,y=0){
   const dx=x-50,dz=z-50,theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
