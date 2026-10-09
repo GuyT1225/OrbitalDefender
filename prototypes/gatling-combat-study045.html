@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Defender — Fortified Plateau Concept</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08110d;color:#c5efcf;font-family:system-ui,-apple-system,sans-serif}
+main{max-width:900px;margin:auto;padding:12px}.heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:17px;letter-spacing:.07em;margin:4px 0}.eyebrow{font:11px monospace;color:#76b98d;letter-spacing:.19em}
+#scene{display:block;width:100%;height:min(77dvh,760px);min-height:440px;background:#1e241d;border:1px solid #42604e;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch;margin-top:9px}
+button{border:1px solid #51785d;background:#14251b;color:#e2ffe9;padding:11px 4px;font-size:11px;font-weight:800;border-radius:4px;touch-action:manipulation;min-height:44px}
+button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}button:active{background:#31503a}.status{grid-column:1 / -1;font:11px/1.6 monospace;color:#a9c8ae;text-align:center}
+#gatling{grid-column:span 2;background:#483a24;border-color:#cc9d52;color:#ffe9af;touch-action:none}#gatling[aria-pressed="true"]{background:#765025}#charge{grid-column:span 2;background:#31472b;border-color:#c6ae6a;color:#fff1c6;user-select:none;-webkit-user-select:none}#charge[aria-pressed="true"]{background:#73552b} .note{color:#86a491;font-size:12px;line-height:1.4;margin-top:10px}
+</style></head>
+<body><main><div class="heading"><div><span class="eyebrow">V0.6 // COMBAT STUDY 04.5</span><h1>OPERATION: FORTIFIED PLATEAU</h1></div><span class="eyebrow">COMBAT LAB</span></div>
+<canvas id="scene" aria-label="Rotatable concept of a fortified plateau with a defended mesa summit and surrounding assault routes"></canvas>
+<div class="toolbar"><button id="left" aria-label="Rotate counterclockwise">↶ ROTATE</button><button id="right" aria-label="Rotate clockwise">ROTATE ↷</button><button id="reset">RESET VIEW</button><button id="shelves" aria-pressed="true">SHELVES: ON</button><button id="camera" aria-pressed="false">VIEW: SURVEY</button><button id="out">− ZOOM</button><button id="in">+ ZOOM</button><button id="orbit" aria-pressed="false">ORBIT: OFF</button><button id="weapon">WEAPON: GATLING</button><button id="gatling" aria-pressed="false">HOLD FIRE</button><button id="spawn">REINFORCE</button><button id="radio" aria-pressed="true">RADIO: ON</button><button id="lens" aria-pressed="true">OPTICS: ON</button><span class="status" id="status">CAMERA 030° // GEOLOGIC SHELVES 2 // FORTRESS TIERS 3</span></div>
+<p class="note">Combat Study 04.4 unified fire/focus and inset impact optics: continuous orbit now stays active while the camera gradually zooms toward the designated aim point, then eases back on release. Quarter-turns remain available. Touch or drag on terrain to designate an aim point, hold CHARGE to ease the camera inward, release to simulate a shot and return to survey. Isolated combat experiment: touch and hold the battlefield to fire or charge, drag to adjust aim, release to stop or launch, watch enemy impacts and read radio confirmations. Touch the terrain to aim. No production combat changes. No enemies, targeting, damage or existing game rules have been changed.</p></main>
+<script>
+"use strict";
+const canvas=document.getElementById("scene"),ctx=canvas.getContext("2d"),status=document.getElementById("status");
+let width=1,height=1,angle=.52,targetAngle=.52,showShelves=true,lowView=false,zoomIndex=2,zoomValue=1,cinemaStart=0,cinemaActive=false,focusX=0,focusZ=0,focusY=34,goalX=0,goalZ=0,goalY=34,aimX=0,aimZ=0,aimY=34,charging=false,charge=0,recoil=0,chargeStart=0,aimSet=false,orbitOn=false;const zoomSteps=[.48,.70,1,1.36,1.75],zoomNames=["WIDE THEATER","SURVEY","TACTICAL","OBSERVATION","DETAIL"];
+function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);width=r.width;height=r.height;canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);ctx.setTransform(d,0,0,d,0,0);}
+addEventListener("resize",resize);resize();
+// Elevation remap preserves the approved Study 02 structure while giving
+// the lower two geological shelves monumental, continuous rock faces.
+// Original 0/9/17/24/29/34 -> expanded 0/18/38/60/65/70.
+function elevation(y){
+ const knots=[[0,0],[9,18],[17,38],[24,60],[29,65],[34,70]];
+ if(y<=0)return y*2;
+ for(let i=1;i<knots.length;i++){
+  if(y<=knots[i][0]){const a=knots[i-1],b=knots[i],t=(y-a[0])/(b[0]-a[0]);return a[1]+t*(b[1]-a[1]);}
+ }
+ return 70+(y-34);
+}
+function project(x,z,y=0){
+ const c=Math.cos(angle),s=Math.sin(angle),rx=x*c-z*s,rz=x*s+z*c;
+ const scale=Math.min(width/265,height/(lowView?214:199))*zoomValue;
+ const depthFactor=lowView?.27:.50;
+ const verticalFactor=lowView?1.17:.93;
+ const fc=Math.cos(angle),fs=Math.sin(angle),frx=focusX*fc-focusZ*fs,frz=focusX*fs+focusZ*fc;
+ return{x:width*.5+(rx-frx)*scale,y:height*(lowView?.66:.60)+(rz-frz)*scale*depthFactor-(elevation(y)-elevation(focusY))*scale*verticalFactor,depth:rz};
+}
+function poly(points,fill,stroke=null,lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(a,b,color,w=1){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function ellipse(x,z,rx,rz,color,y=0){const p=project(x,z,y),a=project(x+rx,z,y),b=project(x,z+rz,y);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),angle,0,Math.PI*2);ctx.fill();}
+function box(x,z,w,d,h,side,roof){const q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];const b=q.map(v=>project(v[0],v[1],34)),t=q.map(v=>project(v[0],v[1],34+h));poly([b[1],b[2],t[2],t[1]],side);poly([b[2],b[3],t[3],t[2]],side);poly(t,roof,"#8f9275");}
+function path(points,color,widthLine){for(let i=1;i<points.length;i++)line(project(...points[i-1]),project(...points[i]),color,widthLine);}
+function terrain(){
+ctx.fillStyle="#41463a";ctx.fillRect(0,0,width,height);
+for(let i=0;i<150;i++){const x=((i*83)%245)-122,z=((i*59)%225)-112;ellipse(x,z,3+i%6,2+i%4,i%3===0?"rgba(162,131,78,.13)":"rgba(91,113,79,.13)");}
+// Scattered distant terrain establishes scale in wide mode: dry washes,
+ // convoy roads, rocky outcrops and sparse shrubs, never a blank theater.
+ for(let i=0;i<410;i++){
+  const x=((i*73+19)%520)-260,z=((i*109+43)%500)-250;
+  if(Math.abs(x)<72&&Math.abs(z)<88)continue;
+  const p=project(x,z,0),r=Math.max(.65,(i%7+2)*Math.min(width/265,height/199)*zoomValue*.36);
+  ctx.fillStyle=i%5===0?"rgba(171,145,102,.42)":i%3===0?"rgba(97,111,75,.54)":"rgba(43,50,40,.4)";
+  ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.47,(i%8)*.41,0,Math.PI*2);ctx.fill();
+ }
+ for(const wash of [
+  [[-255,-145,0],[-170,-119,0],[-114,-84,0],[-70,-76,0]],
+  [[250,185,0],[172,145,0],[125,111,0],[75,73,0]],
+  [[-210,191,0],[-148,150,0],[-108,111,0],[-72,75,0]]
+ ]){path(wash,"rgba(187,155,100,.34)",9*zoomValue);path(wash,"rgba(218,186,129,.17)",3*zoomValue);}
+ for(const d of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const dx=Math.cos(d),dz=Math.sin(d);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#6f6650",8);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#918368",2);}
+}
+const geometry={
+ shelves:[
+ {y:9,shape:[[-52,-70],[-19,-78],[17,-76],[44,-61],[57,-38],[60,-1],[50,32],[32,67],[8,80],[-28,77],[-54,56],[-65,23],[-65,-19]],top:"#816849"},
+ {y:17,shape:[[-39,-61],[-8,-66],[20,-59],[42,-42],[48,-15],[42,17],[31,48],[8,61],[-23,59],[-42,40],[-49,9],[-47,-29]],top:"#997753"}
+ ],
+ foot:[[-30,-51],[5,-55],[31,-45],[39,-21],[33,8],[26,39],[11,55],[-14,57],[-33,42],[-42,14],[-39,-19]],
+ tiers:[
+ {y:24,shape:[[-24,-44],[4,-47],[25,-38],[30,-18],[26,9],[20,35],[8,46],[-13,48],[-27,34],[-34,10],[-32,-19]],top:"#9e8159"},
+ {y:29,shape:[[-20,-35],[3,-39],[20,-29],[23,-8],[19,15],[12,32],[-6,36],[-22,25],[-27,5],[-25,-19]],top:"#b49767"},
+ {y:34,shape:[[-15,-31],[2,-33],[15,-24],[17,-8],[12,6],[-4,13],[-17,5],[-21,-13]],top:"#c8ac7a"}
+ ],
+ structures:[
+ {x:-2,z:-12,y:34,w:12,d:10,h:7,type:"COMMAND"},
+ {x:10,z:-20,y:34,w:4,d:4,h:14,type:"SIGNAL"},
+ {x:-10,z:20,y:29,w:9,d:7,h:5,type:"STORAGE"},
+ {x:8,z:39,y:24,w:8,d:5,h:4,type:"CHECKPOINT"}
+ ],
+ ascent:[[37,55,0],[33,44,5],[23,42,10],[29,30,15],[19,25,20],[8,39,24]]
+};
+function tierFaces(top,bottom,bottomY,topY,shade){
+ const n=top.length;
+ // Divide the face by top-edge segments and anchor it to a corresponding
+ // proportional perimeter point below. Sorting by projected depth prevents
+ // near faces from disappearing beneath distant ones.
+ const faces=[];
+ for(let i=0;i<n;i++){
+  const a=i/n,b=(i+1)/n;
+  const qa=perimeterPoint(bottom,a),qb=perimeterPoint(bottom,b);
+  const ta=top[i],tb=top[(i+1)%n];
+  const depth=(project(ta[0],ta[1],topY).depth+project(tb[0],tb[1],topY).depth)/2;
+  faces.push({depth,i,verts:[project(...qa,bottomY),project(...qb,bottomY),project(...tb,topY),project(...ta,topY)]});
+ }
+ faces.sort((a,b)=>a.depth-b.depth);
+ for(const face of faces){
+  poly(face.verts,face.i%3===0?"#70543a":face.i%2===0?shade:"#886743","#4c3d31",.65);
+  for(let n=1;n<5;n++){
+   const t=n/5,a=face.verts[0],b=face.verts[1],c=face.verts[2],d=face.verts[3];
+   line({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t},{x:d.x+(c.x-d.x)*t,y:d.y+(c.y-d.y)*t},n%2?"rgba(217,172,107,.28)":"rgba(32,27,24,.25)",.8);
+  }
+ }
+}
+function perimeterPoint(shape,t){
+ const lengths=shape.map((p,i)=>Math.hypot(shape[(i+1)%shape.length][0]-p[0],shape[(i+1)%shape.length][1]-p[1]));
+ const sum=lengths.reduce((a,b)=>a+b,0);let dist=((t%1)+1)%1*sum;
+ for(let i=0;i<shape.length;i++){
+  if(dist<=lengths[i]){const p=shape[i],q=shape[(i+1)%shape.length],v=dist/lengths[i];return[p[0]+(q[0]-p[0])*v,p[1]+(q[1]-p[1])*v];}
+  dist-=lengths[i];
+ }
+ return shape[0];
+}
+function plateau(){
+ ellipse(0,2,52,68,"rgba(10,13,10,.45)");
+ let below=showShelves?geometry.shelves[0].shape:geometry.foot,belowY=0;
+ const allTiers=showShelves?[...geometry.shelves,...geometry.tiers]:geometry.tiers;
+ // Expanded tiers connect vertically; the original citadel remains untouched.
+ if(showShelves) below=geometry.shelves[0].shape;
+ for(const tier of allTiers){
+  if(showShelves && tier===geometry.shelves[0]){
+   const footing=tier.shape.map(p=>[p[0]*1.13,p[1]*1.11]);
+   tierFaces(tier.shape,footing,0,tier.y,"#806044");
+  }else{
+   tierFaces(tier.shape,below,belowY,tier.y,"#967248");
+  }
+  poly(tier.shape.map(v=>project(...v,tier.y)),tier.top,"#e2c08d",1.6);
+  below=tier.shape;belowY=tier.y;
+ }
+ // West Point-inspired defensive spine, overlook terraces, and broad retaining edges.
+ if(showShelves){
+  for(const seg of [
+   [[-42,-45],[-33,-57],17], [[-33,-57],[-7,-63],17], [[12,-61],[32,-48],17],
+   [[39,-34],[45,-15],17], [[38,21],[28,44],17], [[9,56],[-9,58],17],
+   [[-52,-29],[-58,-7],9], [[-58,-7],[-55,14],9], [[-47,48],[-28,69],9],
+   [[-19,73],[8,77],9],[[30,66],[43,47],9]
+  ]){
+   const[a,b,y]=seg;
+   line(project(...a,y+1.3),project(...b,y+1.3),"#574735",7);
+   line(project(...a,y+2.5),project(...b,y+2.5),"#cbb18c",2.5);
+  }
+  for(const o of [[-33,-48,17],[34,37,17],[-49,24,9],[28,58,9]]){
+   const [x,z,y]=o;
+   const q=[[x-5,z-3],[x+5,z-3],[x+5,z+3],[x-5,z+3]].map(p=>project(...p,y+2));
+   poly(q,"#b8a283","#e9d5ab",1);
+  }
+  // Narrow carved road zigzags from the outer shelf to the citadel ascent.
+  const lowerRoad=[[65,76,0],[51,68,9],[41,58,9],[47,45,13],[31,39,17],[39,32,17],[37,55,0]];
+  for(let i=1;i<lowerRoad.length;i++){
+   const a=project(...lowerRoad[i-1]),b=project(...lowerRoad[i]);
+   line(a,b,"#5a4a39",8);line(a,b,"#d4b68b",4);
+  }
+ }
+ // Parapet runs are intentionally incomplete: ruined wall gaps suggest breaches.
+ for(const segment of [
+  [[-21,-33],[-10,-38],24],[[11,-39],[24,-32],24],
+  [[-28,14],[-19,29],24],[[7,43],[-7,46],24],
+  [[-22,-21],[-22,4],29],[[12,29],[20,15],29],
+  [[-13,-26],[0,-29],34],[[13,-18],[14,-3],34]
+ ]){const [a,b,y]=segment;line(project(...a,y+1.6),project(...b,y+1.6),"#68563d",6);line(project(...a,y+2.7),project(...b,y+2.7),"#dfc395",2);}
+ // Switchback approach rendered on top of the rock face, with step highlights.
+ for(let i=1;i<geometry.ascent.length;i++){
+  const a=project(...geometry.ascent[i-1]),b=project(...geometry.ascent[i]);
+  line(a,b,"#4b3f33",10);line(a,b,"#e1c494",5);line(a,b,"rgba(255,235,189,.45)",1);
+ }
+ for(let i=1;i<geometry.ascent.length-1;i++){const p=project(...geometry.ascent[i]);ctx.fillStyle="#ecd3a2";ctx.fillRect(p.x-3,p.y-3,6,6);}
+ // Structures use each terrace's actual Y coordinate.
+ const buildings=geometry.structures.slice().sort((a,b)=>project(a.x,a.z,a.y).depth-project(b.x,b.z,b.y).depth);
+ for(const o of buildings){
+  const {x,z,w,d,y,h}=o,q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];
+  const low=q.map(v=>project(...v,y)),hi=q.map(v=>project(...v,y+h));
+  poly([low[1],low[2],hi[2],hi[1]],"#75654d");
+  poly([low[2],low[3],hi[3],hi[2]],"#5e5546");
+  poly(hi,o.type==="SIGNAL"?"#829686":"#b0a17e","#e4cfa1",1);
+  if(o.type==="SIGNAL"){line(project(x,z,y+h),project(x,z,y+h+11),"#b1d5bc",2);const tip=project(x,z,y+h+11);ctx.fillStyle="#a9fbd3";ctx.fillRect(tip.x-2,tip.y-2,4,4);}
+ }
+ const p=project(-2,-12,44);ctx.font="bold 10px monospace";ctx.textAlign="center";ctx.fillStyle="#d8ffdd";ctx.fillText("FORWARD COMMAND",p.x,p.y-13);
+}
+function drawWeaponReticle(x,y){
+ const mobile=Math.min(width,height),r=Math.max(28,Math.min(43,mobile*.11));
+ const color=weaponMode===0?"#b8e8c6":weaponMode===1?"#d7f4e2":"#e9c38e";
+ ctx.save();ctx.translate(x,y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.45;
+ const segment=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+ const corner=(sx,sy,arm)=>{segment(sx*(r-10),sy*r,sx*r,sy*r);segment(sx*r,sy*(r-10),sx*r,sy*r);};
+ for(const a of [[-1,-1],[-1,1],[1,-1],[1,1]])corner(...a);
+ const gap=weaponMode===1?6:9;
+ segment(-r*.55,0,-gap,0);segment(gap,0,r*.55,0);
+ segment(0,-r*.5,0,-gap);segment(0,gap,0,r*.5);
+ ctx.beginPath();ctx.arc(0,0,1.8,0,Math.PI*2);ctx.fill();
+ // Short broken ballistic / orbital guide in the right-hand quadrant.
+ // Guide direction counter-rotates with orbit to evoke the off-axis firing solution.
+ const bend=Math.sin(angle)*8,base=r*.37;
+ ctx.beginPath();
+ for(let k=0;k<7;k++){
+  const t=k/7,a=(.25+t*.85),px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;
+  if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }
+ ctx.strokeStyle=color;ctx.globalAlpha=.72;ctx.setLineDash([4,5]);ctx.stroke();ctx.setLineDash([]);
+ for(let k=0;k<4;k++){const t=k/3,a=.25+t*.85,px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;segment(px,py,px+5+(weaponMode===0?combat.heat*5:0),py+2);}
+ ctx.globalAlpha=1;ctx.strokeStyle=color;
+ if(weaponMode===0){
+   // Heat-informed spread: fragmented tick arc; no giant targeting circle.
+   const spread=r*.59+combat.heat*8;
+   for(let k=0;k<9;k++){const a=k*Math.PI*2/9+angle*.2;segment(Math.cos(a)*spread,Math.sin(a)*spread,Math.cos(a)*(spread+3.5),Math.sin(a)*(spread+3.5));}
+ }else if(weaponMode===1){
+   const tighten=13-charge*5;corner(-1,-1,tighten);
+   segment(-r*.35,r*.83,-r*.35+charge*r*.7,r*.83);
+ }else{
+   // Four blast extent corners, no full opaque circle.
+   const br=r*.92;
+   for(let k=0;k<4;k++){const a=Math.PI*.25+k*Math.PI*.5;segment(Math.cos(a)*br,Math.sin(a)*br,Math.cos(a)*(br+8),Math.sin(a)*(br+8));}
+ }
+ ctx.restore();
+}
+function drawMagnifier(){
+ if(!lensOn||(!charging&&!combat.holding))return;
+ const p=project(aimX,aimZ,aimY),size=Math.min(140,width*.38),h=size*.8;
+ const x=Math.max(12,Math.min(width-size-12,thumbActive?thumbX-size*.5:width-size-18)),y=thumbActive?Math.max(72,Math.min(height-h-28,thumbY+h*.24)):62;
+ // Capture world and impact fx from the main canvas before the HUD is painted.
+ const source=52,mag=2.8;
+ ctx.save();ctx.fillStyle="#102019";ctx.fillRect(x-2,y-2,size+4,h+4);
+ ctx.beginPath();ctx.rect(x,y,size,h);ctx.clip();
+ // Draw captured canvas image using its backing pixel dimensions.
+ const d=canvas.width/width;
+ const sx=Math.max(0,Math.min(canvas.width-source*d,(p.x-source/2)*d)),sy=Math.max(0,Math.min(canvas.height-source*d,(p.y-source/2)*d));
+ const sw=Math.min(source*d,canvas.width-sx),sh=Math.min(source*d,canvas.height-sy);
+ if(sw>0&&sh>0)ctx.drawImage(canvas,sx,sy,sw,sh,x+(size-sw/d*mag)/2,y+(h-sh/d*mag)/2,sw/d*mag,sh/d*mag);
+ ctx.restore();ctx.strokeStyle="#c0e8c9";ctx.lineWidth=1.5;ctx.strokeRect(x-2,y-2,size+4,h+4);
+ ctx.strokeStyle="#ddf5dd";ctx.beginPath();ctx.moveTo(x+size/2-10,y+h/2);ctx.lineTo(x+size/2+10,y+h/2);ctx.moveTo(x+size/2,y+h/2-10);ctx.lineTo(x+size/2,y+h/2+10);ctx.stroke();
+ ctx.fillStyle="#ddf5dd";ctx.font="10px monospace";ctx.textAlign="left";ctx.fillText("IMPACT OPTIC 2.8X",x,y-9);
+}
+function overlay(){
+ const g=ctx.createLinearGradient(0,0,0,height);g.addColorStop(0,"rgba(4,17,11,.16)");g.addColorStop(1,"rgba(4,17,11,.03)");ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle="rgba(129,235,172,.32)";ctx.lineWidth=1;ctx.strokeRect(12,12,width-24,height-24);
+ ctx.font="11px monospace";ctx.fillStyle="#adf5c5";ctx.textAlign="left";
+ ctx.fillText("OD / ORBITAL OBSERVATION",22,32);
+ ctx.fillText("MODE "+zoomNames[zoomIndex],22,48);
+ ctx.fillText("ALT +70  //  GEOLOGY 18 / 38",22,height-22);
+ ctx.textAlign="right";ctx.fillText("CAM "+Math.round(angle*180/Math.PI)+"°",width-22,32);
+ // Minimal, weapon-specific optics. World-space reticle remains authoritative.
+ const mark=project(aimX,aimZ,aimY);
+ drawWeaponReticle(mark.x,mark.y);
+ ctx.fillStyle="#d9e9da";ctx.textAlign="right";
+ ctx.fillText(weaponLabels[weaponMode]+" / "+(weaponMode===0?"HEAT "+Math.round(combat.heat*100)+"%":weaponMode===1?"CHARGE "+Math.round(charge*100)+"%":"AREA 12"),width-22,height-23);
+ if(recoil>0){ctx.textAlign="center";ctx.fillStyle="#ffe5ae";ctx.fillText("ROUND RELEASED · SIMULATED",width*.5,height*.82);}
+
+}
+
+// Procedural audio: no external recordings or licensing dependencies.
+let audioCtx=null,noiseBuffer=null,lastImpactSound=0;
+function initAudio(){
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  if(!audioCtx){audioCtx=new C();noiseBuffer=audioCtx.createBuffer(1,audioCtx.sampleRate*.3,audioCtx.sampleRate);
+   const d=noiseBuffer.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  if(audioCtx.state==="suspended")audioCtx.resume();
+ }catch(e){}
+}
+function soundBurst(freq,duration,volume,noise=false){
+ if(!audioCtx||audioCtx.state!=="running")return;
+ const now=audioCtx.currentTime,src=noise?audioCtx.createBufferSource():audioCtx.createOscillator();
+ if(noise)src.buffer=noiseBuffer;else{src.type="sawtooth";src.frequency.setValueAtTime(freq,now);src.frequency.exponentialRampToValueAtTime(Math.max(35,freq*.45),now+duration);}
+ const filter=audioCtx.createBiquadFilter();filter.type="lowpass";filter.frequency.value=noise?freq:1200;
+ const gain=audioCtx.createGain();gain.gain.setValueAtTime(Math.max(.0001,volume),now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+ src.connect(filter).connect(gain).connect(audioCtx.destination);src.start(now);src.stop(now+duration+.02);
+}
+let weaponMode=0,lensOn=true,thumbActive=false,thumbX=width*.5,thumbY=height*.7,activePointer=null;const weaponLabels=["GATLING","PRECISION","HEAVY"];const combat={units:[],fx:[],tracers:[],holding:false,heat:0,fireTimer:0,hits:0,radioOn:true,lastRadio:-9999,radioText:"RADIO STANDBY",radioUntil:0,shotCount:0};
+function spawnUnits(){
+ for(let i=0;i<15;i++){
+  const theta=(i/15)*Math.PI*2+Math.random()*.22;
+  const rad=80+Math.random()*18;
+  combat.units.push({x:Math.cos(theta)*rad,z:Math.sin(theta)*rad,y:0,vx:0,vz:0,vy:0,spin:0,omega:0,life:1,down:false,age:0,phase:Math.random()*6.28});
+ }
+ if(combat.units.length>55)combat.units.splice(0,combat.units.length-55);
+}
+function radioCall(message,t){
+ if(!combat.radioOn||t-combat.lastRadio<1900)return;
+ combat.lastRadio=t;combat.radioText=message;combat.radioUntil=t+2400;
+ if("speechSynthesis" in window){
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message.toLowerCase());u.rate=1.05;u.pitch=.76;u.volume=.35;speechSynthesis.speak(u);}catch(e){}
+ }
+}
+function impact(x,z,y,hit,t){
+ combat.fx.push({x,z,y,birth:t,hit,seed:Math.random()});
+ if(t-lastImpactSound>110){lastImpactSound=t;soundBurst(hit?670:340,.11,hit?.07:.045,true);}
+ if(combat.fx.length>65)combat.fx.splice(0,combat.fx.length-65);
+}
+function updateCombat(dt,t){
+ combat.heat=Math.max(0,combat.heat-dt*.00023);
+ if(combat.holding&&combat.heat<1){
+  combat.fireTimer+=dt;
+  while(combat.fireTimer>75){
+   combat.fireTimer-=75;combat.heat=Math.min(1,combat.heat+.019);
+   combat.shotCount++;
+   soundBurst(240+Math.random()*90,.052,.035,false);
+   const spread=.8+combat.heat*3;
+   const x=aimX+(Math.random()-.5)*spread,z=aimZ+(Math.random()-.5)*spread,y=aimY;
+   combat.tracers.push({x,z,y,birth:t,phase:Math.random()*6.28,orb:angle});if(combat.tracers.length>22)combat.tracers.shift();
+   let nearest=null,dist=8;
+   for(const u of combat.units){if(u.down)continue;const d=Math.hypot(u.x-x,u.z-z);if(d<dist){dist=d;nearest=u;}}
+   if(nearest){
+    nearest.life-=.38;combat.hits++;impact(nearest.x,nearest.z,nearest.y,true,t);
+    if(combat.hits===1||combat.hits%12===0)radioCall("Rounds on target",t);
+    nearest.vx+=(nearest.x-x)*.012+(Math.random()-.5)*.025;
+    nearest.vz+=(nearest.z-z)*.012+(Math.random()-.5)*.025;
+    if(nearest.life<=0){
+     nearest.down=true;nearest.vy=.12+Math.random()*.08;nearest.omega=(Math.random()-.5)*.014;
+     radioCall(combat.hits%4===0?"Multiple hostiles down":"Good effect on target",t);
+    }
+   }else impact(x,z,y,false,t);
+  }
+  if(combat.heat>=1){combat.holding=false;charging=false;radioCall("Gun overheating",t);}
+ }else combat.fireTimer=0;
+ if(!combat.holding&&combat.heat<.35)document.getElementById("gatling").textContent="HOLD GATLING";
+ for(const u of combat.units){
+  u.age+=dt;
+  if(u.down){
+   const k=dt/16.67;u.x+=u.vx*k;u.z+=u.vz*k;u.y=Math.max(0,u.y+u.vy*k);u.vy-=.009*k;
+   if(u.y===0){u.vx*=.91;u.vz*=.91;u.omega*=.92;}u.spin+=u.omega*k;
+  }else{
+   const toward=Math.atan2(-u.z,-u.x);u.x+=Math.cos(toward)*dt*.002;u.z+=Math.sin(toward)*dt*.002;
+  }
+ }
+ combat.units=combat.units.filter(u=>!u.down||u.age<26000);
+ combat.fx=combat.fx.filter(f=>t-f.birth<550);
+ combat.tracers=combat.tracers.filter(f=>t-f.birth<260);
+}
+function drawCombat(t){
+ // Individual high-velocity curved tracers, born at the current orbit angle.
+ for(const tr of combat.tracers){
+  const life=Math.min(1,(t-tr.birth)/260),p=project(tr.x,tr.z,tr.y);
+  const a=tr.orb,span=Math.min(width,height);
+  const sx=width*.5+(Math.cos(a)*.75+Math.sin(a)*.25)*span*.95,sy=height*(.3+Math.sin(a)*.21);
+  const bend=Math.sin(a+tr.phase*.15)*span*.23;
+  const cx=(sx+p.x)*.5+bend,cy=(sy+p.y)*.50-height*.055;
+  const q=u=>{const v=1-u;return{x:v*v*sx+2*v*u*cx+u*u*p.x,y:v*v*sy+2*v*u*cy+u*u*p.y};};
+  const head=Math.min(1,life*3.2),tail=Math.max(0,head-.18);
+  const steps=8;ctx.save();ctx.globalCompositeOperation="screen";
+  for(let i=0;i<steps;i++){
+   const a=q(tail+(head-tail)*i/steps),b=q(tail+(head-tail)*(i+1)/steps);
+   ctx.strokeStyle="rgba(255,222,143,"+((1-life)*(.22+i/steps*.75))+")";
+   ctx.lineWidth=i>5?2.4:1.4;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  ctx.restore();
+ }
+ for(const f of combat.fx){
+  const p=project(f.x,f.z,f.y),age=Math.min(1,(t-f.birth)/550);
+  ctx.strokeStyle=f.hit?"rgba(255,212,122,"+(1-age)+")":"rgba(208,186,146,"+(1-age)*.8+")";
+  ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(p.x,p.y,4+age*22,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<7;i++){
+    const a=f.seed*6.28+i*Math.PI*2/7,dist=5+age*(13+(i%3)*8);
+    ctx.strokeStyle=f.hit?"rgba(255,235,178,"+(1-age)+")":"rgba(210,187,145,"+(.8-age*.8)+")";
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*dist*.35,p.y+Math.sin(a)*dist*.3);
+    ctx.lineTo(p.x+Math.cos(a)*dist,p.y+Math.sin(a)*dist*.75);ctx.stroke();
+  }
+ }
+ for(const u of combat.units){
+  const p=project(u.x,u.z,u.y),size=Math.max(2.5,5*zoomValue);
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(u.spin);
+  ctx.strokeStyle=u.down?"#93806c":"#e2bfa0";ctx.lineWidth=Math.max(1,size*.32);
+  ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(0,size);ctx.moveTo(0,-size*.35);ctx.lineTo(-size*.65,size*.18);
+  ctx.moveTo(0,-size*.35);ctx.lineTo(size*.65,size*.18);ctx.moveTo(0,size);ctx.lineTo(-size*.55,size*1.6);ctx.moveTo(0,size);ctx.lineTo(size*.55,size*1.6);ctx.stroke();
+  ctx.fillStyle=u.down?"#8d7966":"#cfb99e";ctx.beginPath();ctx.arc(0,-size*1.35,size*.48,0,Math.PI*2);ctx.fill();ctx.restore();
+ }
+ ctx.font="bold 11px monospace";ctx.textAlign="left";ctx.fillStyle="#e5f2d9";
+ ctx.fillText("GATLING  /  HEAT "+Math.round(combat.heat*100)+"%",22,height-58);
+ ctx.fillStyle=combat.heat>.8?"#ffb372":"#a5e6b4";ctx.fillRect(22,height-51,Math.max(0,(width-44)*combat.heat),4);
+ ctx.strokeStyle="#b6dfbc";ctx.strokeRect(22,height-51,width-44,4);
+ if(combat.radioUntil>t){ctx.textAlign="center";ctx.font="bold 11px monospace";ctx.fillStyle="#d7edc6";ctx.fillText("◀ RADIO: "+combat.radioText.toUpperCase(),width/2,height-77);}
+}
+document.getElementById("lens").addEventListener("click",()=>{lensOn=!lensOn;const b=document.getElementById("lens");b.textContent="OPTICS: "+(lensOn?"ON":"OFF");b.setAttribute("aria-pressed",String(lensOn));});
+function startBoardFire(){
+ initAudio();if(weaponMode===0&&combat.heat>=.98)return;
+ charging=true;recoil=0;
+ if(weaponMode===0){combat.holding=true;soundBurst(110,.18,.11,true);}
+}
+function stopBoardFire(){
+ if(!charging&&!combat.holding)return;
+ const wasCharging=charging;charging=false;combat.holding=false;
+ if(wasCharging&&weaponMode!==0&&charge>.18){
+  impact(aimX,aimZ,aimY,false,performance.now());
+  soundBurst(weaponMode===1?185:90,.26,.13,true);recoil=1;
+ }
+ soundBurst(95,.14,.075,true);
+}
+document.getElementById("weapon").addEventListener("click",()=>{stopBoardFire();weaponMode=(weaponMode+1)%3;document.getElementById("weapon").textContent="WEAPON: "+weaponLabels[weaponMode];});
+document.getElementById("spawn").addEventListener("click",()=>{spawnUnits();radioCall("New contacts approaching",performance.now());});
+document.getElementById("radio").addEventListener("click",()=>{combat.radioOn=!combat.radioOn;const b=document.getElementById("radio");b.textContent="RADIO: "+(combat.radioOn?"ON":"OFF");b.setAttribute("aria-pressed",String(combat.radioOn));if(!combat.radioOn&&"speechSynthesis" in window)speechSynthesis.cancel();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){thumbActive=false;activePointer=null;stopBoardFire();}});
+spawnUnits();
+
+function frame(t){
+ const dt=Math.min(50,Math.max(0,t-(frame.prev||t)));frame.prev=t;
+ if(cinemaActive){
+  const e=Math.min(1,(t-cinemaStart)/5500),ease=u=>u*u*(3-2*u);
+  zoomValue=.48+(1.20-.48)*ease(e);
+  angle=.20+.32*ease(e);
+  lowView=e<.68;
+  if(e>=1){cinemaActive=false;zoomIndex=2;targetAngle=.52;lowView=false;}
+ }else{
+  if(orbitOn){targetAngle+=dt*.00011;}
+  angle+=(targetAngle-angle)*.11;
+  charge=charging?Math.min(1,charge+dt/1800):Math.max(0,charge-dt/500);
+  recoil=Math.max(0,recoil-dt/650);
+  // Charging assists framing but never changes the target's world coordinates.
+  const base=zoomSteps[zoomIndex];
+  const assistStrength=Math.max(.08,.34-(base-1)*.28);
+  const targetZoom=base*(1+assistStrength*charge);
+  zoomValue+=(targetZoom-zoomValue)*Math.min(1,dt*.0045);
+  if(charging){goalX=aimX*.40;goalZ=aimZ*.40;goalY=34+(aimY-34)*.30;}
+  else if(recoil<=0){goalX=0;goalZ=0;goalY=34;}
+  const follow=Math.min(1,dt*.0038);focusX+=(goalX-focusX)*follow;focusZ+=(goalZ-focusZ)*follow;focusY+=(goalY-focusY)*follow;
+  // Keep the selected world-space point within a central safe frame even as
+  // the orbital angle changes; never move the impact location itself.
+  if(charging){
+   const p=project(aimX,aimZ,aimY);
+   const marginX=width*.22,marginY=height*.23;
+   const dx=p.x<marginX?p.x-marginX:p.x>width-marginX?p.x-(width-marginX):0;
+   const dy=p.y<marginY?p.y-marginY:p.y>height-marginY?p.y-(height-marginY):0;
+   const scale=Math.min(width/265,height/(lowView?214:199))*zoomValue;
+   const c=Math.cos(angle),sn=Math.sin(angle);
+   const camDx=dx/Math.max(.001,scale),camDz=dy/Math.max(.001,scale*(lowView?.27:.50));
+   const limit=dt*.025;
+   focusX+=Math.max(-limit,Math.min(limit,camDx*c+camDz*sn));
+   focusZ+=Math.max(-limit,Math.min(limit,-camDx*sn+camDz*c));
+  }
+ }
+ updateCombat(dt,t);
+ terrain();plateau();drawCombat(t);drawMagnifier();overlay();
+ status.textContent=zoomNames[zoomIndex]+" // "+(lowView?"LOW OBLIQUE":"ORBITAL")+" // "+Math.round(zoomValue*100)+"% SCALE";
+ requestAnimationFrame(frame);
+}
+document.getElementById("left").addEventListener("click",()=>{cinemaActive=false;orbitOn=false;syncOrbit();targetAngle-=Math.PI/2;});
+document.getElementById("right").addEventListener("click",()=>{cinemaActive=false;orbitOn=false;syncOrbit();targetAngle+=Math.PI/2;});
+document.getElementById("reset").addEventListener("click",()=>{cinemaActive=false;orbitOn=false;syncOrbit();targetAngle=.52;goalX=0;goalZ=0;goalY=34;zoomIndex=2;lowView=false;});
+document.getElementById("shelves").addEventListener("click",()=>{showShelves=!showShelves;const b=document.getElementById("shelves");b.textContent="SHELVES: "+(showShelves?"ON":"OFF");b.setAttribute("aria-pressed",String(showShelves));});
+document.getElementById("camera").addEventListener("click",()=>{lowView=!lowView;const b=document.getElementById("camera");b.textContent="VIEW: "+(lowView?"LOW":"SURVEY");b.setAttribute("aria-pressed",String(lowView));});
+document.getElementById("out").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.max(0,zoomIndex-1);});
+document.getElementById("in").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.min(zoomSteps.length-1,zoomIndex+1);});
+function syncOrbit(){const b=document.getElementById("orbit");b.textContent="ORBIT: "+(orbitOn?"ON":"OFF");b.setAttribute("aria-pressed",String(orbitOn));}
+document.getElementById("orbit").addEventListener("click",()=>{cinemaActive=false;orbitOn=!orbitOn;targetAngle=angle;syncOrbit();});
+// Aim designation: tap once or drag a finger; no repeated tap-to-pan.
+function designate(e){
+ const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*width/r.width,py=Math.max(24,(e.clientY-r.top)*height/r.height-65);
+ let best={dist:Infinity};
+ for(let x=-70;x<=70;x+=2)for(let z=-85;z<=85;z+=2){
+  for(const y of [0,9,17,24,29,34]){
+   const p=project(x,z,y),d=(p.x-px)**2+(p.y-py)**2;
+   if(d<best.dist)best={dist:d,x,z,y};
+  }
+ }
+ aimX=best.x;aimZ=best.z;aimY=best.y;aimSet=true;
+}
+canvas.addEventListener("pointerdown",e=>{
+ if(activePointer!==null)return;e.preventDefault();
+ activePointer=e.pointerId;thumbActive=true;
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ canvas.setPointerCapture(e.pointerId);designate(e);startBoardFire();
+});
+canvas.addEventListener("pointermove",e=>{
+ if(e.pointerId!==activePointer)return;e.preventDefault();
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ designate(e);
+});
+function endBoardPointer(e){
+ if(e.pointerId!==activePointer)return;
+ activePointer=null;thumbActive=false;stopBoardFire();
+}
+canvas.addEventListener("pointerup",endBoardPointer);
+canvas.addEventListener("pointercancel",endBoardPointer);
+canvas.addEventListener("lostpointercapture",endBoardPointer);
+document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)gatlingStop();});
+requestAnimationFrame(frame);
+</script></body></html>
