@@ -579,3 +579,14 @@ canvas{filter:contrast(1.08) brightness(1.05)}
 .interWaveMusicRow input{flex:1;min-width:90px;accent-color:#88dfa1}
 .interWaveMusic small{font-size:10px;color:#8eae9a}
 @media(max-width:720px){.interWaveMusic{padding:9px;gap:7px;margin-bottom:10px}.interWaveMusicRow{gap:8px}.upgradeCard{max-height:92dvh;overflow-y:auto}.interWaveMusic select{font-size:12px}}
+
+/* V0.6 — upgrade comparison, visible before every wave */
+.upgradeChoices button .upgradeCount{display:block;margin-top:9px;color:#a9f1be;font-size:10px;font-weight:900;letter-spacing:.08em}
+.upgradeChoices button .upgradeTotal{display:block;margin-top:3px;color:#b5bd9f;font-size:10px;line-height:1.3}
+
+/* V0.6 Phase 1 large-field portrait treatment: make the world fill the viewport. */
+@media(max-width:720px) and (orientation:portrait){
+  #arcadeApp #arcadeField{height:clamp(530px,79dvh,1000px);min-height:0}
+  #arcadeApp .arcadeHero{background:#30382c}
+  #arcadeApp .arcadeCombatDock{margin-top:0}
+}

@@ -765,6 +765,7 @@ let arcadeChain=0,arcadeBestChain=0;
 let arcadeAudioEnabled=true,arcadeMusicTimer=null,arcadeMusicStep=0,arcadeMusicAudio=null,arcadeMusicTrackId=null,arcadeMusicFallback=false;
 let arcadeMusicVolume=.34, nextWaveTrackId=null;
 const arcadeMods={splash:1,cooldown:1,damage:1};
+const arcadeUpgradeCounts={splash:0,cooldown:0,damage:0};
 
 const arcadeWeaponDefs={
   cannon:{name:"CANNON",damage:1.25,radius:5,cooldown:420,heat:.07,travel:430,color:"#7de49c",role:"rapid"},
@@ -1096,14 +1097,14 @@ function resizeArcade(){
 window.addEventListener("resize",()=>{if(!arcadeApp.classList.contains("modeHidden"))resizeArcade();});
 
 function arcadePortrait(){return window.innerWidth<=720&&window.innerHeight>window.innerWidth;}
-function arcadeCamera(){return arcadePortrait()?{x:154,z:164,center:.46,height:145}:{x:120,z:150,center:.51,height:120};}
+function arcadeCamera(){return arcadePortrait()?{x:101,z:159,center:.425,height:145,perspective:.0048}:{x:120,z:150,center:.51,height:120,perspective:0};}
 function arcadeProject(x,z,y=0){
   const dx=x-50,dz=z-50,theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  const cam=arcadeCamera();return{x:arcadeW/2+rx*(arcadeW/cam.x),y:arcadeH*cam.center+rz*(arcadeH/cam.z)-y*(arcadeH/cam.height),depth:rz};
+  const cam=arcadeCamera(),nearScale=1+rz*cam.perspective;return{x:arcadeW/2+rx*(arcadeW/cam.x)*nearScale,y:arcadeH*cam.center+rz*(arcadeH/cam.z)-y*(arcadeH/cam.height),depth:rz};
 }
 function arcadeScreenToGround(sx,sy){
-  const cam=arcadeCamera(),rx=(sx-arcadeW/2)/(arcadeW/cam.x),rz=(sy-arcadeH*cam.center)/(arcadeH/cam.z),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
+  const cam=arcadeCamera(),rz=(sy-arcadeH*cam.center)/(arcadeH/cam.z),rx=(sx-arcadeW/2)/((arcadeW/cam.x)*(1+rz*cam.perspective)),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   return{x:clamp(rx*ct+rz*st+50,3,97),z:clamp(-rx*st+rz*ct+50,3,97)};
 }
 function arcadeLine(a,b,color,w=1,dash=null){
@@ -1127,7 +1128,7 @@ function resetArcadeStructures(){
 function startArcadeRun(){
   cancelArcadeSession();arcadePhase="PLAYING";
   arcadeRunning=true;arcadeRunOver=false;arcadeWaveTransition=false;nextWaveTrackId=null;arcadeWave=1;arcadeOrbitNudge=0;arcadeScore=0;arcadeBase=100;arcadeHeat=0;arcadeReadyAt=0;arcadeKills=0;arcadeChain=0;arcadeBestChain=0;
-  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;
+  arcadeEnemies=[];arcadeShots=[];arcadeFx=[];arcadeGroundScars=[];arcadeMods.splash=1;arcadeMods.cooldown=1;arcadeMods.damage=1;arcadeUpgradeCounts.splash=0;arcadeUpgradeCounts.cooldown=0;arcadeUpgradeCounts.damage=0;
   arcadeWeapon="cannon";arcadeWeaponButtons.forEach(b=>b.classList.toggle("active",b.dataset.arcadeWeapon===arcadeWeapon));
   resetArcadeStructures();queueArcadeWave(1);arcadeUi.upgrade.classList.remove("show");arcadeUi.end.classList.remove("show");showArcadeBanner("WAVE 1 INBOUND");
   uiAudioUpdate();startArcadeMusic();arcadeSfxWave();updateArcadeHud(performance.now());
@@ -1177,7 +1178,19 @@ function updateArcadeEnemies(dt,now){
     if(arcadeWave>=5)endArcadeRun(true);else {const session=arcadeSessionId;setTimeout(()=>{if(session===arcadeSessionId&&arcadeRunning&&!arcadeRunOver&&arcadePhase==="PLAYING")showArcadeUpgrade();},500);}
   }
 }
-function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;
+function refreshArcadeUpgradeChoices(){
+  for(const key of ["splash","cooldown","damage"]){
+    const btn=document.querySelector('[data-upgrade="'+key+'"]');
+    if(!btn)continue;
+    const count=btn.querySelector(".upgradeCount"),total=btn.querySelector(".upgradeTotal");
+    if(count)count.textContent="OWNED x"+arcadeUpgradeCounts[key];
+    if(total){
+      const value=key==="cooldown"?(100*(1-arcadeMods.cooldown)).toFixed(0)+"% faster":key==="splash"?(arcadeMods.splash*100).toFixed(0)+"% radius":(arcadeMods.damage*100).toFixed(0)+"% damage";
+      total.textContent="Current: "+value;
+    }
+  }
+}
+function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;refreshArcadeUpgradeChoices();
   nextWaveTrackId=arcadeTrackForWave(arcadeWave+1);
   nextWaveTrackSelect.value=nextWaveTrackId;
   nextWaveVolumeInput.value=String(Math.round(arcadeMusicVolume*100));
@@ -1186,7 +1199,7 @@ function showArcadeUpgrade(){if(arcadePhase!=="PLAYING")return;
 document.querySelectorAll("[data-upgrade]").forEach(btn=>btn.addEventListener("click",()=>{
   if(arcadePhase!=="UPGRADE"||!arcadeRunning||arcadeRunOver)return;
   arcadePhase="PLAYING";
-  const k=btn.dataset.upgrade;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
+  const k=btn.dataset.upgrade;arcadeUpgradeCounts[k]++;if(k==="splash")arcadeMods.splash*=1.2;if(k==="cooldown")arcadeMods.cooldown*=.85;if(k==="damage")arcadeMods.damage*=1.2;
   arcadeUi.upgrade.classList.remove("show");arcadeUi.upgrade.setAttribute("aria-hidden","true");arcadeSfxUpgrade();arcadeWave++;queueArcadeWave(arcadeWave);syncArcadeTrackToWave();showArcadeBanner("WAVE "+arcadeWave+" INBOUND");setTimeout(arcadeSfxWave,120);
 }));
 function endArcadeRun(success){
@@ -1235,7 +1248,7 @@ function resolveArcadeImpact(s,now){
       if(d<=r){
         const fall=1-clamp(d/r,0,.78),armorBonus=def.role==="penetrator"&&e.type==="armor"?1.75:1;
         e.hp-=dam*fall*armorBonus;
-        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;kills++;}else hit++;
+        if(e.hp<=0){e.dead=true;arcadeScore+=e.score;arcadeKills++;hit++;kills++;arcadeAddGroundScar(e.x,e.z,e.type==="armor"?5:2.7,"wreck");}else hit++;
       }
     }
     if(cluster)arcadeFx.push({x:cx,z:cz,start:now,duration:520,color:def.color,label:"",radius:r,tier:s.tier.label});
@@ -1247,22 +1260,101 @@ function resolveArcadeImpact(s,now){
   if(s.tier.label==="OVERCHARGE"){
     for(const st of arcadeStructures){if(st.hp<=0)continue;const d=Math.hypot(st.x-s.end.x,st.z-s.end.z);if(d<=radius*.72)st.hp=Math.max(0,st.hp-damage*(def.role==="penetrator"?.6:.3));}
   }
+  arcadeAddGroundScar(s.end.x,s.end.z,Math.min(radius*.58,9),"impact");
   if(hit>0){arcadeChain++;arcadeBestChain=Math.max(arcadeBestChain,arcadeChain);}else arcadeChain=Math.max(0,arcadeChain-2);
   arcadeFx.push({x:s.end.x,z:s.end.z,start:now,duration:850,color:def.color,label:hit?("HIT x"+hit+" // CHAIN x"+arcadeChain):"MISS // CHAIN -",radius,tier:s.tier.label});
   arcadeSfxImpact(s.tier.label,hit>0,s.weapon);
   arcadeSfxDamage(kills,hit,s.tier.label);
 }
-function drawArcadeBoard(){
-  arcadeCtx.fillStyle="#020706";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
-  const q=[arcadeProject(8,0),arcadeProject(92,0),arcadeProject(92,100),arcadeProject(8,100)];arcadePoly(q,"#315f40","#07110b",1.4);
-  for(let i=10;i<=90;i+=10)arcadeLine(arcadeProject(i,0),arcadeProject(i,100),"rgba(77,151,96,.13)",1);
-  for(let z=0;z<=100;z+=10)arcadeLine(arcadeProject(8,z),arcadeProject(92,z),"rgba(77,151,96,.13)",1);
-  for(const x of arcadeLanes){
-    arcadeLine(arcadeProject(x,2,.02),arcadeProject(x,94,.02),"rgba(240,170,67,.18)",Math.max(8,arcadeW/85));
-    arcadeLine(arcadeProject(x,2,.03),arcadeProject(x,94,.03),"rgba(255,205,100,.14)",1,[7,7]);
+// V0.6 environmental memory is visual only; combat math and lanes remain unchanged.
+let arcadeGroundScars=[];
+function arcadeAddGroundScar(x,z,r,kind="impact"){
+  arcadeGroundScars.push({x,z,r:Math.min(12,Math.max(1.8,r)),kind,seed:Math.random()});
+  if(arcadeGroundScars.length>72)arcadeGroundScars.shift();
+}
+function arcadeGroundEllipse(x,z,rx,rz,color,stroke=null){
+  const p=arcadeProject(x,z,.01),a=arcadeProject(x+rx,z,.01),b=arcadeProject(x,z+rz,.01);
+  arcadeCtx.beginPath();arcadeCtx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),0,0,Math.PI*2);
+  arcadeCtx.fillStyle=color;arcadeCtx.fill();if(stroke){arcadeCtx.strokeStyle=stroke;arcadeCtx.lineWidth=1;arcadeCtx.stroke();}
+}
+function drawArcadeTerrain(){
+  // Dry ground, sparse variation and roadside hardscape. No random per-frame flicker.
+  for(let i=0;i<58;i++){
+    const x=9+((i*37)%83),z=((i*67)%97),shade=i%3===0?"rgba(145,126,88,.11)":"rgba(105,112,87,.09)";
+    arcadeGroundEllipse(x,z,1.1+(i%4)*.9,.7+(i%3)*.8,shade);
   }
-  const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#143421";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
-  arcadeCtx.fillStyle="#9be7ee";arcadeCtx.font="900 11px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText("DEFENSE BASE",b.x,b.y+4);
+  for(const x of arcadeLanes){
+    arcadeLine(arcadeProject(x,-75,.02),arcadeProject(x,135,.02),"rgba(119,110,77,.27)",Math.max(9,arcadeW/65));
+    arcadeLine(arcadeProject(x,-75,.04),arcadeProject(x,135,.04),"rgba(174,156,106,.22)",1.5,[4,11]);
+  }
+  for(let i=0;i<12;i++){
+    const z=8+i*7.4, x=i%2?14:88;
+    arcadeGroundEllipse(x,z,2.2,1.1,"rgba(37,49,36,.48)");
+  }
+}
+function drawArcadeGroundScars(){
+  for(const mark of arcadeGroundScars){
+    arcadeGroundEllipse(mark.x,mark.z,mark.r,mark.r*.67,mark.kind==="wreck"?"rgba(22,20,17,.84)":"rgba(27,24,18,.6)","rgba(149,118,74,.24)");
+    arcadeGroundEllipse(mark.x+.15,mark.z+.1,mark.r*.48,mark.r*.3,"rgba(8,12,10,.32)");
+    if(mark.kind==="wreck"){
+      const p=arcadeProject(mark.x,mark.z,.4);
+      arcadeCtx.fillStyle="#35362f";arcadeCtx.strokeStyle="#696952";arcadeCtx.lineWidth=1;
+      arcadeCtx.fillRect(p.x-4,p.y-2,8,4);arcadeCtx.strokeRect(p.x-4,p.y-2,8,4);
+    }
+  }
+}
+// Early RTS-inspired environmental landmarks, not interactive units.
+function drawArcadeWorldDetails(){
+  const patches=[
+    [18,17,15,9,"#424634"],[78,32,18,11,"#474936"],[17,72,12,14,"#3b4435"],
+    [89,85,13,10,"#484a36"],[48,45,14,8,"#414735"],[62,7,12,6,"#4c4a36"]
+  ];
+  for(const [x,z,rx,rz,color] of patches){
+    arcadeGroundEllipse(x,z,rx,rz,color);
+    arcadeGroundEllipse(x+2,z+1,rx*.72,rz*.62,"rgba(90,82,58,.2)");
+  }
+  // Distinct silhouettes at the periphery: scattered rocks, scrub and supply points.
+  for(let i=0;i<44;i++){
+    const x=11+(i*47)%78,z=5+(i*71)%91;
+    if(arcadeLanes.some(lane=>Math.abs(x-lane)<7))continue;
+    const p=arcadeProject(x,z,.2);
+    const w=1.8+(i%3)*1.1,h=1.4+(i%4)*.7;
+    arcadeCtx.fillStyle=i%5===0?"#6c6950":"#48513a";
+    arcadeCtx.strokeStyle="rgba(16,25,19,.55)";arcadeCtx.lineWidth=1;
+    arcadeCtx.beginPath();arcadeCtx.moveTo(p.x-w,p.y+h);
+    arcadeCtx.lineTo(p.x-w*.45,p.y-h);arcadeCtx.lineTo(p.x+w,p.y-h*.3);
+    arcadeCtx.lineTo(p.x+w*.7,p.y+h);arcadeCtx.closePath();arcadeCtx.fill();arcadeCtx.stroke();
+  }
+  // Service depot and abandoned equipment, outside combat corridors.
+  for(const [x,z] of [[14,37],[86,58],[15,88]]){
+    const p=arcadeProject(x,z,.3);
+    arcadeCtx.save();arcadeCtx.fillStyle="#4c523f";arcadeCtx.strokeStyle="#85886b";arcadeCtx.lineWidth=1.2;
+    arcadeCtx.fillRect(p.x-7,p.y-4,14,8);arcadeCtx.strokeRect(p.x-7,p.y-4,14,8);
+    arcadeCtx.fillStyle="#69735c";arcadeCtx.fillRect(p.x-4,p.y-7,8,3);
+    arcadeCtx.restore();
+  }
+  // Concrete approach and marked perimeter give the defended outpost a site identity.
+  arcadePoly([arcadeProject(32,88,.1),arcadeProject(68,88,.1),arcadeProject(73,106,.1),arcadeProject(27,106,.1)],"rgba(162,165,132,.38)","rgba(85,89,72,.57)",1.3);
+  for(let x=35;x<=65;x+=10)arcadeLine(arcadeProject(x,89,.14),arcadeProject(x,102,.14),"rgba(178,183,146,.28)",1);
+}
+function drawArcadeBoard(){
+  // The camera observes a continuous site; logical gameplay bounds are not drawn as a board edge.
+  arcadeCtx.fillStyle="#222b24";arcadeCtx.fillRect(0,0,arcadeW,arcadeH);
+  const ground=[arcadeProject(-120,-130),arcadeProject(220,-130),arcadeProject(220,230),arcadeProject(-120,230)];
+  arcadePoly(ground,null,"#30382c");
+  // Muted survey contours cross the entire environment without delineating a playfield.
+  for(let i=-100;i<=200;i+=20)arcadeLine(arcadeProject(i,-130),arcadeProject(i,230),"rgba(149,168,125,.035)",1);
+  for(let z=-120;z<=220;z+=20)arcadeLine(arcadeProject(-120,z),arcadeProject(220,z),"rgba(149,168,125,.035)",1);
+  for(let i=0;i<145;i++){
+    const x=-102+((i*53)%305),z=-115+((i*83)%325);
+    const shade=i%4===0?"rgba(157,138,95,.09)":"rgba(60,71,49,.12)";
+    arcadeGroundEllipse(x,z,1.8+(i%6),1+(i%4)*1.5,shade);
+  }
+  drawArcadeTerrain();
+  drawArcadeWorldDetails();
+  drawArcadeGroundScars();
+  const b=arcadeProject(50,94,2);arcadeCtx.fillStyle="#394637";arcadeCtx.strokeStyle="#6ad8e8";arcadeCtx.lineWidth=2;arcadeCtx.fillRect(b.x-52,b.y-14,104,28);arcadeCtx.strokeRect(b.x-52,b.y-14,104,28);
+  arcadeCtx.fillStyle="#9be7ee";arcadeCtx.font="900 11px monospace";arcadeCtx.textAlign="center";arcadeCtx.fillText("SENSOR OUTPOST",b.x,b.y+4);
 }
 function drawArcadeStructures(){
   for(const s of arcadeStructures){
