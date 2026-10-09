@@ -1096,14 +1096,14 @@ function resizeArcade(){
 window.addEventListener("resize",()=>{if(!arcadeApp.classList.contains("modeHidden"))resizeArcade();});
 
 function arcadePortrait(){return window.innerWidth<=720&&window.innerHeight>window.innerWidth;}
-function arcadeCamera(){return arcadePortrait()?{x:154,z:164,center:.46,height:145}:{x:120,z:150,center:.51,height:120};}
+function arcadeCamera(){return arcadePortrait()?{x:124,z:143,center:.47,height:145,perspective:.0032}:{x:120,z:150,center:.51,height:120,perspective:0};}
 function arcadeProject(x,z,y=0){
   const dx=x-50,dz=z-50,theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   const rx=dx*ct-dz*st,rz=dx*st+dz*ct;
-  const cam=arcadeCamera();return{x:arcadeW/2+rx*(arcadeW/cam.x),y:arcadeH*cam.center+rz*(arcadeH/cam.z)-y*(arcadeH/cam.height),depth:rz};
+  const cam=arcadeCamera(),nearScale=1+rz*cam.perspective;return{x:arcadeW/2+rx*(arcadeW/cam.x)*nearScale,y:arcadeH*cam.center+rz*(arcadeH/cam.z)-y*(arcadeH/cam.height),depth:rz};
 }
 function arcadeScreenToGround(sx,sy){
-  const cam=arcadeCamera(),rx=(sx-arcadeW/2)/(arcadeW/cam.x),rz=(sy-arcadeH*cam.center)/(arcadeH/cam.z),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
+  const cam=arcadeCamera(),rz=(sy-arcadeH*cam.center)/(arcadeH/cam.z),rx=(sx-arcadeW/2)/((arcadeW/cam.x)*(1+rz*cam.perspective)),theta=arcadeOrbit,ct=Math.cos(theta),st=Math.sin(theta);
   return{x:clamp(rx*ct+rz*st+50,3,97),z:clamp(-rx*st+rz*ct+50,3,97)};
 }
 function arcadeLine(a,b,color,w=1,dash=null){
