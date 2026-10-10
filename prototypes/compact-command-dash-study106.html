@@ -1178,6 +1178,7 @@ document.querySelectorAll(".weaponStation").forEach(b=>b.addEventListener("click
  stopBoardFire();weaponMode=Number(b.dataset.selectWeapon);updateWeaponStations();
 }));
 document.getElementById("weapon").addEventListener("click",()=>{stopBoardFire();weaponMode=(weaponMode+1)%3;updateWeaponStations();});
+document.getElementById("rotaryWeapon").addEventListener("click",()=>document.getElementById("weapon").click());
 document.getElementById("stripView").addEventListener("click",()=>{document.getElementById("worldViewMode").click();document.querySelector("#stripView small").textContent=worldViewNames[worldView];});
 document.getElementById("stripWaves").addEventListener("click",()=>document.getElementById("liveWaveBtn").click());
 document.getElementById("stripTest").addEventListener("click",()=>document.getElementById("orbitalAudioTest").click());
