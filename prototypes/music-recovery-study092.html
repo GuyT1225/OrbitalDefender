@@ -364,7 +364,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
  </select>
  <label class="musicVolumeLabel" for="musicVolume">MUSIC LEVEL <span id="musicLevel">45%</span></label>
  <input id="musicVolume" type="range" min="0" max="100" step="1" value="25"/>
- <div class="musicFoot" id="musicBusDiagnostic">CHECKING MUSIC OUTPUT</div><button id="musicRouteToggle" type="button">MODE: MIX</button><span class="musicFoot">If music is silent, tap MODE: MIX to switch to DIRECT.</span>
+ <div class="musicFoot" id="musicBusDiagnostic">CHECKING MUSIC OUTPUT</div><button id="musicRouteToggle" type="button">MODE: MIX</button><span class="musicFoot">If music is too quiet, tap MODE: MIX to boost music.</span>
 </div>
 <div class="cockpitDock"><div class="toolbar">
 <button id="weapon">GATLING / READY</button><button id="orbit" aria-pressed="true">↻ ORBIT</button><button id="lens" aria-pressed="true">◎ OPTIC</button><button id="flightToggle" aria-expanded="false" aria-controls="flightControls">OPTIONS ▾</button>
@@ -673,8 +673,8 @@ function ensureMusicBus(){
  initAudio();if(!audioCtx||musicGainNode)return;
  try{musicSourceNode=audioCtx.createMediaElementSource(cockpitPlayer);musicGainNode=audioCtx.createGain();musicGainNode.gain.value=currentMusicGain;musicSourceNode.connect(musicGainNode).connect(audioCtx.destination);cockpitPlayer.volume=1;}catch(e){musicRouteError=String(e);audioDiag.errors++;audioDiag.lastError="MUSIC BUS "+musicRouteError;}
 }
-function musicBusReport(){const node=document.getElementById("musicBusDiagnostic");if(node)node.textContent="OUTPUT "+Math.round(currentMusicGain*100)+"% / "+(musicDirectMode?"DIRECT":musicGainNode?"GAIN BUS":"FALLBACK")+" / "+(audioCtx?.state||"NO CONTEXT");}
-function applyMusicMode(){if(musicGainNode&&audioCtx){musicGainNode.disconnect();if(musicDirectMode)musicGainNode.connect(audioCtx.destination);else musicGainNode.connect(audioCtx.destination);}if(musicDirectMode){cockpitPlayer.volume=1;setMusicGain(musicTarget());}else{ensureMusicBus();setMusicGain(musicTarget());}const b=document.getElementById("musicRouteToggle");if(b)b.textContent=musicDirectMode?"MODE: DIRECT":"MODE: MIX";musicBusReport();}
+function musicBusReport(){const node=document.getElementById("musicBusDiagnostic");if(node)node.textContent="OUTPUT "+Math.round(currentMusicGain*100)+"% / "+(musicDirectMode?"BOOST":musicGainNode?"GAIN BUS":"FALLBACK")+" / "+(audioCtx?.state||"NO CONTEXT");}
+function applyMusicMode(){if(musicGainNode&&audioCtx){musicGainNode.disconnect();musicGainNode.connect(audioCtx.destination);}if(musicDirectMode){cockpitPlayer.volume=1;setMusicGain(musicTarget());}else{ensureMusicBus();setMusicGain(musicTarget());}const b=document.getElementById("musicRouteToggle");if(b)b.textContent=musicDirectMode?"MODE: BOOST":"MODE: MIX";musicBusReport();}
 function setMusicGain(value){const diag=document.getElementById("musicBusDiagnostic");if(diag)diag.textContent="MUSIC OUTPUT / "+Math.round(value*100)+"%";currentMusicGain=Math.max(0,Math.min(1,value));if(musicGainNode&&audioCtx){musicGainNode.gain.setTargetAtTime(musicDirectMode?1:currentMusicGain,audioCtx.currentTime,.015);cockpitPlayer.muted=currentMusicGain===0;}else{cockpitPlayer.volume=currentMusicGain;cockpitPlayer.muted=currentMusicGain===0;}musicBusReport();}
 
 function musicTarget(){const v=document.getElementById("musicVolume");return (v?Number(v.value):45)/100*musicBaseGain;}
