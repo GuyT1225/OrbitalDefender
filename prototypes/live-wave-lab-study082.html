@@ -685,8 +685,8 @@ const heavyFx=[];let orbitalCooldown=0;let salvoQueue=[];
 function spawnUnits(count=15){
  for(let i=0;i<count;i++){
   const theta=(i/count)*Math.PI*2+Math.random()*.22;
-  const rad=80+Math.random()*18;
-  combat.units.push({x:Math.cos(theta)*rad,z:Math.sin(theta)*rad,y:0,vx:0,vz:0,vy:0,spin:0,omega:0,life:1,down:false,age:0,phase:Math.random()*6.28});
+  const rad=83+Math.random()*22;
+  combat.units.push({x:Math.cos(theta)*rad,z:Math.sin(theta)*rad,y:terrainHeight(Math.cos(theta)*rad,Math.sin(theta)*rad),vx:0,vz:0,vy:0,spin:0,omega:0,life:1,down:false,age:0,phase:Math.random()*6.28});
  }
  if(combat.units.length>55)combat.units.splice(0,combat.units.length-55);
 }
@@ -777,10 +777,16 @@ function updateCombat(dt,t){
    const k=dt/16.67;u.x+=u.vx*k;u.z+=u.vz*k;u.y=Math.max(0,u.y+u.vy*k);u.vy-=.009*k;
    if(u.y===0){u.vx*=.91;u.vz*=.91;u.omega*=.92;}u.spin+=u.omega*k;
   }else{
-   const toward=Math.atan2(-u.z,-u.x);u.x+=Math.cos(toward)*dt*.002;u.z+=Math.sin(toward)*dt*.002;
+   const toward=Math.atan2(-u.z,-u.x)+Math.sin(u.phase+u.age*.0007)*.22;
+   const dist=Math.hypot(u.x,u.z);const speed=dist>21?.0024:.00042;
+   u.x+=Math.cos(toward)*dt*speed;u.z+=Math.sin(toward)*dt*speed;
+   // Infantry spreads along the approach instead of stacking on a single point.
+   u.x+=Math.sin(u.phase+u.age*.0014)*dt*.00052;u.z+=Math.cos(u.phase+u.age*.0014)*dt*.00052;
+   u.y=terrainHeight(u.x,u.z);
+   if(u.age>2100&&Math.random()<dt*.000027){combat.fx.push({x:u.x+Math.sin(u.phase)*12,z:u.z+Math.cos(u.phase)*12,y:u.y,birth:t,hit:false,seed:Math.random()});}
   }
  }
- combat.units=combat.units.filter(u=>!u.down||u.age<26000);
+ combat.units=combat.units.filter(u=>!u.down||u.age<10000);
  combat.fx=combat.fx.filter(f=>t-f.birth<550);
  stepProjectiles(dt,t);
 }
