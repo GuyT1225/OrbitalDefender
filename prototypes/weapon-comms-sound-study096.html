@@ -1,0 +1,1289 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Defender — Fortified Plateau Concept</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08110d;color:#c5efcf;font-family:system-ui,-apple-system,sans-serif}
+main{max-width:900px;margin:auto;padding:12px}.heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:17px;letter-spacing:.07em;margin:4px 0}.eyebrow{font:11px monospace;color:#76b98d;letter-spacing:.19em}
+#scene{display:block;width:100%;height:min(77dvh,760px);min-height:440px;background:#1e241d;border:1px solid #42604e;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch;margin-top:9px}
+button{border:1px solid #51785d;background:#14251b;color:#e2ffe9;padding:11px 4px;font-size:11px;font-weight:800;border-radius:4px;touch-action:manipulation;min-height:44px}
+button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}button:active{background:#31503a}.status{grid-column:1 / -1;font:11px/1.6 monospace;color:#a9c8ae;text-align:center}
+#gatling{grid-column:span 2;background:#483a24;border-color:#cc9d52;color:#ffe9af;touch-action:none}#gatling[aria-pressed="true"]{background:#765025}#charge{grid-column:span 2;background:#31472b;border-color:#c6ae6a;color:#fff1c6;user-select:none;-webkit-user-select:none}#charge[aria-pressed="true"]{background:#73552b} .note{color:#86a491;font-size:12px;line-height:1.4;margin-top:10px}
+#sceneWrap{position:relative}#pip{position:absolute;z-index:12;top:70px;right:12px;width:148px;height:118px;background:#0c1a14;border:2px solid #c0e8c9;box-shadow:0 6px 22px rgba(0,0,0,.65);pointer-events:none;image-rendering:auto}#pipLabel{position:absolute;z-index:13;top:52px;right:12px;color:#d6f6df;font:10px monospace;pointer-events:none;text-shadow:0 1px 3px #000}
+#audioGate{position:fixed;z-index:90;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,10,7,.80);padding:20px}#audioGate .inner{max-width:340px;text-align:center;border:1px solid #95caa1;background:#112119;padding:22px;border-radius:8px}#audioUnlock{background:#355640;border-color:#b2f1bd;width:100%;font-size:16px;margin:12px 0}#audioStateText{font:12px monospace;color:#c2ddc9;line-height:1.5}
+#gameIntro{position:fixed;inset:0;z-index:90;overflow:auto;background:radial-gradient(ellipse at 75% 36%,#726049 0%,#293327 23%,#101915 52%,#050a08 100%);color:#e5edda}
+#gameIntro .bay-art{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.9}
+.bay-art:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 116px,#0008 119px 122px,transparent 126px),linear-gradient(165deg,#18221c 0%,transparent 45%,#080c08 100%)}
+.bay-window{position:absolute;right:-7%;top:8%;width:60%;height:73%;border:18px solid #121911;transform:skew(-8deg);background:linear-gradient(145deg,#a2875a80,#63543c66 40%,#252b2466),repeating-linear-gradient(160deg,transparent 0 28px,#151c1470 32px 34px)}
+.bay-window span{font:10px monospace;color:#e2ca95;position:absolute;right:12%;top:14%}
+.crew{position:absolute;right:36%;bottom:-17%;height:68%;width:23%;border-radius:45% 44% 8% 8%;background:linear-gradient(85deg,#050907,#2d3629 34%,#161b15 70%,#040907);box-shadow:0 -58px 0 -25px #3a4338}
+.gun{position:absolute;right:3%;top:56%;width:47%;height:9%;transform:rotate(-11deg);background:repeating-linear-gradient(90deg,#181e1a 0 18px,#575b43 20px 25px,#101310 26px 32px);border:8px solid #131711;box-shadow:0 13px 0 #1a211b,0 -13px 0 #252b22}
+.operator-console{position:absolute;right:10%;bottom:6%;width:42%;height:21%;transform:skew(-12deg);border:8px solid #27332b;background:repeating-linear-gradient(90deg,#17261b 0 28px,#426343 30px 33px,#101711 34px 46px);box-shadow:0 0 40px #94b98122}
+.flight-panel{position:relative;min-height:100dvh;width:min(570px,100%);padding:clamp(22px,5vw,66px);background:linear-gradient(90deg,#07100ef2,#0b1713d9 75%,#101b14a0);display:flex;flex-direction:column;justify-content:center;gap:13px}
+.flight-panel[hidden]{display:none}
+.flight-eyebrow{font:11px monospace;letter-spacing:2px;color:#9cae8a}.flight-title{font:900 clamp(40px,8vw,77px)/.91 system-ui;letter-spacing:-2px;margin:8px 0;color:#e4e6d9;text-shadow:0 3px 7px #050705}.flight-title.small{font-size:clamp(30px,7vw,53px)}.flight-title em{font-style:normal;color:#9faa7a}
+.flight-sub{font:10px monospace;letter-spacing:2px;color:#d6ddce;margin:3px 0 35px}
+.flight-primary{border:1px solid #a3c291;border-radius:2px;background:linear-gradient(90deg,#233a2a,#1c3324);color:#f1f7e9;font:700 15px monospace;text-align:left;letter-spacing:2px;padding:15px;display:flex;justify-content:space-between;align-items:center}
+.flight-primary:disabled{opacity:.37}.flight-primary span{font-size:24px}
+.future-item{font:13px monospace;color:#b4c6b1;padding:14px;border:1px solid #53625266}.future-item small{float:right;color:#809583}
+.flight-footer{font:11px/1.6 monospace;color:#92aa90;margin-top:18px}.checkrow{display:flex;justify-content:space-between;gap:6px;padding:12px;border-bottom:1px solid #445945;font:11px monospace}.checkrow strong{color:#afdda2}
+.flightControls{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;background:#0e1b14;border:1px solid #44614a;border-radius:5px}
+.flightControls[hidden]{display:none}.toolbar>button{font-size:10px}#flightToggle[aria-expanded="true"]{background:#314c39}
+#sceneWrap{isolation:isolate}.flightControls{position:absolute;z-index:25;inset:auto 8px 8px;display:block;max-height:72%;overflow-y:auto;overscroll-behavior:contain;padding:11px;background:rgba(7,18,14,.96);border:1px solid #9dc5a1;border-radius:8px;box-shadow:0 3px 24px #000b;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.flightControls[hidden]{display:none}.flightHead{display:flex;align-items:center;justify-content:space-between;font:700 11px monospace;letter-spacing:1px;color:#c4e8ca;padding:0 2px 8px}.flightHead button{min-height:30px;min-width:36px;font-size:23px;padding:0}.flightSection{padding:6px 0;border-top:1px solid #44634f}.flightSectionTitle{font:10px monospace;color:#91ad99;margin:2px 0 8px;letter-spacing:1px}.flightGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.flightGrid button{padding:7px 2px 6px;min-height:61px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.flightSymbol{font-size:23px;line-height:1;color:#d3e6c5}.flightGrid small{font-size:9px;line-height:1.1;letter-spacing:.2px}.flightSecondary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding-top:7px;border-top:1px solid #44634f}.flightSecondary button{font-size:9px;min-height:36px;padding:4px 1px}
+#sceneWrap{overflow:hidden}.hudMission,.hudAttitude,.hudTarget{position:absolute;pointer-events:none;z-index:15;color:#d0e6d0;background:#07140edc;border:1px solid #5c8064;padding:6px 8px;font:10px/1.4 monospace;letter-spacing:.3px;border-radius:3px;text-shadow:0 1px 2px #000}
+.hudMission{top:9px;left:9px}.hudMission span,.hudAttitude span{display:block;color:#96b79c;font-size:9px}.hudAttitude{top:9px;right:9px;text-align:right}.hudTarget{bottom:11px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#d6e4bd}.hudTarget[data-status="STABLE"]{border-color:#9acc9d;color:#b4f4bb}.hudTarget[data-status="SETTLING"]{border-color:#d1a962;color:#ead193}
+.flightInstrument{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:center;padding:8px;background:#15251b;border:1px solid #45664d;border-radius:4px;margin-bottom:7px}
+.instrumentCompass{position:relative;margin:auto;border:1px solid #7ca389;border-radius:50%;width:91px;height:91px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(circle,#243e2d,#0a1710)}
+.instrumentCompass:before{content:"N";position:absolute;top:3px;font:9px monospace;color:#abcdb1}.instrumentArrow{font-size:30px;color:#c1e6b8}.instrumentCompass small{font:9px monospace;color:#9bb59d}.instrumentAttitude{display:flex;flex-direction:column;gap:8px;font:11px monospace;color:#d9ead5}.instrumentAttitude strong{font-size:9px;letter-spacing:1px;color:#90ae93}
+.flightControls{max-height:68%}.flightGrid button{min-height:49px}.flightSymbol{font-size:20px}.flightSecondary{margin-top:7px}
+#sphereMode{padding:2px 0 9px}.sphereHeader{display:flex;justify-content:space-between;font:700 10px monospace;color:#c9e1c4;letter-spacing:.6px}.sphereHeader span{font-size:9px;color:#8ba991}#domeSurface{width:min(100%,300px);margin:4px auto 0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}#domeSurface:active{cursor:grabbing}#domeSurface svg{display:block;max-height:194px}.sphereReadout{display:flex;justify-content:space-around;gap:5px;font:10px monospace;color:#d2e4ca;background:#14261b;border:1px solid #506b52;padding:8px 2px;border-radius:4px}#domeHint{font:9px/1.3 monospace;color:#bdc69e;text-align:center;margin-top:6px;min-height:25px}.sphereActions{display:grid;grid-template-columns:1fr 1.6fr;gap:6px;margin-top:3px}.sphereActions button{min-height:39px;font-size:10px}#classicPanel[hidden]{display:none}.flightControls{max-height:75%}#domeTilt{transform-box:fill-box;transform-origin:center}
+#sphereMode{position:absolute;left:7px;bottom:30px;width:clamp(132px,39%,171px);padding:7px 6px;background:rgba(6,18,12,.68);border:1px solid rgba(157,197,165,.66);border-radius:12px;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);z-index:20;touch-action:none;box-shadow:0 4px 14px #0007;pointer-events:auto}
+.sphereHeader{font-size:8px;letter-spacing:0}.sphereHeader span{display:none}#domeSurface{width:100%;margin:0;touch-action:none}#domeSurface svg{max-height:119px}.sphereReadout{padding:4px 1px;gap:1px;font-size:8px}.sphereReadout span{white-space:nowrap}#domeHint{font-size:8px;min-height:0;margin-top:4px;line-height:1.2}.sphereActions{grid-template-columns:1fr 1fr;gap:4px}.sphereActions button{font-size:8px;padding:4px 1px;min-height:31px}#classicToggle{font-size:0}#classicToggle:after{content:"CLASSIC";font-size:8px}.flightControls{z-index:26}
+@media(max-width:390px){#sphereMode{width:144px;bottom:28px}#domeSurface svg{max-height:108px}}
+/* 06.8: smaller optical footprint; retain generous interaction surface. */
+#sphereMode{width:clamp(112px,32%,137px);left:5px;bottom:25px;padding:4px 3px;background:rgba(6,18,12,.25);border-color:rgba(157,197,165,.31);box-shadow:0 2px 9px #0003;backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:9px}
+#sphereMode .sphereHeader{font-size:7px;opacity:.82}
+#domeSurface svg{max-height:98px;opacity:.76}
+#sphereMode .sphereReadout{background:rgba(10,26,16,.42);border-color:rgba(131,169,136,.35);font-size:7px;padding:3px 1px}
+#sphereMode #domeHint{font-size:7px;color:#b9d0ba;opacity:.72;line-height:1}
+#sphereMode .sphereActions button{min-height:29px;font-size:8px;background:rgba(15,32,19,.52);border-color:rgba(131,169,136,.48)}
+@media(max-width:390px){#sphereMode{width:119px;left:4px;bottom:24px}#domeSurface svg{max-height:88px}}
+#quickZoom{position:absolute;z-index:22;left:calc(clamp(112px,32%,137px) + 9px);bottom:46px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:3px;background:rgba(8,21,14,.33);border:1px solid rgba(150,191,155,.31);border-radius:9px}
+#quickZoom button{width:42px;height:43px;min-height:43px;padding:0;background:rgba(14,34,20,.58);border:1px solid rgba(160,203,165,.69);border-radius:7px;font-size:23px;color:#e4f7e2;touch-action:manipulation}
+#quickZoomLabel{font:9px monospace;color:#d4e8d2;letter-spacing:.3px}
+@media(max-width:390px){#quickZoom{left:126px;bottom:40px}#quickZoom button{width:39px;height:40px;min-height:40px}}
+
+/* Study 07.0: integrated shifter-legend flight dash. No separate floating zoom panel. */
+.flightDash{position:absolute;left:8px;bottom:27px;z-index:22;width:170px;padding:6px 7px 5px;border:1px solid rgba(137,166,141,.8);border-radius:13px 13px 9px 9px;background:linear-gradient(110deg,rgba(34,49,38,.74),rgba(8,20,12,.68));box-shadow:inset 0 1px 2px #d3ecb322,0 5px 16px #0008;backdrop-filter:blur(1px);-webkit-backdrop-filter:blur(1px);touch-action:auto}
+.flightDash .dashLegend{height:34px;padding:0 2px;margin-bottom:3px;pointer-events:none;filter:drop-shadow(0 1px 2px #000b)}
+.flightDash .dashMain{display:grid;grid-template-columns:minmax(0,1fr) 39px;align-items:center;gap:2px}
+.flightDash #domeSurface{width:100%;margin:0;min-height:91px;touch-action:none;cursor:grab}
+.flightDash #domeSurface svg{width:100%;max-height:108px;opacity:.91}
+.flightDash #quickZoom{position:static;display:flex;gap:3px;align-items:center;justify-content:center;padding:2px 0;background:none;border:0}
+.flightDash #quickZoom button{width:37px;height:37px;min-height:37px;font-size:22px;background:linear-gradient(#324b36b8,#132819e0);border-color:#92ab89;box-shadow:inset 0 1px 1px #a0b9a24d}
+.flightDash #quickZoomLabel{font:9px monospace;color:#e9f2da}
+.flightDash .dashTelemetry{display:flex;justify-content:space-around;align-items:center;white-space:nowrap;gap:3px;background:#09160fb5;border:1px solid #58715d9c;border-radius:3px;color:#d9ebd3;font:9px monospace;padding:4px 2px}
+.flightDash .dashUtility{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-top:4px}
+.flightDash .dashUtility button{min-height:29px;padding:4px;font-size:9px;background:#162a1dbd;border-color:#69846c}
+.flightDash .dashHint{font:8px/1.2 monospace;text-align:center;color:#e4ce96;min-height:0;max-height:23px;overflow:hidden}
+.flightDash #classicToggle:after{content:none}
+@media(max-width:390px){.flightDash{left:6px;bottom:24px;width:158px;padding:5px 6px}.flightDash #domeSurface{min-height:85px}.flightDash #domeSurface svg{max-height:98px}.flightDash #quickZoom button{height:36px;min-height:36px}}
+/* 07.1 - cockpit corner instrument, no card or detached legend */
+.flightDash{left:5px;bottom:14px;width:146px;z-index:22;padding:0;background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;overflow:visible}
+.flightDash:before{content:"";position:absolute;pointer-events:none;left:-8px;bottom:-13px;width:113px;height:55px;border-left:4px solid rgba(110,133,121,.49);border-bottom:6px solid rgba(93,119,106,.57);transform:skew(-19deg);border-bottom-left-radius:13px;filter:drop-shadow(0 2px 3px #0009)}
+.flightDash:after{content:"";position:absolute;pointer-events:none;left:9px;top:14px;width:100px;height:78px;border-left:2px solid #879a8773;border-top:2px solid #879a8755;border-radius:54% 52% 12% 20%;transform:rotate(-11deg)}
+.flightDash .dashMain{grid-template-columns:minmax(0,1fr) 36px;gap:1px}
+.flightDash #domeSurface{position:relative;min-height:79px;margin:0;width:108px;isolation:isolate}
+.flightDash #domeSurface svg{display:block;width:108px;max-height:87px;opacity:.88}
+.flightDash .sphereOverlay{position:absolute;left:20%;top:22%;width:60%;height:58%;pointer-events:none;z-index:2;mix-blend-mode:screen;opacity:.77}
+.flightDash .sphereOverlay svg{width:100%!important;height:100%;max-height:none!important;opacity:1!important}
+.flightDash .sphereOverlay #dirUp,.flightDash .sphereOverlay #dirDown,.flightDash .sphereOverlay #dirLeft,.flightDash .sphereOverlay #dirRight{opacity:.52;transition:opacity .1s}
+.flightDash .sphereOverlay #orbLeft,.flightDash .sphereOverlay #orbRight{opacity:.33;transition:opacity .1s}
+.flightDash[data-gesture="up"] #dirUp,.flightDash[data-gesture="down"] #dirDown,.flightDash[data-gesture="left"] #dirLeft,.flightDash[data-gesture="right"] #dirRight,.flightDash[data-gesture="rim-left"] #orbLeft,.flightDash[data-gesture="rim-right"] #orbRight{opacity:1}
+.flightDash #quickZoom{gap:2px}
+.flightDash #quickZoom button{width:35px;height:38px;min-height:38px;border-radius:5px;background:#192d228f;border-color:#8ca38b9c;font-size:22px}
+.flightDash #quickZoomLabel{font-size:10px;text-shadow:0 1px 3px #000}
+.flightDash .dashTelemetry{border:0;border-bottom:1px solid #8da68988;border-radius:0;background:#0a1b1282;font-size:8px;padding:3px 1px}
+.flightDash .dashUtility{grid-template-columns:1fr 1fr;padding-top:3px;gap:3px}
+.flightDash .dashUtility button{min-height:26px;padding:3px 1px;border-color:#718a7488;background:#1a312194;font-size:8px}
+.flightDash .dashHint{position:absolute;left:3px;bottom:100%;width:139px;color:#e9d9a5;text-shadow:0 1px 2px #000;font-size:8px;pointer-events:none}
+@media(max-width:390px){.flightDash{left:4px;bottom:13px;width:140px}.flightDash #domeSurface{width:103px;min-height:76px}.flightDash #domeSurface svg{width:103px;max-height:83px}.flightDash #quickZoom button{width:33px;height:37px;min-height:37px}}
+/* 07.2: unified cockpit layers. Everything is positioned within the battlefield. */
+#sceneWrap{position:relative;overflow:hidden;isolation:isolate;--hudMetal:rgba(10,18,15,.9);--hudStroke:#687763;--hudLit:#b8e5bb;--hudAmber:#e5a85e}
+#sceneWrap[data-cockpit-theme="retro"]{--hudMetal:rgba(9,24,15,.92);--hudStroke:#4f9c65;--hudLit:#80f4a1;--hudAmber:#b0d879}
+.cockpitCanopy{position:absolute;inset:0;pointer-events:none;z-index:14;overflow:hidden}
+.canopyLeft,.canopyRight{position:absolute;top:-10%;bottom:0;width:9px;background:linear-gradient(90deg,#030706eb,#3e5145c9,#0c1410a8);border-left:1px solid #78927c80;transform-origin:bottom center}
+.canopyLeft{left:0;transform:rotate(-13deg)}.canopyRight{right:0;transform:rotate(13deg)}
+.canopyTop{position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(#040806,#415446bd,#0c1711b3);border-bottom:2px solid #728d7677}
+.cockpitRadar{position:absolute;z-index:15;left:9px;bottom:172px;width:99px;height:90px;padding:5px;border:1px solid var(--hudStroke);border-radius:11px 11px 4px 4px;background:var(--hudMetal);box-shadow:0 7px 13px #0007;pointer-events:none}
+.cockpitRadar>span,.cockpitWeaponPod>span,.cockpitOpticLabel{font:8px monospace;letter-spacing:.6px;color:var(--hudLit)}
+.radarFace{position:relative;overflow:hidden;width:70px;height:66px;border:1px solid #70a37b;border-radius:50%;margin:3px auto 0;background:repeating-radial-gradient(circle,#193625 0 1px,#102316 1px 15px);box-shadow:inset 0 0 13px #000}
+.radarFace:after{content:"";position:absolute;top:50%;left:0;right:0;border-top:1px solid #63936b70;transform:rotate(30deg)}
+.radarFace b{position:absolute;top:26px;left:30px;color:#c6f5bc;font-size:12px}.radarFace em{position:absolute;top:10px;left:48px;color:#ef8d6c;font-size:10px}.radarSweep{position:absolute;left:50%;top:50%;width:30px;height:1px;background:#a4ed9b;transform-origin:left center;animation:radarScan 7s linear infinite}
+@keyframes radarScan{to{transform:rotate(360deg)}}
+.cockpitWeaponPod{position:absolute;z-index:18;bottom:72px;left:176px;right:128px;min-width:90px;height:79px;border:1px solid var(--hudStroke);border-radius:8px 8px 0 0;background:var(--hudMetal);box-shadow:inset 0 2px 7px #69816c30,0 3px 14px #0009;padding:8px 7px;pointer-events:none}
+.cockpitWeaponVisual{display:flex;align-items:center;gap:8px;color:var(--hudLit);font:10px monospace;margin-top:9px}.cockpitWeaponVisual #weaponSymbol{font-size:15px;color:var(--hudAmber)}
+.cockpitMeter{margin-top:8px;height:5px;border:1px solid #5e8063;background:#06170e}.cockpitMeter i{display:block;height:100%;width:90%;background:var(--hudLit)}
+.cockpitOpticLabel{position:absolute;z-index:17;bottom:167px;right:11px;background:var(--hudMetal);padding:4px 6px;border:1px solid var(--hudStroke);pointer-events:none}
+#pip{position:absolute!important;left:auto!important;right:10px!important;top:auto!important;bottom:72px!important;width:112px!important;height:90px!important;z-index:17;border:2px solid var(--hudStroke);box-shadow:0 3px 18px #0009}
+#pipLabel{display:none!important}
+.flightDash{bottom:66px;left:7px;z-index:23}
+.cockpitDock{position:absolute;z-index:23;left:0;right:0;bottom:0;height:67px;padding:5px 7px;background:linear-gradient(180deg,#243429b8,var(--hudMetal) 18%,#060c09ee);border-top:3px solid var(--hudStroke);box-shadow:0 -5px 10px #0008;display:flex;align-items:center;gap:5px}
+.cockpitDock .toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));flex:1;gap:4px;margin:0;min-width:0}.cockpitDock .toolbar button{min-height:41px;padding:4px 2px;font-size:9px;border-color:var(--hudStroke);color:var(--hudLit);background:#1c3023}.cockpitDock .toolbar .status{display:none}
+#themeToggle{min-width:48px;max-width:49px;min-height:41px;padding:2px;font-size:9px;background:#243b2a;color:var(--hudLit);border-color:var(--hudStroke)}
+#targetState{bottom:157px}
+#sceneWrap .hudMission{top:10px;left:13px}#sceneWrap .hudAttitude{top:10px;right:13px}
+@media(max-width:430px){.cockpitWeaponPod{left:163px;right:100px;bottom:69px;height:64px;padding:4px;font-size:8px}.cockpitWeaponVisual{font-size:8px;gap:3px;margin-top:6px}.cockpitMeter{margin-top:4px}#pip{right:5px!important;width:95px!important;height:74px!important;bottom:70px!important}.cockpitOpticLabel{display:none}.cockpitRadar{bottom:192px;width:76px;height:77px}.radarFace{width:59px;height:55px}.flightDash{bottom:71px;transform:scale(.89);transform-origin:bottom left}.cockpitDock{height:70px}.cockpitDock .toolbar button{font-size:8px}#targetState{bottom:146px}}
+/* Study 07.3: one continuous, angular cockpit foreground. */
+#sceneWrap{--dashHeight:clamp(124px,22%,174px);--dashBottom:69px}
+#dashSuperstructure{position:absolute;z-index:15;left:0;right:0;bottom:0;height:calc(var(--dashHeight) + var(--dashBottom));pointer-events:none;background:linear-gradient(to bottom,transparent 0%,#070e0b0a 4%,#070e0ba8 32%,#070d09d9 70%,#030805f1);clip-path:polygon(0 4%,5% 12%,17% 15%,23% 26%,42% 26%,47% 21%,53% 21%,58% 26%,77% 26%,83% 15%,95% 12%,100% 4%,100% 100%,0 100%);border-bottom:4px solid #819784}
+#dashSuperstructure .dashRim{position:absolute;top:15%;left:0;right:0;height:8px;background:linear-gradient(90deg,#83968f,#111c17 23%,#d2b070 50%,#111c17 77%,#83968f);clip-path:polygon(0 0,18% 10%,25% 100%,75% 100%,82% 10%,100% 0,100% 40%,82% 44%,75% 90%,25% 90%,18% 44%,0 40%)}
+.dashSeam{position:absolute;bottom:0;width:2px;height:64%;background:#78917d80}.dashSeamL{left:35%;transform:skew(12deg)}.dashSeamR{right:35%;transform:skew(-12deg)}
+.cockpitRadar,.cockpitWeaponPod,.flightDash,.cockpitDock{filter:drop-shadow(0 -3px 3px #000b)}
+.cockpitRadar{bottom:var(--dashBottom);left:5px;width:120px;height:110px;border-radius:12px 9px 0 0;clip-path:polygon(0 12%,11% 0,89% 0,100% 12%,100% 100%,0 100%);border-color:#718976d9;background:linear-gradient(155deg,#28382ce8,var(--hudMetal))}
+.radarFace{width:81px;height:77px}
+.flightDash{left:10px;bottom:calc(var(--dashBottom) + 4px);transform:translateX(16px) scale(.78);transform-origin:bottom left}
+.cockpitWeaponPod{bottom:var(--dashBottom);height:98px;left:158px;right:132px;min-width:95px;border-radius:6px 6px 0 0;background:linear-gradient(125deg,#344337e8,var(--hudMetal) 26%);border-color:#869783bf;clip-path:polygon(0 14%,9% 0,91% 0,100% 14%,100% 100%,0 100%);padding:16px 9px 6px}
+.cockpitOpticLabel{display:none}
+#pip{bottom:calc(var(--dashBottom) + 6px)!important;right:7px!important;width:117px!important;height:98px!important;border-radius:7px 7px 0 0;border-color:#91a58abf}
+.cockpitDock{height:var(--dashBottom);border-top:2px solid #b8a26caa;background:linear-gradient(#293b30ec 0,#070d0bf2 20%);padding:4px 5px;gap:3px}
+.cockpitDock .toolbar{gap:3px}.cockpitDock .toolbar button,#themeToggle,#musicToggle{min-height:43px;padding:3px 1px;border:1px solid #72917daa;background:linear-gradient(140deg,#1b3025,#0b1711);border-radius:3px;font:700 9px/1.25 monospace;color:#d0ead4;box-shadow:inset 0 1px #8baf8a45}
+#musicToggle,#themeToggle{min-width:40px;width:40px;font-size:8px}
+.hudTarget{bottom:calc(var(--dashBottom) + 119px)!important}
+.musicPanel{position:absolute;z-index:32;bottom:var(--dashBottom);left:8px;right:8px;padding:10px;background:#0a1711f5;border:1px solid #8eac95;border-radius:6px 6px 0 0;box-shadow:0 -7px 24px #000b;color:#d9edda;font:10px monospace}
+.musicPanel[hidden]{display:none}.musicHeader,.musicTrackRow,.musicVolumeLabel{display:flex;align-items:center;justify-content:space-between;gap:8px}.musicHeader{font-size:11px;letter-spacing:1px;padding-bottom:7px;border-bottom:1px solid #48684f}
+.musicHeader button{min-height:26px;width:34px;font-size:21px;padding:0}.musicTrackRow{margin:8px 0;min-height:38px}.musicTrackRow>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e6d79d}.musicTrackRow button{min-height:33px;padding:4px 8px}
+.musicSelectLabel{display:block;color:#96b89e;margin:7px 0 4px}#musicSelect{display:block;width:100%;min-height:40px;background:#1b3223;color:#e6f4e4;border:1px solid #72977a;border-radius:3px;font:12px monospace;padding:5px}
+.musicVolumeLabel{margin:9px 0 2px}#musicVolume{width:100%;height:25px;accent-color:#9cddab}.musicFoot{font-size:9px;color:#86a991;margin-top:3px}
+@media(max-width:430px){#sceneWrap{--dashHeight:135px;--dashBottom:66px}.cockpitRadar{width:83px;height:83px;bottom:var(--dashBottom)}.radarFace{width:60px;height:57px}.flightDash{left:2px;bottom:calc(var(--dashBottom) + 2px);transform:translateX(5px) scale(.69)}.cockpitWeaponPod{left:130px;right:105px;height:82px;padding:12px 5px 3px;bottom:var(--dashBottom)}#pip{width:97px!important;height:81px!important;bottom:calc(var(--dashBottom) + 2px)!important}.cockpitDock{height:var(--dashBottom)}.cockpitDock .toolbar button{font-size:7px;min-height:40px}#musicToggle,#themeToggle{min-width:35px;width:35px;font-size:7px}#targetState{bottom:calc(var(--dashBottom) + 102px)!important}}
+/* 07.4 tactical reposition: always available above the left-thumb sphere. */
+.flightDash .snapTurnDock{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin:0 0 3px;width:135px;z-index:3}
+.flightDash .snapTurnDock button{min-height:37px;padding:2px 0;background:linear-gradient(155deg,#32463aeb,#0b1b13f2);border:1px solid #91a891af;box-shadow:inset 0 1px #efffe62a;border-radius:4px;color:#e7f1db;font-size:18px;font-weight:700;line-height:.94;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;touch-action:manipulation}
+.flightDash .snapTurnDock small{font:700 8px monospace;color:#e5c995;letter-spacing:.1px}
+.flightDash .snapTurnDock button:active{background:#4d654b}
+@media(max-width:430px){.flightDash .snapTurnDock{width:134px}.flightDash .snapTurnDock button{min-height:43px}}
+.mesaGuide{position:absolute;z-index:19;top:70px;left:50%;transform:translateX(-50%);background:#08170fc7;color:#c2efc8;font:10px monospace;letter-spacing:.3px;border:1px solid #628269a8;padding:4px 7px;border-radius:4px;pointer-events:none;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.mesaGuide button{display:none;min-height:30px;padding:3px 7px;font:700 9px monospace;pointer-events:auto;color:#f2dcaa;border-color:#d6af69;background:#37402a}
+.mesaGuide[data-edge="yes"]{border-color:#d6af69;color:#f1dca5;box-shadow:0 0 12px #dfb86b22}.mesaGuide[data-edge="yes"] button{display:block}
+@media(max-width:430px){.mesaGuide{top:61px;font-size:9px;padding:3px 5px}}
+/* 07.7 visual finish: connected beveled metal, instrument lighting, deeper inset surfaces. */
+#sceneWrap{--hudStroke:#94a799;--hudLit:#b9eed0;--hudAmber:#ffa558}
+#dashSuperstructure{background:linear-gradient(to bottom,transparent 0%,#0b151030 9%,#0a1210ce 33%,#060c09ed 76%,#030705f8);filter:drop-shadow(0 -6px 4px #0008)}
+#dashSuperstructure .dashRim{height:10px;background:linear-gradient(90deg,#c1c5b6,#111e18 19%,#e59b53 50%,#111e18 81%,#b2b8ab);filter:drop-shadow(0 -2px 5px #f2af5a4a)}
+.cockpitRadar,.cockpitWeaponPod,.musicPanel{border-color:#8e9e8e;box-shadow:inset 0 2px 2px #d2e5c033,inset 0 -8px 17px #0009,0 -5px 13px #000a}
+.cockpitRadar{background:linear-gradient(140deg,#3e5146ef 0%,#14251dee 25%,#080e0bed 88%);clip-path:polygon(0 15%,14% 0,86% 0,100% 15%,100% 100%,0 100%)}
+.cockpitWeaponPod{background:linear-gradient(133deg,#506054e9 0%,#16281fef 19%,#080f0bf4 78%);clip-path:polygon(0 16%,10% 0,90% 0,100% 16%,100% 100%,0 100%)}
+.cockpitWeaponPod>span{font-weight:800;letter-spacing:1px;text-shadow:0 0 8px #98e2b754}
+.cockpitWeaponVisual #weaponSymbol{color:#ffb567;text-shadow:0 0 8px #ff94455a}
+.cockpitDock{border-top:3px solid #c6ad7c;background:linear-gradient(180deg,#526358 0%,#192720 10%,#0a120efb 38%,#030805 100%);box-shadow:inset 0 2px #edf2df3f,0 -7px 13px #0008}
+.cockpitDock .toolbar button,#musicToggle,#themeToggle{background:linear-gradient(148deg,#3d4c40 0%,#16271e 18%,#07110b 90%);border:1px solid #8c9c88;clip-path:polygon(0 15%,12% 0,88% 0,100% 15%,100% 86%,88% 100%,12% 100%,0 86%);border-radius:0;box-shadow:inset 0 1px #e2f9e151,inset 0 -3px 3px #000b;text-shadow:0 1px 2px #000}
+.flightDash .snapTurnDock button{border-color:#bbc9ae;background:linear-gradient(150deg,#576557,#0e1d13 60%);box-shadow:inset 0 2px #e0ebd03d,0 3px 6px #0007}
+.flightDash #quickZoom button{border-color:#b9c4b4;background:linear-gradient(140deg,#59675a,#0d1b12 70%)}
+#pip{border-color:#d0d9c5!important;box-shadow:inset 0 0 10px #0007,0 0 0 4px #23352b,0 5px 16px #000a!important}
+/* 07.8 concept-to-game: single near-field instrument housing with continuous upper silhouette */
+#sceneWrap{--dashBottom:72px;--dashHeight:161px;--hudMetal:#08100def;--hudStroke:#97a89b;--hudLit:#bcefd2;--hudAmber:#ffac57}
+#dashSuperstructure{height:calc(var(--dashBottom) + var(--dashHeight) + 17px);clip-path:polygon(0 6%,5% 12%,17% 13%,23% 21%,39% 21%,45% 16%,55% 16%,61% 21%,77% 21%,83% 13%,95% 12%,100% 6%,100% 100%,0 100%);background:linear-gradient(180deg,transparent 0%,#6d817329 12%,#25342cca 22%,#080f0ce8 43%,#030706fc 100%);box-shadow:none;filter:drop-shadow(0 -8px 8px #000d)}
+#dashSuperstructure .dashRim{top:12%;height:11px;left:0;right:0;background:linear-gradient(90deg,#ffab66,#c7d7c7 8%,#15231b 19%,#ffa85e 34%,#ffd48c 50%,#ffa85e 66%,#15231b 81%,#c7d7c7 92%,#ffab66);clip-path:polygon(0 0,17% 0,23% 100%,39% 100%,45% 12%,55% 12%,61% 100%,77% 100%,83% 0,100% 0,100% 25%,83% 25%,77% 86%,61% 86%,55% 24%,45% 24%,39% 86%,23% 86%,17% 25%,0 25%)}
+.dashShoulder{position:absolute;top:23%;width:30%;height:20px;border-top:3px solid #a1ae9d;background:linear-gradient(#3b4f42ac,transparent);transform:skew(22deg)}
+.dashShoulder.left{left:0}.dashShoulder.right{right:0;transform:skew(-22deg)}
+.dashKeel{position:absolute;bottom:0;left:34%;width:32%;height:22px;background:linear-gradient(#364c3b,#050b08);clip-path:polygon(13% 0,87% 0,100% 100%,0 100%);border-top:2px solid #b28d57}
+.dashIndicator{position:absolute;z-index:1;bottom:38%;height:3px;width:14px;background:#ffab57;box-shadow:0 0 8px #ff883c}.dashIndicator.one{left:4%}.dashIndicator.two{left:50%}.dashIndicator.three{right:4%}
+.cockpitRadar,.cockpitWeaponPod,.flightDash,#pip{z-index:20}
+.cockpitRadar{left:9px;bottom:var(--dashBottom);width:124px;height:114px;padding:8px 5px 5px;background:linear-gradient(135deg,#4f6154,#17251d 17%,#060c0af8 80%);clip-path:polygon(0 12%,11% 0,89% 0,100% 12%,100% 100%,0 100%);border:2px solid #9baaa0;border-bottom:0}
+.radarFace{width:83px;height:81px;border-color:#b4c4ab;box-shadow:0 0 0 5px #1e3328,inset 0 0 13px #000}
+.flightDash{left:20px;bottom:calc(var(--dashBottom) + 7px);transform:scale(.76);transform-origin:bottom left;filter:drop-shadow(0 3px 5px #000d)}
+.cockpitWeaponPod{bottom:var(--dashBottom);left:147px;right:130px;height:110px;min-width:100px;padding:18px 8px 7px;border:2px solid #aeb8aa;border-bottom:0;background:linear-gradient(135deg,#4b6051,#18271f 17%,#050a08 92%);clip-path:polygon(0 12%,9% 0,91% 0,100% 12%,100% 100%,0 100%)}
+.cockpitWeaponPod:after{content:"";position:absolute;bottom:5px;left:8px;right:8px;height:4px;background:repeating-linear-gradient(90deg,#d4ecb9 0 10%,#07150e 10% 14%);opacity:.45;pointer-events:none}
+.cockpitWeaponVisual{font-size:10px;margin-top:13px}.cockpitMeter{height:8px}
+#pip{bottom:calc(var(--dashBottom) + 8px)!important;right:8px!important;width:113px!important;height:99px!important;border:3px solid #9da99d!important;border-radius:3px;box-shadow:0 0 0 4px #263d2f,0 -3px 16px #000c!important}
+.cockpitDock{bottom:0;height:var(--dashBottom);padding:8px 7px 10px;border-top:4px solid #8b9c8d;background:linear-gradient(180deg,#405347,#0b1610 19%,#040a07 94%);box-shadow:inset 0 2px #d0dfc34d}
+.cockpitDock:after{content:"";position:absolute;bottom:0;left:10px;right:10px;height:4px;background:repeating-linear-gradient(90deg,#d5823f 0 6px,transparent 6px 30px);opacity:.65;pointer-events:none}
+.cockpitDock .toolbar button,#musicToggle,#themeToggle{min-height:45px;color:#d4f2dd;border:1px solid #a2b5a6;background:linear-gradient(147deg,#405345,#1c2b22 23%,#050d08 93%);box-shadow:inset 0 2px #d0e2c153,inset 0 -3px 4px #000e;text-shadow:0 1px 3px #000}
+#weapon{color:#f5d6a2!important;border-color:#eab77d!important}
+#targetState{bottom:calc(var(--dashBottom) + 129px)!important}
+@media(max-width:430px){#sceneWrap{--dashBottom:70px;--dashHeight:130px}.cockpitRadar{left:4px;width:85px;height:90px;padding:4px 2px}.radarFace{width:60px;height:61px}.flightDash{left:4px;bottom:calc(var(--dashBottom) + 2px);transform:translateX(5px) scale(.63)}.cockpitWeaponPod{left:127px;right:108px;height:86px;padding:12px 4px 3px}.cockpitWeaponVisual{margin-top:4px;font-size:8px}.cockpitMeter{height:6px}#pip{right:5px!important;width:97px!important;height:80px!important;bottom:calc(var(--dashBottom) + 3px)!important}.cockpitDock{height:var(--dashBottom);padding:7px 3px 9px}.cockpitDock .toolbar button,#musicToggle,#themeToggle{min-height:42px;font-size:7px}#targetState{bottom:calc(var(--dashBottom) + 102px)!important}}
+/* Gold Master cockpit: continuous sculpted silhouette, open battlefield and mounted instruments. */
+#sceneWrap{--dashBottom:67px;--dashHeight:155px;--goldFrameBottom:0}
+#cockpitGoldShell{position:absolute;left:0;right:0;bottom:0;width:100%;height:calc(var(--dashBottom) + var(--dashHeight) + 22px);z-index:15;pointer-events:none;filter:drop-shadow(0 -5px 8px #0008)}
+#dashSuperstructure{opacity:.14;pointer-events:none}
+#dashSuperstructure .dashRim,#dashSuperstructure .dashShoulder,#dashSuperstructure .dashKeel,#dashSuperstructure .dashIndicator{display:none}
+.cockpitRadar,.cockpitWeaponPod,#pip,.flightDash{z-index:21}
+.cockpitRadar{bottom:var(--dashBottom);left:8px;width:125px;height:109px;border:0;background:linear-gradient(145deg,#344b3cbd,#07120dea 40%);box-shadow:inset 0 0 0 2px #76947c,0 1px 9px #000b;clip-path:polygon(0 11%,12% 0,88% 0,100% 11%,100% 100%,0 100%)}
+.cockpitWeaponPod{bottom:var(--dashBottom);left:147px;right:128px;height:105px;border:0;background:linear-gradient(145deg,#354c3de3,#07130eee 35%);box-shadow:inset 0 0 0 2px #6a8771;clip-path:polygon(0 11%,9% 0,91% 0,100% 11%,100% 100%,0 100%)}
+.flightDash{left:14px;bottom:calc(var(--dashBottom) + 7px);transform:scale(.71);transform-origin:bottom left}
+#pip{bottom:calc(var(--dashBottom) + 7px)!important;right:9px!important;width:113px!important;height:95px!important;border:2px solid #78977f!important;box-shadow:0 0 0 4px #1b2b22,0 5px 12px #000b!important}
+.cockpitDock{height:var(--dashBottom);bottom:0;background:linear-gradient(#293d31e0,#09140ef8 25%,#040906ff);border-top:0;box-shadow:inset 0 2px #91a98b76;z-index:23}
+.cockpitDock:after{display:none}
+.cockpitDock .toolbar button,#musicToggle,#themeToggle{clip-path:polygon(0 16%,12% 0,88% 0,100% 16%,100% 89%,90% 100%,10% 100%,0 89%);border-color:#729180;background:linear-gradient(148deg,#324637,#0b1a10 65%,#050c08);min-height:43px}
+.canopyLeft,.canopyRight{width:5px;opacity:.55}.canopyTop{height:4px;opacity:.5}
+@media(max-width:430px){#sceneWrap{--dashBottom:64px;--dashHeight:125px}#cockpitGoldShell{height:calc(var(--dashBottom) + var(--dashHeight) + 16px)}.cockpitRadar{left:4px;width:83px;height:77px}.radarFace{width:58px;height:57px}.flightDash{left:1px;bottom:calc(var(--dashBottom) + 4px);transform:translateX(4px) scale(.65)}.cockpitWeaponPod{left:124px;right:104px;height:79px;padding:12px 3px 3px}#pip{right:5px!important;width:93px!important;height:75px!important;bottom:calc(var(--dashBottom) + 5px)!important}.cockpitDock{height:var(--dashBottom)}.cockpitDock .toolbar button,#musicToggle,#themeToggle{min-height:40px;font-size:7px}}
+/* Study 08.0: machined hardware language. Bevels from 45-degree chamfers, not rounded cards. */
+#sceneWrap{--hudStroke:#718779;--hudLit:#b5dec9;--hudAmber:#e1a66b}
+#cockpitGoldShell{filter:drop-shadow(0 -7px 8px #000a)}
+#cockpitGoldShell path:first-of-type{stroke:#758a7a;stroke-width:2}
+#cockpitGoldShell path:nth-of-type(2){stroke:#b5a174;stroke-width:2}
+.cockpitRadar,.cockpitWeaponPod{border-radius:0!important;border:0!important;box-shadow:inset 0 0 0 1px #637c69, inset 0 2px 0 #a0b39b47,0 5px 9px #000b!important;background:linear-gradient(157deg,#324238 0%,#101d15 13%,#030c08 64%,#111d15 100%)!important}
+.cockpitRadar{clip-path:polygon(0 17%,13% 0,86% 0,100% 17%,100% 100%,0 100%);padding-top:12px}
+.cockpitWeaponPod{clip-path:polygon(0 12%,10% 0,90% 0,100% 12%,100% 100%,0 100%);padding-top:18px}
+.cockpitRadar>span,.cockpitWeaponPod>span{color:#b4c9b2;font:700 8px/1.1 monospace;letter-spacing:1.3px}
+.cockpitWeaponVisual{color:#d2eed9;font-weight:700}
+.cockpitMeter{border:1px solid #7d937b;background:repeating-linear-gradient(90deg,#15291b 0 10px,#050c08 10px 13px)!important}
+.cockpitMeter i{background:repeating-linear-gradient(90deg,#a6d7ab 0 9px,#0b1e10 9px 12px)}
+.radarFace{box-shadow:inset 0 0 14px #000,0 0 0 3px #0d2115;border:1px solid #71967a}
+#pip{border:1px solid #8c9d8a!important;border-radius:0!important;clip-path:polygon(0 10%,8% 0,100% 0,100% 90%,92% 100%,0 100%);box-shadow:0 0 0 4px #17271d,0 5px 9px #000b!important}
+.flightDash{filter:none}
+.flightDash:before,.flightDash:after{opacity:.42}
+.flightDash .dashUtility button,.flightDash #quickZoom button,.flightDash .snapTurnDock button{border-radius:0!important;clip-path:polygon(0 16%,14% 0,100% 0,100% 84%,86% 100%,0 100%);background:linear-gradient(145deg,#37493a,#0b1a10 50%,#06120a)!important;box-shadow:inset 0 1px #b4c5a544!important}
+.cockpitDock{border-top:2px solid #758a76!important;background:linear-gradient(180deg,#2e4034 0,#0d1a11 15%,#030907 100%)!important;box-shadow:inset 0 1px #d0dbba55!important}
+.cockpitDock .toolbar button,#musicToggle,#themeToggle{border-radius:0!important;clip-path:polygon(0 17%,13% 0,87% 0,100% 17%,100% 82%,87% 100%,13% 100%,0 82%);background:linear-gradient(157deg,#36483a 0%,#0a160e 35%,#030b06 100%)!important;border:1px solid #6d8874!important;box-shadow:inset 0 2px #a1bea347!important;color:#c5e6cd!important;letter-spacing:.25px}
+.cockpitDock #weapon{color:#f7c98f!important;background:linear-gradient(150deg,#453825,#1b1a10 50%,#0c100a)!important;border-color:#a5855b!important}
+.cockpitDock .toolbar button:active,#musicToggle:active,#themeToggle:active{filter:brightness(1.55)}
+.hudMission,.hudAttitude,.hudTarget,.mesaGuide{border-radius:0!important;clip-path:polygon(0 0,100% 0,100% 80%,95% 100%,0 100%)}
+.musicPanel{border-radius:0!important;background:#07130ef5!important;border-color:#829783;box-shadow:0 -4px 11px #000b}
+.musicHeader button,.musicTrackRow button,#musicSelect{border-radius:0!important}
+@media(max-width:430px){.cockpitRadar{padding-top:8px}.cockpitWeaponPod{padding-top:12px}.cockpitDock .toolbar button,#musicToggle,#themeToggle{letter-spacing:0}}
+/* 08.1 DECK // an original early-2000s media-player instrument skin.
+   Cosmetic overrides only: same control elements, gestures and battlefield. */
+#sceneWrap[data-cockpit-theme="deck"]{--hudStroke:#789eab;--hudLit:#b6f5dd;--hudAmber:#f6aa5a;--metal:#141d25;color:#bbf7de}
+#sceneWrap[data-cockpit-theme="deck"] #cockpitGoldShell{filter:drop-shadow(0 -5px 4px #000b) saturate(.7) hue-rotate(125deg)}
+#sceneWrap[data-cockpit-theme="deck"] #dashSuperstructure{opacity:.19}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitRadar,
+#sceneWrap[data-cockpit-theme="deck"] .cockpitWeaponPod{background:linear-gradient(145deg,#58707b 0%,#273a43 8%,#0c1720 18%,#060c12 70%,#142630 100%)!important;box-shadow:inset 0 0 0 2px #516a74,inset 0 4px 0 #a0b4b750,0 8px 10px #000c!important}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitRadar>span,
+#sceneWrap[data-cockpit-theme="deck"] .cockpitWeaponPod>span{color:#b2d1dc;letter-spacing:1.6px}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitWeaponPod:before{content:"DECK / 01";position:absolute;right:9px;top:7px;color:#ecad5b;font:700 8px monospace;letter-spacing:1px}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitWeaponVisual{background:#071b1b;border-top:1px solid #2e6560;border-bottom:1px solid #2e6560;padding:4px 0;color:#d1f7ca;text-shadow:0 0 5px #59d9a480;font-family:monospace}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitMeter{height:9px;background:#091a1c!important;box-shadow:inset 0 0 0 1px #2d6a62}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitMeter i{background:repeating-linear-gradient(90deg,#a7eead 0 5px,#256858 5px 6px,#061c18 6px 8px)}
+#sceneWrap[data-cockpit-theme="deck"] .radarFace{background:radial-gradient(circle at 50% 45%,#113d3d,#051316 72%);border:1px solid #74bab5;box-shadow:inset 0 0 17px #000,0 0 0 3px #283f44,0 0 11px #50d7b23b}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitDock{background:linear-gradient(#50616a 0,#26353e 7%,#111c25 16%,#070d14 95%)!important;border-top:3px solid #718b91!important;box-shadow:inset 0 2px #d7e5e55c!important}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitDock .toolbar button,
+#sceneWrap[data-cockpit-theme="deck"] #musicToggle,
+#sceneWrap[data-cockpit-theme="deck"] #themeToggle{background:linear-gradient(158deg,#60737c 0%,#2e4149 8%,#11212c 45%,#0b161f 84%,#23333e)!important;border:1px solid #607782!important;box-shadow:inset 0 2px #a9c0bb88,inset 0 -3px #02080d!important;color:#bfece8!important;text-shadow:0 0 4px #20aa9370;letter-spacing:.45px;font-family:monospace}
+#sceneWrap[data-cockpit-theme="deck"] .cockpitDock #weapon{color:#ffce8a!important;border-color:#a77c50!important;background:linear-gradient(155deg,#7f5c3a 0%,#292520 18%,#141716 80%)!important;box-shadow:inset 0 2px #ffcd8880,inset 0 -3px #060706!important}
+#sceneWrap[data-cockpit-theme="deck"] #pip{border:2px solid #748e92!important;box-shadow:0 0 0 4px #142831,0 5px 9px #000c!important}
+#sceneWrap[data-cockpit-theme="deck"] #pipLabel{color:#adf1d8}
+#sceneWrap[data-cockpit-theme="deck"] .flightDash{filter:drop-shadow(0 0 5px #2abb9d55)}
+#sceneWrap[data-cockpit-theme="deck"] .flightDash button{background:linear-gradient(155deg,#3a515b,#101e27 55%,#060d14)!important;border-color:#6c9c9f!important;color:#b3f4e2!important}
+#sceneWrap[data-cockpit-theme="deck"] .hudMission,
+#sceneWrap[data-cockpit-theme="deck"] .hudAttitude{background:transparent!important;border:0!important;box-shadow:none!important;color:#a5efda;text-shadow:0 0 7px #28bf9b88}
+#sceneWrap[data-cockpit-theme="deck"] .radarSweep{opacity:.9}
+/* Live Wave Lab: fixed, low-profile wave control, two additional original cockpit skins */
+#liveWaveBtn{position:absolute;top:80px;left:50%;transform:translateX(-50%);z-index:29;min-height:30px;padding:4px 10px;border:1px solid #88bea0;border-radius:0;clip-path:polygon(0 0,96% 0,100% 20%,100% 100%,4% 100%,0 80%);background:#0a1c16e8;color:#bcf2d2;font:700 10px monospace;letter-spacing:1px;box-shadow:0 0 9px #0008}
+#sceneWrap[data-cockpit-theme="amber"]{--hudLit:#ffd79c;--hudStroke:#ae895c;--hudAmber:#ffac57;filter:sepia(.13)}
+#sceneWrap[data-cockpit-theme="amber"] .cockpitDock,#sceneWrap[data-cockpit-theme="amber"] .cockpitRadar,#sceneWrap[data-cockpit-theme="amber"] .cockpitWeaponPod{background:linear-gradient(155deg,#71634c,#2b2925 14%,#131a1b 68%,#080b0b)!important}
+#sceneWrap[data-cockpit-theme="amber"] .cockpitDock button{background:linear-gradient(145deg,#76664b,#272c2a 17%,#12191c)!important;color:#ffdca4!important;border-color:#ba8d58!important;box-shadow:inset 0 2px #ffcb8b55!important}
+#sceneWrap[data-cockpit-theme="amber"] .radarFace{filter:sepia(.7) hue-rotate(330deg)}
+#sceneWrap[data-cockpit-theme="phosphor"]{--hudLit:#a7ffa3;--hudStroke:#5a965a;--hudAmber:#a3e69a}
+#sceneWrap[data-cockpit-theme="phosphor"] .cockpitDock,#sceneWrap[data-cockpit-theme="phosphor"] .cockpitRadar,#sceneWrap[data-cockpit-theme="phosphor"] .cockpitWeaponPod{background:linear-gradient(160deg,#304931,#081b0f 28%,#010a04)!important}
+#sceneWrap[data-cockpit-theme="phosphor"] .cockpitDock button{background:linear-gradient(155deg,#305934,#071d0b 28%,#020a04)!important;color:#b3ffa6!important;text-shadow:0 0 5px #55ff6980!important;border-color:#477b4c!important}
+#sceneWrap[data-cockpit-theme="phosphor"] #pip{filter:grayscale(1) sepia(1) hue-rotate(62deg) saturate(2)}
+#sceneWrap[data-cockpit-theme="phosphor"] .radarFace{filter:hue-rotate(35deg) saturate(1.6)}
+@media(max-width:430px){#liveWaveBtn{top:66px;font-size:9px}}
+/* Study 08.3: single top telemetry ribbon, not corner cards. */
+#combatTelem{position:absolute;left:10px;right:10px;top:8px;z-index:26;pointer-events:none;display:flex;gap:7px;align-items:center;justify-content:space-between;color:#c2f2d4;font:700 10px/1.2 monospace;letter-spacing:.2px;text-shadow:0 1px 5px #000,0 0 7px #1be5a477}
+#combatTelem span{white-space:nowrap;background:#06120c72;padding:4px 3px;border-bottom:1px solid #76ba9177}
+#combatTelem #weaponHint{text-align:right;color:#f0c69a}
+#sceneWrap .hudMission,#sceneWrap .hudAttitude{display:none!important}
+#liveWaveBtn{top:34px!important;font-size:10px;min-height:29px}
+#sceneWrap #mesaGuide{top:70px}
+@media(max-width:430px){#combatTelem{font-size:8px;left:4px;right:4px;gap:3px}#combatTelem span{padding:3px 1px}#liveWaveBtn{top:31px!important}}
+#orbitalAudioTest{position:absolute;top:73px;right:6px;z-index:35;border:1px solid #f2bd78;background:#21190cde;color:#ffdab0;padding:6px;font:700 9px monospace;letter-spacing:.2px;border-radius:0;min-height:29px} @media(max-width:430px){#orbitalAudioTest{top:68px;font-size:8px}}
+#radioCaption{position:absolute;left:11px;top:75px;z-index:29;pointer-events:none;color:#abddc9;background:#06150b7b;font:700 9px monospace;letter-spacing:.7px;padding:3px 6px;opacity:.4;transition:opacity .12s}#radioCaption.hot{opacity:1;color:#ffe5aa;text-shadow:0 0 9px #ffac66}@media(max-width:430px){#radioCaption{top:67px;font-size:8px;max-width:58%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}}
+#musicHardMute{min-height:36px;padding:7px 12px;background:#1b2b1c;border:1px solid #b4c4a0;color:#e6f4d3;font:700 11px monospace}
+</style></head>
+<body><div id="gameIntro" class="flight-screen">
+ <div class="bay-art"><div class="bay-window"><span>PLATEAU / SECTOR 07</span></div><div class="crew"></div><div class="gun"></div><div class="operator-console"></div></div>
+ <section class="flight-panel" id="menuPanel">
+ <div class="flight-eyebrow">OD // ORBITAL DEFENSE COMMAND</div><h1 class="flight-title">ORBITAL<br><em>DEFENDER</em></h1>
+ <p class="flight-sub">HIGHER GROUND. A SAFER TOMORROW.</p>
+ <button id="beginPreflight" class="flight-primary">START MISSION <span>›</span></button>
+ <div class="future-item">TRAINING <small>COMING LATER</small></div><div class="future-item">LOADOUT <small>COMING LATER</small></div>
+ <div class="flight-footer">GUNSHIP 01 // DEFENSE UPLINK // SYSTEM STANDBY</div>
+ </section>
+ <section class="flight-panel" id="preflightPanel" hidden>
+ <div class="flight-eyebrow">OD // MISSION DEPLOYMENT SEQUENCE</div><h1 class="flight-title small">PRE-FLIGHT<br><em>SYSTEM CHECK</em></h1>
+ <div class="checkrow"><span>01 / TARGETING OPTICS</span><strong>READY</strong></div>
+ <div class="checkrow"><span>02 / ORBIT STABILIZATION</span><strong>READY</strong></div>
+ <div class="checkrow"><span>03 / WEAPON FEED</span><strong>READY</strong></div>
+ <div class="checkrow"><span>04 / BATTLEFIELD LINK</span><strong>READY</strong></div>
+ <div class="checkrow"><span>05 / AUDIO COMMS</span><strong id="commsStatus">STANDBY</strong></div>
+ <button id="audioUnlock" class="flight-primary">ACTIVATE COMMS <span>›</span></button>
+ <button id="deploy" class="flight-primary" disabled>BEGIN DEPLOYMENT <span>›</span></button>
+ <div id="audioStateText" class="flight-footer">Audio must be running before deployment.</div>
+ </section>
+ </div><main><div class="heading"><div><span class="eyebrow">V0.6 // WEAPON & COMMS SOUND STUDY 09.6</span><h1>OPERATION: FORTIFIED PLATEAU — 05.6</h1></div><span class="eyebrow">COMBAT LAB</span></div>
+<div id="sceneWrap" data-cockpit-theme="deck"><div id="radioCaption" aria-live="polite">COMMS / STANDBY</div><button id="orbitalAudioTest" type="button">♫ TEST STRIKE</button><div id="combatTelem" aria-live="off"><span id="waveProgress">WAVE STANDBY</span><span id="combatTally">0 CONTACTS</span><span id="weaponHint">HOLD TO FIRE</span></div><button id="liveWaveBtn" type="button" aria-label="Start the next hostile wave">▶ WAVES</button><canvas id="scene" aria-label="Rotatable concept of a fortified plateau with a defended mesa summit and surrounding assault routes"></canvas><canvas id="pip" width="296" height="236" aria-label="Magnified impact view"></canvas><div id="pipLabel">056 / IMPACT OPTIC</div><div class="cockpitCanopy" aria-hidden="true"><i class="canopyLeft"></i><i class="canopyRight"></i><i class="canopyTop"></i></div>
+<svg id="cockpitGoldShell" viewBox="0 0 400 310" preserveAspectRatio="none" aria-hidden="true">
+<defs><linearGradient id="goldBezel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#52655d"/><stop offset=".16" stop-color="#202f29"/><stop offset=".55" stop-color="#0a130f"/><stop offset="1" stop-color="#020706"/></linearGradient><linearGradient id="goldTrim" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7c8f80"/><stop offset=".18" stop-color="#ffab61"/><stop offset=".5" stop-color="#d3d2ae"/><stop offset=".82" stop-color="#ffab61"/><stop offset="1" stop-color="#7c8f80"/></linearGradient></defs>
+<path d="M0 56 Q0 34 20 39 L68 60 Q89 64 105 86 L158 87 L176 70 Q185 64 200 64 Q215 64 224 70 L242 87 L295 86 Q311 64 332 60 L380 39 Q400 34 400 56 L400 310 L0 310 Z" fill="url(#goldBezel)" stroke="#6d8274" stroke-width="3"/>
+<path d="M0 52 Q0 37 20 44 L69 64 Q91 69 105 92 L158 93 L176 77 Q186 71 200 71 Q214 71 224 77 L242 93 L295 92 Q309 69 331 64 L380 44 Q400 37 400 52" fill="none" stroke="url(#goldTrim)" stroke-width="4"/>
+<path d="M0 107 L91 117 L122 132 L278 132 L309 117 L400 107" fill="none" stroke="#748c7d" stroke-width="2" opacity=".65"/>
+<path d="M0 236 L400 236" stroke="#9da48b" stroke-width="3"/><path d="M4 240 L396 240" stroke="#d58e48" stroke-width="2" opacity=".65"/>
+<path d="M110 129 L110 235 M290 129 L290 235" stroke="#647868" stroke-width="2" opacity=".6"/>
+<path d="M0 290 L70 290 L88 306 L312 306 L330 290 L400 290" fill="none" stroke="#d18a49" stroke-width="4" opacity=".7"/>
+</svg>
+<div id="dashSuperstructure" aria-hidden="true"><span class="dashSeam dashSeamL"></span><span class="dashSeam dashSeamR"></span><span class="dashRim"></span><span class="dashShoulder left"></span><span class="dashShoulder right"></span><span class="dashKeel"></span><span class="dashIndicator one"></span><span class="dashIndicator two"></span><span class="dashIndicator three"></span></div>
+<div class="cockpitRadar" aria-hidden="true"><span>TACTICAL / SCAN</span><div class="radarFace"><i class="radarSweep"></i><b>◆</b><em>▲</em></div></div>
+<div class="cockpitWeaponPod"><span>WEAPONS / COMMAND</span><div class="cockpitWeaponVisual"><span id="weaponSymbol">▰▰▰</span><span id="weaponStatus">GATLING / READY</span></div><div class="cockpitMeter"><i id="weaponMeter"></i></div></div>
+<div class="cockpitOpticLabel" aria-hidden="true">TARGET OPTIC / LIVE FEED</div>
+<div id="missionReadout" class="hudMission">OD / SECTOR 07 <span>FORTRESS DEFENSE</span></div>
+<div id="attitudeReadout" class="hudAttitude">↻ CW <span>52° / 0°</span></div>
+<div id="mesaGuide" class="mesaGuide" aria-live="off"><span id="mesaGuideText">MESA / CENTERED</span><button id="mesaCenter" type="button" aria-label="Center view on mesa">◎ CENTER</button></div>
+<div id="targetState" class="hudTarget">◌ TRACKING</div>
+<div id="flightDash" class="flightDash" aria-label="Mounted flight controls"><div class="snapTurnDock" role="group" aria-label="Tactical orbit reposition"><button id="turnLeftQuick" type="button" aria-label="Quick turn 90 degrees left">↶<small>90°</small></button><button id="turnWhipQuick" type="button" aria-label="Whip around 180 degrees">⤾<small>180°</small></button><button id="turnRightQuick" type="button" aria-label="Quick turn 90 degrees right">↷<small>90°</small></button></div>
+  <div class="dashMain"><div id="domeSurface" role="application" aria-label="Flight sphere: drag center for pitch and bank; swipe around rim to reverse orbit" tabindex="0">
+<svg viewBox="0 0 300 205" width="100%" aria-hidden="true">
+<defs><radialGradient id="domeMat" cx="32%" cy="23%" r="83%"><stop offset="0" stop-color="#7e9885"/><stop offset=".38" stop-color="#365640"/><stop offset="1" stop-color="#08170f"/></radialGradient><linearGradient id="domePlinth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#607c61"/><stop offset="1" stop-color="#111d16"/></linearGradient></defs>
+<ellipse cx="150" cy="176" rx="109" ry="20" fill="#020a05"/><rect x="40" y="151" width="220" height="45" rx="13" fill="url(#domePlinth)" stroke="#66876c"/><ellipse cx="150" cy="153" rx="106" ry="29" fill="#172d1e" stroke="#a0ba99"/>
+<g id="domeTilt"><path d="M51 146C56 80 102 30 150 30C198 30 244 80 249 146Q250 176 150 178Q50 176 51 146" fill="url(#domeMat)" stroke="#acc7aa" stroke-width="2"/>
+<g stroke="#a8d0ad" fill="none" opacity=".55"><path d="M74 111Q150 89 226 111M89 79Q150 63 211 79M150 35V166" stroke-dasharray="4 5"/><ellipse cx="150" cy="145" rx="81" ry="14"/></g>
+<g font-family="monospace" font-size="11" text-anchor="middle" fill="#e3efd9"><text x="150" y="56">N</text><text x="86" y="133">W</text><text x="214" y="133">E</text><text x="150" y="161">S</text></g></g>
+<circle cx="150" cy="111" r="17" fill="#0d2215" stroke="#d4c08e" stroke-width="2"/><circle cx="150" cy="111" r="3" fill="#e9d39f"/>
+<path id="domeCue" d="M66 112 A84 84 0 0 1 234 112" stroke="#e9c879" fill="none" stroke-width="3" opacity=".6"/>
+<text x="150" y="188" text-anchor="middle" font-size="10" font-family="monospace" fill="#d3e9d1">DRAG DOME / SWIPE RIM</text></svg>
+<div id="sphereOverlay" class="sphereOverlay" aria-hidden="true"><svg viewBox="0 0 100 80" preserveAspectRatio="xMidYMid meet">
+<g stroke="#fff8e9" stroke-width="4.1" stroke-linecap="round" stroke-linejoin="round" fill="none">
+<path id="dirUp" d="M50 28V12m-8 8 8-8 8 8"/><path id="dirDown" d="M50 51v18m-8-8 8 8 8-8"/>
+<path id="dirLeft" d="M37 40H18m8-8-8 8 8 8"/><path id="dirRight" d="M63 40h19m-8-8 8 8-8 8"/>
+</g><circle cx="50" cy="40" r="5" stroke="#e9d4a0" stroke-width="2.6" fill="#142519"/>
+<g stroke="#f0cf92" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"><path id="orbLeft" d="M12 14Q2 33 12 55l-2-12m2 12 8-9"/><path id="orbRight" d="M88 14q10 19 0 41l2-12m-2 12-8-9"/></g>
+</svg></div></div>
+<div id="quickZoom" aria-label="Quick zoom controls"><button id="quickZoomIn" type="button" aria-label="Zoom in">＋</button><div id="quickZoomLabel">3/5</div><button id="quickZoomOut" type="button" aria-label="Zoom out">−</button></div></div>
+  <div class="dashTelemetry"><span id="domeOrbit">↻ CW</span><span id="domePitch">P52°</span><span id="domeBank">B0°</span></div>
+  <div class="dashUtility"><button id="sphereLevel" type="button">⊕ LVL</button><button id="classicToggle" aria-expanded="false" type="button">OPTIONS</button></div>
+  <div id="domeHint" class="dashHint" aria-live="off"></div>
+</div>
+<div id="flightControls" class="flightControls" hidden role="group" aria-label="Flight commands">
+<div class="flightHead"><span>FLIGHT // CLASSIC SETTINGS</span><button id="closeFlight" type="button" aria-label="Close flight commands">×</button></div>
+<div id="classicPanel" hidden>
+<div class="flightInstrument"><div class="instrumentCompass"><span class="instrumentArrow" id="instrumentArrow">↻</span><small id="instrumentHeading">CW / 030°</small></div><div class="instrumentAttitude"><strong>CAMERA ATTITUDE</strong><span id="instrumentPitch">PITCH 52°</span><span id="instrumentBank">BANK 0°</span></div></div>
+<div class="flightSection"><div class="flightSectionTitle">ORBIT / POSITION</div><div class="flightGrid">
+<button id="left"><span class="flightSymbol">↶</span><small>TURN −90°</small></button><button id="right"><span class="flightSymbol">↷</span><small>TURN +90°</small></button><button id="reverse"><span class="flightSymbol">⇄</span><small>REVERSE</small></button><button id="sweep"><span class="flightSymbol">⌁</span><small>SWEEP</small></button>
+</div></div><div class="flightSection"><div class="flightSectionTitle">ATTITUDE / OPTICS</div><div class="flightGrid">
+<button id="pitchDown"><span class="flightSymbol">↘</span><small>DIP</small></button><button id="pitchUp"><span class="flightSymbol">↗</span><small>PITCH</small></button><button id="bankLeft"><span class="flightSymbol">⤺</span><small>BANK LEFT</small></button><button id="bankRight"><span class="flightSymbol">⤻</span><small>BANK RIGHT</small></button>
+<button id="level"><span class="flightSymbol">⊕</span><small>LEVEL</small></button><button id="out"><span class="flightSymbol">−</span><small>ZOOM OUT</small></button><button id="in"><span class="flightSymbol">+</span><small>ZOOM IN</small></button><button id="reset"><span class="flightSymbol">⌖</span><small>RESET</small></button>
+</div></div><div class="flightSecondary"><button id="camera">VIEW: SURVEY</button><button id="shelves" aria-pressed="true">SHELVES: ON</button><button id="spawn">REINFORCE</button><button id="radio" aria-pressed="true">RADIO: ON</button></div>
+</div></div><div id="musicPanel" class="musicPanel" hidden role="group" aria-label="Cockpit audio controls">
+ <div class="musicHeader"><b>♫ AUDIO / DECK</b><button id="musicClose" type="button" aria-label="Close audio controls">×</button></div>
+ <div class="musicTrackRow"><span id="musicNowPlaying">STANDBY / MUSIC OFF</span><button id="musicPlay" type="button">▶ PLAY</button></div>
+ <label class="musicSelectLabel" for="musicSelect">TRACK</label><select id="musicSelect">
+  <option value="auto">AUTO / WAVE PROGRESSION</option>
+  <option value="synthwave">01 · Synthwave House Loop</option>
+  <option value="bilwe">02 · Bilwe</option>
+  <option value="technological">03 · Technological Messup</option>
+  <option value="void">04 · Claimed by the Void</option>
+  <option value="brute">05 · Brute Force</option>
+  <option value="mindstream">TACTICAL · MindStream</option>
+  <option value="calm">Calm Loop</option>
+  <option value="off">MUSIC OFF</option>
+ </select>
+ <label class="musicVolumeLabel" for="musicVolume">MUSIC LEVEL <span id="musicLevel">65%</span></label>
+ <input id="musicVolume" type="range" min="0" max="100" step="1" value="65"/>
+ <div class="musicFoot" id="musicPlaybackState">NATIVE MUSIC PLAYER · READY</div><div class="musicFoot">09.6 · SAMPLED WEAPONS / RADIO PRIORITY</div><button id="musicHardMute" type="button">MUTE MUSIC</button>
+</div>
+<div class="cockpitDock"><div class="toolbar">
+<button id="weapon">GATLING / READY</button><button id="orbit" aria-pressed="true">↻ ORBIT</button><button id="lens" aria-pressed="true">◎ OPTIC</button><button id="flightToggle" aria-expanded="false" aria-controls="flightControls">OPTIONS ▾</button>
+<span class="status" id="status">RETICLE TRACK // ORBIT ACTIVE</span></div><button id="musicToggle" type="button" aria-expanded="false" aria-controls="musicPanel" aria-label="Open soundtrack controls">♫ AUDIO</button><button id="themeToggle" type="button" aria-label="Cycle cockpit skin: Deck, Tactical, Retro">▦ DECK</button></div>
+</div>
+
+<p class="note" style="display:none">Combat Study 04.4 unified fire/focus and inset impact optics: continuous orbit now stays active while the camera gradually zooms toward the designated aim point, then eases back on release. Quarter-turns remain available. Touch or drag on terrain to designate an aim point, hold CHARGE to ease the camera inward, release to simulate a shot and return to survey. Isolated combat experiment: touch and hold the battlefield to launch world-space Gatling rounds with gravity, or charge, drag to adjust aim, release to stop or launch, watch enemy impacts and read radio confirmations. Touch the terrain to aim. No production combat changes. No enemies, targeting, damage or existing game rules have been changed.</p></main>
+<script>
+"use strict";
+const canvas=document.getElementById("scene"),ctx=canvas.getContext("2d"),status=document.getElementById("status");
+let width=1,height=1,angle=.52,targetAngle=.52,showShelves=true,lowView=false,zoomIndex=2,zoomValue=1,cinemaStart=0,cinemaActive=false,focusX=0,focusZ=0,focusY=34,goalX=0,goalZ=0,goalY=34,aimX=0,aimZ=0,aimY=34,charging=false,charge=0,recoil=0,chargeStart=0,aimSet=false,orbitOn=true,orbitDirection=1,orbitSpeed=.00011,orbitSpeedGoal=.00011,sweepUntil=0,pitchDeg=52,pitchGoal=52,bankDeg=0,bankGoal=0,tracking=true;const zoomSteps=[.62,.83,1.04,1.38,1.78],zoomNames=["WIDE THEATER","SURVEY","TACTICAL","OBSERVATION","DETAIL"];
+function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);width=r.width;height=r.height;canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);ctx.setTransform(d,0,0,d,0,0);}
+addEventListener("resize",resize);resize();
+// Elevation remap preserves the approved Study 02 structure while giving
+// the lower two geological shelves monumental, continuous rock faces.
+// Original 0/9/17/24/29/34 -> expanded 0/18/38/60/65/70.
+function elevation(y){
+ const knots=[[0,0],[9,10],[17,24],[24,77],[29,92],[34,106]];
+ if(y<=0)return y*2;
+ for(let i=1;i<knots.length;i++){
+  if(y<=knots[i][0]){const a=knots[i-1],b=knots[i],t=(y-a[0])/(b[0]-a[0]);return a[1]+t*(b[1]-a[1]);}
+ }
+ return 106+(y-34);
+}
+function playableFraming(){const reserved=Math.min(222,height*.34);return {centerY:22+(height-reserved-22)*.49,usableHeight:height-reserved-18};}
+function project(x,z,y=0){
+ const c=Math.cos(angle),s=Math.sin(angle),rx=x*c-z*s,rz=x*s+z*c;
+ const frame=playableFraming();
+ const scale=Math.min(width/265,frame.usableHeight/(lowView?205:190))*zoomValue;
+ const tilt=Math.PI*pitchDeg/180;
+ const depthFactor=Math.sin(tilt)*.84;
+ const verticalFactor=Math.cos(tilt)*1.18;
+ const fc=Math.cos(angle),fs=Math.sin(angle),frx=focusX*fc-focusZ*fs,frz=focusX*fs+focusZ*fc;
+ const sx=(rx-frx)*scale,sy=(rz-frz)*scale*depthFactor-(elevation(y)-elevation(focusY))*scale*verticalFactor;
+ const bank=bankDeg*Math.PI/180,bc=Math.cos(bank),bs=Math.sin(bank);
+ return{x:width*.5+sx*bc-sy*bs,y:frame.centerY+sx*bs+sy*bc,depth:rz};
+}
+function poly(points,fill,stroke=null,lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(a,b,color,w=1){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function ellipse(x,z,rx,rz,color,y=0){const p=project(x,z,y),a=project(x+rx,z,y),b=project(x,z+rz,y);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),angle,0,Math.PI*2);ctx.fill();}
+function box(x,z,w,d,h,side,roof){const q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];const b=q.map(v=>project(v[0],v[1],34)),t=q.map(v=>project(v[0],v[1],34+h));poly([b[1],b[2],t[2],t[1]],side);poly([b[2],b[3],t[3],t[2]],side);poly(t,roof,"#8f9275");}
+function path(points,color,widthLine){for(let i=1;i<points.length;i++)line(project(...points[i-1]),project(...points[i]),color,widthLine);}
+function terrain(){
+ctx.fillStyle="#41463a";ctx.fillRect(0,0,width,height);
+for(let i=0;i<150;i++){const x=((i*83)%245)-122,z=((i*59)%225)-112;ellipse(x,z,3+i%6,2+i%4,i%3===0?"rgba(162,131,78,.13)":"rgba(91,113,79,.13)");}
+// Scattered distant terrain establishes scale in wide mode: dry washes,
+ // convoy roads, rocky outcrops and sparse shrubs, never a blank theater.
+ for(let i=0;i<410;i++){
+  const x=((i*73+19)%520)-260,z=((i*109+43)%500)-250;
+  if(Math.abs(x)<72&&Math.abs(z)<88)continue;
+  const p=project(x,z,0),r=Math.max(.65,(i%7+2)*Math.min(width/265,height/199)*zoomValue*.36);
+  ctx.fillStyle=i%5===0?"rgba(171,145,102,.42)":i%3===0?"rgba(97,111,75,.54)":"rgba(43,50,40,.4)";
+  ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.47,(i%8)*.41,0,Math.PI*2);ctx.fill();
+ }
+ for(const wash of [
+  [[-255,-145,0],[-170,-119,0],[-114,-84,0],[-70,-76,0]],
+  [[250,185,0],[172,145,0],[125,111,0],[75,73,0]],
+  [[-210,191,0],[-148,150,0],[-108,111,0],[-72,75,0]]
+ ]){path(wash,"rgba(187,155,100,.34)",9*zoomValue);path(wash,"rgba(218,186,129,.17)",3*zoomValue);}
+ for(const d of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const dx=Math.cos(d),dz=Math.sin(d);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#6f6650",8);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#918368",2);}
+}
+const geometry={
+ shelves:[
+ {y:9,shape:[[-52,-70],[-19,-78],[17,-76],[44,-61],[57,-38],[60,-1],[50,32],[32,67],[8,80],[-28,77],[-54,56],[-65,23],[-65,-19]],top:"#816849"},
+ {y:17,shape:[[-39,-61],[-8,-66],[20,-59],[42,-42],[48,-15],[42,17],[31,48],[8,61],[-23,59],[-42,40],[-49,9],[-47,-29]],top:"#997753"}
+ ],
+ foot:[[-30,-51],[5,-55],[31,-45],[39,-21],[33,8],[26,39],[11,55],[-14,57],[-33,42],[-42,14],[-39,-19]],
+ tiers:[
+ {y:24,shape:[[-24,-44],[4,-47],[25,-38],[30,-18],[26,9],[20,35],[8,46],[-13,48],[-27,34],[-34,10],[-32,-19]],top:"#9e8159"},
+ {y:29,shape:[[-20,-35],[3,-39],[20,-29],[23,-8],[19,15],[12,32],[-6,36],[-22,25],[-27,5],[-25,-19]],top:"#b49767"},
+ {y:34,shape:[[-15,-31],[2,-33],[15,-24],[17,-8],[12,6],[-4,13],[-17,5],[-21,-13]],top:"#c8ac7a"}
+ ],
+ structures:[
+ {x:-2,z:-12,y:34,w:12,d:10,h:7,type:"COMMAND"},
+ {x:10,z:-20,y:34,w:4,d:4,h:14,type:"SIGNAL"},
+ {x:-10,z:20,y:29,w:9,d:7,h:5,type:"STORAGE"},
+ {x:8,z:39,y:24,w:8,d:5,h:4,type:"CHECKPOINT"}
+ ],
+ ascent:[[37,55,0],[33,44,5],[23,42,10],[29,30,15],[19,25,20],[8,39,24]]
+};
+function tierFaces(top,bottom,bottomY,topY,shade){
+ const n=top.length;
+ // Divide the face by top-edge segments and anchor it to a corresponding
+ // proportional perimeter point below. Sorting by projected depth prevents
+ // near faces from disappearing beneath distant ones.
+ const faces=[];
+ for(let i=0;i<n;i++){
+  const a=i/n,b=(i+1)/n;
+  const qa=perimeterPoint(bottom,a),qb=perimeterPoint(bottom,b);
+  const ta=top[i],tb=top[(i+1)%n];
+  const depth=(project(ta[0],ta[1],topY).depth+project(tb[0],tb[1],topY).depth)/2;
+  faces.push({depth,i,verts:[project(...qa,bottomY),project(...qb,bottomY),project(...tb,topY),project(...ta,topY)]});
+ }
+ faces.sort((a,b)=>a.depth-b.depth);
+ for(const face of faces){
+  poly(face.verts,face.i%3===0?"#70543a":face.i%2===0?shade:"#886743","#4c3d31",.65);
+  for(let n=1;n<5;n++){
+   const t=n/5,a=face.verts[0],b=face.verts[1],c=face.verts[2],d=face.verts[3];
+   line({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t},{x:d.x+(c.x-d.x)*t,y:d.y+(c.y-d.y)*t},n%2?"rgba(217,172,107,.28)":"rgba(32,27,24,.25)",.8);
+  }
+ }
+}
+function perimeterPoint(shape,t){
+ const lengths=shape.map((p,i)=>Math.hypot(shape[(i+1)%shape.length][0]-p[0],shape[(i+1)%shape.length][1]-p[1]));
+ const sum=lengths.reduce((a,b)=>a+b,0);let dist=((t%1)+1)%1*sum;
+ for(let i=0;i<shape.length;i++){
+  if(dist<=lengths[i]){const p=shape[i],q=shape[(i+1)%shape.length],v=dist/lengths[i];return[p[0]+(q[0]-p[0])*v,p[1]+(q[1]-p[1])*v];}
+  dist-=lengths[i];
+ }
+ return shape[0];
+}
+function plateau(){
+ ellipse(0,2,52,68,"rgba(10,13,10,.45)");
+ let below=showShelves?geometry.shelves[0].shape:geometry.foot,belowY=0;
+ const allTiers=showShelves?[...geometry.shelves,...geometry.tiers]:geometry.tiers;
+ // Expanded tiers connect vertically; the original citadel remains untouched.
+ if(showShelves) below=geometry.shelves[0].shape;
+ for(const tier of allTiers){
+  if(showShelves && tier===geometry.shelves[0]){
+   const footing=tier.shape.map(p=>[p[0]*1.13,p[1]*1.11]);
+   tierFaces(tier.shape,footing,0,tier.y,"#806044");
+  }else{
+   tierFaces(tier.shape,below,belowY,tier.y,"#967248");
+  }
+  poly(tier.shape.map(v=>project(...v,tier.y)),tier.top,"#e2c08d",1.6);
+  below=tier.shape;belowY=tier.y;
+ }
+ // West Point-inspired defensive spine, overlook terraces, and broad retaining edges.
+ if(showShelves){
+  for(const seg of [
+   [[-42,-45],[-33,-57],17], [[-33,-57],[-7,-63],17], [[12,-61],[32,-48],17],
+   [[39,-34],[45,-15],17], [[38,21],[28,44],17], [[9,56],[-9,58],17],
+   [[-52,-29],[-58,-7],9], [[-58,-7],[-55,14],9], [[-47,48],[-28,69],9],
+   [[-19,73],[8,77],9],[[30,66],[43,47],9]
+  ]){
+   const[a,b,y]=seg;
+   line(project(...a,y+1.3),project(...b,y+1.3),"#574735",7);
+   line(project(...a,y+2.5),project(...b,y+2.5),"#cbb18c",2.5);
+  }
+  for(const o of [[-33,-48,17],[34,37,17],[-49,24,9],[28,58,9]]){
+   const [x,z,y]=o;
+   const q=[[x-5,z-3],[x+5,z-3],[x+5,z+3],[x-5,z+3]].map(p=>project(...p,y+2));
+   poly(q,"#b8a283","#e9d5ab",1);
+  }
+  // Narrow carved road zigzags from the outer shelf to the citadel ascent.
+  const lowerRoad=[[65,76,0],[51,68,9],[41,58,9],[47,45,13],[31,39,17],[39,32,17],[37,55,0]];
+  for(let i=1;i<lowerRoad.length;i++){
+   const a=project(...lowerRoad[i-1]),b=project(...lowerRoad[i]);
+   line(a,b,"#5a4a39",8);line(a,b,"#d4b68b",4);
+  }
+ }
+ // Parapet runs are intentionally incomplete: ruined wall gaps suggest breaches.
+ for(const segment of [
+  [[-21,-33],[-10,-38],24],[[11,-39],[24,-32],24],
+  [[-28,14],[-19,29],24],[[7,43],[-7,46],24],
+  [[-22,-21],[-22,4],29],[[12,29],[20,15],29],
+  [[-13,-26],[0,-29],34],[[13,-18],[14,-3],34]
+ ]){const [a,b,y]=segment;line(project(...a,y+1.6),project(...b,y+1.6),"#68563d",6);line(project(...a,y+2.7),project(...b,y+2.7),"#dfc395",2);}
+ // Switchback approach rendered on top of the rock face, with step highlights.
+ for(let i=1;i<geometry.ascent.length;i++){
+  const a=project(...geometry.ascent[i-1]),b=project(...geometry.ascent[i]);
+  line(a,b,"#4b3f33",10);line(a,b,"#e1c494",5);line(a,b,"rgba(255,235,189,.45)",1);
+ }
+ for(let i=1;i<geometry.ascent.length-1;i++){const p=project(...geometry.ascent[i]);ctx.fillStyle="#ecd3a2";ctx.fillRect(p.x-3,p.y-3,6,6);}
+ // Structures use each terrace's actual Y coordinate.
+ const buildings=geometry.structures.slice().sort((a,b)=>project(a.x,a.z,a.y).depth-project(b.x,b.z,b.y).depth);
+ for(const o of buildings){
+  const {x,z,w,d,y,h}=o,q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];
+  const low=q.map(v=>project(...v,y)),hi=q.map(v=>project(...v,y+h));
+  poly([low[1],low[2],hi[2],hi[1]],"#75654d");
+  poly([low[2],low[3],hi[3],hi[2]],"#5e5546");
+  poly(hi,o.type==="SIGNAL"?"#829686":"#b0a17e","#e4cfa1",1);
+  // Raised service roof, corner armour and illuminated vents lend built scale.
+  const roof=project(x,z,y+h+.5),corner=project(x+w*.28,z+d*.22,y+h+.5);
+  ctx.strokeStyle="#655746";ctx.lineWidth=1.25;ctx.beginPath();ctx.moveTo(roof.x,roof.y);ctx.lineTo(corner.x,corner.y);ctx.stroke();
+  ctx.fillStyle="#2c403a";ctx.fillRect(roof.x-2.2,roof.y-2.2,4.4,3);
+  const edgeA=project(x-w*.5,z-d*.5,y+h),edgeB=project(x-w*.5,z-d*.5,y+h-2.5);
+  line(edgeA,edgeB,"#d5ae74",1.6);
+  if(o.type==="SIGNAL"){line(project(x,z,y+h),project(x,z,y+h+11),"#b1d5bc",2);const tip=project(x,z,y+h+11);ctx.fillStyle="#a9fbd3";ctx.fillRect(tip.x-2,tip.y-2,4,4);}
+  else {const beacon=project(x+w*.32,z-d*.28,y+h+1);ctx.fillStyle="#ffad67";ctx.beginPath();ctx.arc(beacon.x,beacon.y,Math.max(1.2,1.6*zoomValue),0,Math.PI*2);ctx.fill();}
+
+ }
+ const p=project(-2,-12,44);ctx.font="bold 10px monospace";ctx.textAlign="center";ctx.fillStyle="#d8ffdd";ctx.fillText("FORWARD COMMAND",p.x,p.y-13);
+}
+function drawWeaponReticle(x,y){
+ const mobile=Math.min(width,height),r=Math.max(28,Math.min(43,mobile*.11));
+ const color=weaponMode===0?"#b8e8c6":weaponMode===1?"#d7f4e2":"#e9c38e";
+ ctx.save();ctx.translate(x,y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.45;
+ const segment=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+ const corner=(sx,sy,arm)=>{segment(sx*(r-10),sy*r,sx*r,sy*r);segment(sx*r,sy*(r-10),sx*r,sy*r);};
+ for(const a of [[-1,-1],[-1,1],[1,-1],[1,1]])corner(...a);
+ const gap=weaponMode===1?6:9;
+ segment(-r*.55,0,-gap,0);segment(gap,0,r*.55,0);
+ segment(0,-r*.5,0,-gap);segment(0,gap,0,r*.5);
+ ctx.beginPath();ctx.arc(0,0,1.8,0,Math.PI*2);ctx.fill();
+ // Short broken ballistic / orbital guide in the right-hand quadrant.
+ // Guide direction counter-rotates with orbit to evoke the off-axis firing solution.
+ const bend=Math.sin(angle)*8,base=r*.37;
+ ctx.beginPath();
+ for(let k=0;k<7;k++){
+  const t=k/7,a=(.25+t*.85),px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;
+  if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }
+ ctx.strokeStyle=color;ctx.globalAlpha=.72;ctx.setLineDash([4,5]);ctx.stroke();ctx.setLineDash([]);
+ for(let k=0;k<4;k++){const t=k/3,a=.25+t*.85,px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;segment(px,py,px+5+(weaponMode===0?combat.heat*5:0),py+2);}
+ ctx.globalAlpha=1;ctx.strokeStyle=color;
+ if(weaponMode===0){
+   // Heat-informed spread: fragmented tick arc; no giant targeting circle.
+   const spread=r*.59+combat.heat*8;
+   for(let k=0;k<9;k++){const a=k*Math.PI*2/9+angle*.2;segment(Math.cos(a)*spread,Math.sin(a)*spread,Math.cos(a)*(spread+3.5),Math.sin(a)*(spread+3.5));}
+ }else if(weaponMode===1){
+   const tighten=13-charge*5;corner(-1,-1,tighten);
+   segment(-r*.35,r*.83,-r*.35+charge*r*.7,r*.83);
+ }else{
+   // Four blast extent corners, no full opaque circle.
+   const br=r*.92;
+   for(let k=0;k<4;k++){const a=Math.PI*.25+k*Math.PI*.5;segment(Math.cos(a)*br,Math.sin(a)*br,Math.cos(a)*(br+8),Math.sin(a)*(br+8));}
+ }
+ ctx.restore();
+}
+function drawMagnifier(){
+ const pip=document.getElementById("pip"),label=document.getElementById("pipLabel");
+ if(!lensOn){pip.style.display="none";label.style.display="none";return;}
+ pip.style.display="block";label.style.display="block";
+ const rect=canvas.getBoundingClientRect();
+ const rw=rect.width/width,rh=rect.height/height;
+ const w=Math.min(148,rect.width*.42),h=w*.8;
+ const px=thumbActive?Math.max(12,Math.min(rect.width-w-12,thumbX*rw-w*.5)):rect.width-w-14;
+ const py=thumbActive?Math.max(40,Math.min(rect.height-h-20,thumbY*rh-h-30)):74;
+ pipPosX=pipPosX===null?px:pipPosX+(px-pipPosX)*.22;
+ pipPosY=pipPosY===null?py:pipPosY+(py-pipPosY)*.22;
+ pip.style.width=w+"px";pip.style.height=h+"px";pip.style.left=pipPosX+"px";pip.style.top=pipPosY+"px";pip.style.right="auto";
+ label.style.left=pipPosX+"px";label.style.top=Math.max(5,pipPosY-17)+"px";label.style.right="auto";
+ const p=project(aimX,aimZ,aimY),d=canvas.width/width;
+ opticX=opticX===null?p.x:opticX+(p.x-opticX)*.26;opticY=opticY===null?p.y:opticY+(p.y-opticY)*.26;
+ const srcW=Math.min(52*d,canvas.width),srcH=Math.min(42*d,canvas.height);
+ const sx=Math.max(0,Math.min(canvas.width-srcW,opticX*d-srcW/2));
+ const sy=Math.max(0,Math.min(canvas.height-srcH,opticY*d-srcH/2));
+ const g=pip.getContext("2d");g.clearRect(0,0,pip.width,pip.height);
+ // Separate destination canvas avoids undefined overlapping source/destination copies on iOS Safari.
+ g.drawImage(canvas,sx,sy,srcW,srcH,0,0,pip.width,pip.height);
+ g.strokeStyle="#dff9e5";g.lineWidth=2;
+ const cx=pip.width/2,cy=pip.height/2;
+ g.beginPath();g.moveTo(cx-15,cy);g.lineTo(cx+15,cy);g.moveTo(cx,cy-15);g.lineTo(cx,cy+15);g.stroke();
+}
+function overlay(){
+ const g=ctx.createLinearGradient(0,0,0,height);g.addColorStop(0,"rgba(4,17,11,.16)");g.addColorStop(1,"rgba(4,17,11,.03)");ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle="rgba(129,235,172,.32)";ctx.lineWidth=1;ctx.strokeRect(12,12,width-24,height-24);
+ ctx.font="11px monospace";ctx.fillStyle="#adf5c5";ctx.textAlign="left";
+ ctx.fillText("OD / MACHINED 080",22,32);
+ ctx.fillText("MODE "+zoomNames[zoomIndex]+" / PITCH "+Math.round(pitchDeg)+" / BANK "+Math.round(bankDeg),22,48);
+ ctx.fillText("RETICLE LOCK / FLIGHT ATTITUDE",22,height-22);
+ ctx.textAlign="right";ctx.fillText("CAM "+Math.round(angle*180/Math.PI)+"°",width-22,32);
+ // Minimal, weapon-specific optics. World-space reticle remains authoritative.
+ const mark=project(aimX,aimZ,aimY);
+ drawWeaponReticle(mark.x,mark.y);
+ ctx.fillStyle="#d9e9da";ctx.textAlign="right";
+ ctx.fillText(weaponLabels[weaponMode]+" / "+(weaponMode===0?"HEAT "+Math.round(combat.heat*100)+"%":weaponMode===1?"CHARGE "+Math.round(charge*100)+"%":"AREA 12"),width-22,height-23);
+ if(recoil>0){ctx.textAlign="center";ctx.fillStyle="#ffe5ae";ctx.fillText("ROUND RELEASED · SIMULATED",width*.5,height*.82);}
+
+}
+
+// Procedural audio: no external recordings or licensing dependencies.
+let audioCtx=null,noiseBuffer=null,lastImpactSound=0;
+const audioDiag={firstTouch:null,firstScheduled:null,resumeRequested:null,resumeResolved:null,count:0,errors:0,lastError:"NONE"};
+function elapsed(start){return start===null?"--":((performance.now()-start)/1000).toFixed(1)+"s";}
+function audioDiagnostics(){
+ const d=audioDiag,state=audioCtx?audioCtx.state:"NOT CREATED";
+ const lines=["AUDIO 056 / "+state,"TOUCH +"+elapsed(d.firstTouch),
+ "SCHEDULED "+d.count+" / FIRST +"+(d.firstScheduled===null?"--":((d.firstScheduled-d.firstTouch)/1000).toFixed(2)+"s"),
+ "RESUME "+(d.resumeRequested===null?"--":d.resumeResolved===null?"PENDING "+elapsed(d.resumeRequested):"OK +"+((d.resumeResolved-d.firstTouch)/1000).toFixed(2)+"s"),
+ "ERRORS "+d.errors+" "+d.lastError.slice(0,20)];
+ ctx.save();ctx.font="bold 10px monospace";ctx.textAlign="left";
+ ctx.fillStyle="rgba(4,15,10,.85)";ctx.fillRect(13,56,Math.min(264,width-26),105);
+ lines.forEach((v,i)=>{ctx.fillStyle=i===0?"#ffda91":"#d0ecd5";ctx.fillText(v,20,75+i*18);});
+ ctx.restore();
+}
+function initAudio(){
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  if(!audioCtx){audioCtx=new C();audioCtx.onstatechange=()=>{};noiseBuffer=audioCtx.createBuffer(1,audioCtx.sampleRate*.3,audioCtx.sampleRate);
+   const d=noiseBuffer.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  // Prime audio directly inside the user gesture; Safari resumes asynchronously.
+  if(audioCtx.state==="suspended"){audioDiag.resumeRequested=performance.now();const p=audioCtx.resume();if(p&&p.then)p.then(()=>{audioDiag.resumeResolved=performance.now();}).catch(e=>{audioDiag.errors++;audioDiag.lastError=String(e);});}
+  // A near-silent oscillator establishes an active output path on the very first touch.
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  g.gain.value=.0001;o.connect(g).connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+.015);
+ }catch(e){audioDiag.errors++;audioDiag.lastError=String(e);}
+}
+function soundBurst(freq,duration,volume,noise=false){
+ if(!audioCtx||audioCtx.state==="closed")return;
+ audioDiag.count++;if(audioDiag.firstScheduled===null)audioDiag.firstScheduled=performance.now();
+ const now=audioCtx.currentTime,src=noise?audioCtx.createBufferSource():audioCtx.createOscillator();
+ if(noise)src.buffer=noiseBuffer;else{src.type="sawtooth";src.frequency.setValueAtTime(freq,now);src.frequency.exponentialRampToValueAtTime(Math.max(35,freq*.45),now+duration);}
+ const filter=audioCtx.createBiquadFilter();filter.type="lowpass";filter.frequency.value=noise?freq:1200;
+ const gain=audioCtx.createGain();gain.gain.setValueAtTime(Math.max(.0001,volume),now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+ src.connect(filter).connect(gain).connect(audioCtx.destination);src.start(now);src.stop(now+duration+.02);
+}
+
+// Original Orbital weapon character adapted from main/game.js arcadeSfxLaunch/Impact.
+// Audio 08.8: music remains musical, and yields briefly around each strike.
+let musicDuckUntil=0,musicDuckStart=0,musicDuckDepth=.34,musicBaseGain=.42,musicLastUpdate=0;
+function musicTarget(){return Number(document.getElementById("musicVolume")?.value||40)/100*musicBaseGain;}
+function duckWeapons(ms=1000,depth=.34){/* Original arcade game did not duck soundtrack during weapons. */}
+function restoreMusic(t){
+ return; // Preserve native playback and original overlapping mix.
+ const base=musicTarget(),during=t<musicDuckUntil;
+ const elapsed=t-musicDuckStart;
+ const attack=Math.min(1,Math.max(0,elapsed/85));
+ const ducked=base*(1-(1-musicDuckDepth)*attack);
+ const goal=during?ducked:base;
+ const dt=Math.max(0,Math.min(60,t-(musicLastUpdate||t)));musicLastUpdate=t;
+ const smoothing=1-Math.exp(-dt/(during?70:550));
+ /* iOS native media playback: do not route into AudioContext or replace playback with a muted media source. */
+ if(!during)musicDuckDepth=.34;
+}
+// Safari-safe sound queue. A weapon release must not silently vanish while AudioContext resumes.
+let pendingWeaponSounds=[];
+function withWeaponAudio(callback){
+ initAudio();
+ if(!audioCtx)return;
+ if(audioCtx.state==="running"){callback();return;}
+ pendingWeaponSounds.push(callback);
+ const resume=audioCtx.resume();
+ if(resume&&resume.then)resume.then(()=>{const jobs=pendingWeaponSounds.splice(0);jobs.forEach(fn=>{try{fn()}catch(e){audioDiag.errors++;audioDiag.lastError=String(e);}});}).catch(e=>{audioDiag.errors++;audioDiag.lastError=String(e);});
+}
+function weaponOsc(from,to,dur,type,vol,delay=0){if(!audioCtx)return;const t=audioCtx.currentTime+delay,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(from,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,to),t+dur);g.gain.setValueAtTime(Math.max(.0001,vol),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(audioCtx.destination);o.start(t);o.stop(t+dur+.02);audioDiag.count++;}
+function weaponNoise(dur,vol,freq,delay=0){if(!audioCtx||!noiseBuffer)return;const t=audioCtx.currentTime+delay,b=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();b.buffer=noiseBuffer;f.type="bandpass";f.frequency.value=freq;f.Q.value=.7;g.gain.setValueAtTime(Math.max(.0001,vol),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);b.connect(f).connect(g).connect(audioCtx.destination);b.start(t);b.stop(t+Math.min(dur,.28)+.02);audioDiag.count++;}
+// Exact synthesis frequencies, envelopes and tier sample rates ported from main/game.js.
+const heritageSamples={laserCannon:"../assets/audio/sfx/doomsday_laser_cannon_short.wav",splash:"../assets/audio/sfx/water_explode.opus",gatling:"../assets/audio/sfx/fire_heavy.wav",armorHit:"../assets/audio/sfx/impact_pen.wav",salvo:"../assets/audio/sfx/sfx_laser_1.mp3",salvoConfirm:"../assets/audio/sfx/sfx_laser_3.mp3"};
+const heritagePool={};
+function primeHeritageSample(key){
+ const src=heritageSamples[key];if(!src)return;
+ if(!heritagePool[key])heritagePool[key]=Array.from({length:3},()=>{const a=new Audio(src);a.preload="auto";a.load();return a;});
+}
+function heritageSample(key,volume,rate=1){
+ primeHeritageSample(key);
+ const pool=heritagePool[key];if(!pool)return;
+ try{const a=pool.find(x=>x.paused||x.ended)||pool[0];a.pause();a.currentTime=0;a.volume=volume;a.playbackRate=rate;const p=a.play();if(p?.catch)p.catch(()=>{});}catch(e){}
+}
+function heritageTone(hz,dur,type,gain,delay=0){weaponOsc(hz,hz,dur,type,gain,delay);}
+function heritageSweep(from,to,dur,type,gain,delay=0){weaponOsc(from,to,dur,type,gain,delay);}
+function heritageNoise(dur,gain,hz,filterType="lowpass",delay=0){
+ if(!audioCtx||!noiseBuffer)return;const t=audioCtx.currentTime+delay,source=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter(),g=audioCtx.createGain();source.buffer=noiseBuffer;filter.type=filterType;filter.frequency.value=hz;g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);source.connect(filter).connect(g).connect(audioCtx.destination);source.start(t);source.stop(t+Math.min(dur,.29)+.01);
+}
+function heritageKick(delay=0,gain=.035){heritageSweep(120,45,.18,"sine",gain,delay);heritageNoise(.045,gain*.35,160,"lowpass",delay);}
+function weaponLaunch(type,tier=1){if(type!=="orbital"){withWeaponAudio(()=>{heritageNoise(.12,.035,1000);heritageSweep(250,80,.25,"sawtooth",.04);});return;}
+ const over=tier===3,heavy=tier===2;
+ // Native recorded launch sample stays outside AudioContext, just as in the original.
+ // Start the whistle synchronously with release; pooled clip avoids repeated media loading.
+ withWeaponAudio(()=>{
+  heritageSweep(420,72,over?.55:.38,"sawtooth",over?.045:.032);
+  heritageTone(42,over?.72:.48,"sine",over?.05:.035,.02);
+  heritageNoise(.18,.025,1200,"bandpass",.06);
+  heritageNoise(.035,over?.04:heavy?.029:.02,3200,"highpass");
+  heritageSweep(over?160:heavy?215:340,over?58:heavy?85:190,over?.3:heavy?.19:.09,"triangle",over?.04:heavy?.03:.019,.01);
+  if(heavy){heritageTone(72,.22,"sine",.032,.015);heritageNoise(.13,.025,850,"lowpass",.02);}
+  if(over){heritageNoise(.30,.045,500,"lowpass",.03);heritageSweep(340,55,.46,"sawtooth",.042,.015);}
+ });
+ heritageSample("laserCannon",over?.27:heavy?.22:.14,over?.9:heavy?.98:1.24);
+}
+function weaponImpact(type,tier=1){if(type!=="orbital"){withWeaponAudio(()=>{heritageNoise(.2,.04,680);heritageSweep(180,55,.34,"sine",.04);});return;}
+ const big=tier===3,heavy=tier===2;
+ withWeaponAudio(()=>{
+  heritageNoise(big?.5:.34,big?.08:.058,520,"lowpass");
+  heritageSweep(180,38,big?.6:.42,"sine",big?.06:.045);
+  heritageNoise(.16,.026,2600,"highpass",.04);
+  if(heavy){heritageKick(.02,.038);heritageNoise(.23,.036,480,"lowpass",.04);}
+  if(big){heritageKick(.02,.07);heritageSweep(110,32,.55,"sine",.055,.02);heritageNoise(.42,.055,330,"lowpass",.045);heritageNoise(.18,.025,2400,"highpass",.08);}
+ });
+}
+// A real button click is required on some iPhone Safari sessions to unlock audio.
+// Do not hide the gate until context actually transitions to running.
+document.getElementById("beginPreflight").addEventListener("click",()=>{
+ document.getElementById("menuPanel").hidden=true;
+ document.getElementById("preflightPanel").hidden=false;
+});
+const audioStateText=document.getElementById("audioStateText");
+document.getElementById("audioUnlock").addEventListener("click",()=>{
+ initAudio();audioStateText.textContent="AUDIO COMMS / "+(audioCtx?audioCtx.state:"UNAVAILABLE");
+ if(!audioCtx)return;
+ const ready=()=>{
+  if(audioCtx.state!=="running"){audioStateText.textContent="AUDIO COMMS / "+audioCtx.state+" — TAP AGAIN";return;}
+  document.getElementById("commsStatus").textContent="ONLINE";
+  audioStateText.textContent="AUDIO COMMS / VERIFIED — READY FOR DEPLOYMENT";
+  document.getElementById("deploy").disabled=false;
+  document.getElementById("audioUnlock").hidden=true;
+  soundBurst(300,.11,.11,true);
+ };
+ if(audioCtx.state==="running")ready();
+ else audioCtx.resume().then(ready).catch(()=>{audioStateText.textContent="AUDIO COMMS / NOT READY — RETRY";});
+});
+document.getElementById("deploy").addEventListener("click",()=>{
+ if(!audioCtx||audioCtx.state!=="running")return;
+ document.getElementById("gameIntro").style.display="none";
+ soundBurst(170,.12,.11,true);
+});
+let stableAimAt=performance.now(),lastAimX=0,lastAimZ=0,lastAimY=34,aimMotionAt=0;
+let aimTouchPx=null,aimTouchPy=null,pipPosX=null,pipPosY=null,opticX=null,opticY=null;
+let weaponMode=0,lensOn=true,thumbActive=false,thumbX=width*.5,thumbY=height*.7,activePointer=null;const weaponLabels=["GATLING","ORBITAL","SALVO"];const combat={units:[],fx:[],tracers:[],projectiles:[],holding:false,heat:0,fireTimer:0,hits:0,radioOn:true,lastRadio:-9999,radioText:"RADIO STANDBY",radioUntil:0,shotCount:0};
+const liveWaves={on:false,index:0,pending:0,nextAt:0,started:0,kills:0};
+const heavyFx=[];let orbitalCooldown=0;let salvoQueue=[];
+const orbitalFlights=[];let orbitalChargeStart=0;
+function heritageTier(ms){return ms<450?{level:1,name:"SNAP",radius:12,flight:330}:ms<1250?{level:2,name:"HEAVY",radius:19,flight:430}:{level:3,name:"OVERCHARGE",radius:27,flight:590};}
+function launchHeritageOrbital(x,z,y,ms,now){const tier=heritageTier(ms);orbitalFlights.push({x,z,y,tier,birth:now,hitAt:now+tier.flight,start:{x:x-90,z:z-65,y:y+85},control:{x:x-37,z:z-32,y:y+110}});orbitalCooldown=now+Math.round(480*tier.level);weaponLaunch("orbital",tier.level);radioCall(tier.name+" strike",now);}
+function updateOrbitalFlights(t){for(let i=orbitalFlights.length-1;i>=0;i--){const f=orbitalFlights[i];if(t>=f.hitAt){detonateAt(f.x,f.z,f.y,f.tier.radius,t,"orbital",f.tier.level);orbitalFlights.splice(i,1);}}}
+// Original main/game.js quadratic projectile idea: start -> elevated control -> target.
+function flightPoint(f,k){const u=1-k;return {x:u*u*f.start.x+2*u*k*f.control.x+k*k*f.x,z:u*u*f.start.z+2*u*k*f.control.z+k*k*f.z,y:u*u*f.start.y+2*u*k*f.control.y+k*k*f.y};}
+function drawOrbitalFlights(t){
+ ctx.save();
+ for(const f of orbitalFlights){
+  const k=Math.min(1,(t-f.birth)/(f.hitAt-f.birth)),level=f.tier.level;
+  const samples=15,begin=Math.max(0,k-.34);
+  ctx.globalCompositeOperation="screen";
+  for(let pass=0;pass<2;pass++){
+   ctx.beginPath();for(let i=0;i<=samples;i++){const q=(()=>{const w=flightPoint(f,begin+(k-begin)*i/samples);return project(w.x,w.z,w.y);})();if(i===0)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);}
+   ctx.strokeStyle=pass===0?"rgba(76,211,238,.34)":"rgba(240,255,251,.95)";
+   ctx.lineWidth=pass===0?5+level*2:1.6+level*.65;
+   ctx.shadowColor=pass===0?"#45dfff":"#dfffff";ctx.shadowBlur=pass===0?13:4;ctx.stroke();
+  }
+  const q=flightPoint(f,k),head=project(q.x,q.z,q.y);ctx.shadowColor="#d5ffff";ctx.shadowBlur=8+level*3;ctx.fillStyle="#f4ffff";ctx.beginPath();ctx.arc(head.x,head.y,2+level,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+
+function spawnUnits(count=15){
+ for(let i=0;i<count;i++){
+  const theta=(i/count)*Math.PI*2+Math.random()*.22;
+  const rad=74+Math.random()*30;
+  combat.units.push({x:Math.cos(theta)*rad,z:Math.sin(theta)*rad,y:terrainHeight(Math.cos(theta)*rad,Math.sin(theta)*rad),vx:0,vz:0,vy:0,spin:0,omega:0,life:1,down:false,age:0,phase:Math.random()*6.28});
+ }
+ if(combat.units.length>55)combat.units.splice(0,combat.units.length-55);
+}
+let lastConfirmAt=-9999;
+function radioConfirm(message){
+ const now=performance.now();if(now-lastConfirmAt<750)return;lastConfirmAt=now;
+ withWeaponAudio(()=>{
+ // Deliberately short, high-mid communication chirps: separate from explosion bass.
+ duckWeapons(650,.20);
+ const alert=/inbound|overheat|recharg|hot/i.test(message);
+ const series=alert?[[820,660,.095],[580,450,.11]]:[[600,720,.075],[870,740,.095]];
+ series.forEach(([a,b,d],i)=>weaponOsc(a,b,d,"triangle",.065,i*.125));
+ weaponNoise(.035,.035,2500,.008);
+ });
+}
+function radioCall(message,t){
+ if(!combat.radioOn||t-combat.lastRadio<1900)return;
+ combat.lastRadio=t;combat.radioText=message;combat.radioUntil=t+2400;const m=document.getElementById("radioCaption");if(m){m.textContent="COMMS / "+message.toUpperCase();m.classList.add("hot");setTimeout(()=>m.classList.remove("hot"),1700);}
+ // Short tactical radio confirmation in place of browser text-to-speech.
+ // A licensed sample pack can replace this chirp without changing game logic.
+ radioConfirm(message);
+}
+function impact(x,z,y,hit,t){
+ combat.fx.push({x,z,y,birth:t,hit,seed:Math.random()});
+ if(t-lastImpactSound>135){lastImpactSound=t;if(hit){heritageSample("armorHit",.25,1.1);soundBurst(870,.065,.065,false);}else soundBurst(350,.075,.028,true);}
+ if(combat.fx.length>65)combat.fx.splice(0,combat.fx.length-65);
+}
+// World-space Gatling: meters are stylized world units; fixed ballistic gravity.
+const BALLISTIC_G=26;
+function pointInPolygon(x,z,poly){
+ let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+  const a=poly[i],b=poly[j];
+  if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }return inside;
+}
+function terrainHeight(x,z){
+ let h=0;
+ for(const sh of geometry.shelves)if(pointInPolygon(x,z,sh.shape))h=Math.max(h,sh.y);
+ for(const sh of geometry.tiers)if(pointInPolygon(x,z,sh.shape))h=Math.max(h,sh.y);
+ return h;
+}
+function firePhysicalRound(t){
+ // Camera-right basis (cos(angle), -sin(angle)) projects to screen right.
+ // Keep the weapon on the same apparent side as we orbit or move aim.
+ const spread=.23+combat.heat*.85,target={x:aimX+(Math.random()-.5)*spread,z:aimZ+(Math.random()-.5)*spread,y:aimY};
+ const side=108;
+ const origin={x:target.x+Math.cos(angle)*side,z:target.z-Math.sin(angle)*side,y:target.y+20};
+ const flight=.39,vy=(target.y-origin.y+.5*BALLISTIC_G*flight*flight)/flight;
+ combat.projectiles.push({x:origin.x,z:origin.z,y:origin.y,vx:(target.x-origin.x)/flight,
+  vz:(target.z-origin.z)/flight,vy,age:0,trail:[{...origin}],target});
+ if(combat.projectiles.length>45)combat.projectiles.shift();
+}
+function resolveImpact(p,t){
+ let nearest=null,dist=7;
+ for(const u of combat.units){if(u.down)continue;
+  const d=Math.hypot(u.x-p.x,u.z-p.z);
+  if(d<dist&&Math.abs(u.y-p.y)<9){dist=d;nearest=u;}
+ }
+ if(nearest){
+  nearest.life-=.38;combat.hits++;impact(p.x,p.z,p.y,true,t);
+  if(combat.hits===1||combat.hits%9===0)radioCall("Rounds on target",t);
+  nearest.vx+=(Math.random()-.5)*.08;nearest.vz+=(Math.random()-.5)*.08;
+  if(nearest.life<=0){nearest.down=true;nearest.vy=.14;nearest.omega=(Math.random()-.5)*.014;
+   radioCall(combat.hits%4===0?"Multiple hostiles down":"Good effect on target",t);}
+ }else impact(p.x,p.z,p.y,false,t);
+}
+function stepProjectiles(dt,t){
+ const step=Math.min(dt,50)/1000,remaining=[];
+ for(const p of combat.projectiles){
+  const sub=4,h=step/sub;let hit=false;
+  for(let j=0;j<sub;j++){
+   p.x+=p.vx*h;p.z+=p.vz*h;p.y+=p.vy*h-.5*BALLISTIC_G*h*h;
+   p.vy-=BALLISTIC_G*h;p.age+=h;
+   const terrain=terrainHeight(p.x,p.z);
+   if(p.y<=terrain){p.y=terrain;resolveImpact(p,t);hit=true;break;}
+  }
+  if(!hit&&p.age<2.4){
+   p.trail.push({x:p.x,z:p.z,y:p.y});
+   if(p.trail.length>9)p.trail.shift();remaining.push(p);
+  }
+ }
+ combat.projectiles=remaining;
+}
+function updateCombat(dt,t){
+ combat.heat=Math.max(0,combat.heat-dt*.00023);
+ if(combat.holding&&combat.heat<1){
+  combat.fireTimer+=dt;
+  while(combat.fireTimer>75){
+   combat.fireTimer-=75;combat.heat=Math.min(1,combat.heat+.019);
+   combat.shotCount++;
+   soundBurst(240+Math.random()*90,.052,.035,false);
+   firePhysicalRound(t);
+  }
+  if(combat.heat>=1){combat.holding=false;charging=false;radioCall("Gun overheating",t);}
+ }else combat.fireTimer=0;
+
+ for(const u of combat.units){
+  u.age+=dt;
+  if(u.down){
+   const k=dt/16.67;u.x+=u.vx*k;u.z+=u.vz*k;u.y=Math.max(0,u.y+u.vy*k);u.vy-=.009*k;
+   if(u.y===0){u.vx*=.91;u.vz*=.91;u.omega*=.92;}u.spin+=u.omega*k;
+  }else{
+   const toward=Math.atan2(-u.z,-u.x)+Math.sin(u.phase+u.age*.0007)*.22;
+   const dist=Math.hypot(u.x,u.z);const speed=dist>21?.0024:.00042;
+   u.x+=Math.cos(toward)*dt*speed;u.z+=Math.sin(toward)*dt*speed;
+   // Infantry spreads along the approach instead of stacking on a single point.
+   u.x+=Math.sin(u.phase+u.age*.0014)*dt*.00052;u.z+=Math.cos(u.phase+u.age*.0014)*dt*.00052;
+   u.y=terrainHeight(u.x,u.z);
+   if(u.age>2100&&Math.random()<dt*.000027){combat.fx.push({x:u.x+Math.sin(u.phase)*12,z:u.z+Math.cos(u.phase)*12,y:u.y,birth:t,hit:false,seed:Math.random()});}
+  }
+ }
+ combat.units=combat.units.filter(u=>!u.down||u.age<10000);
+ combat.fx=combat.fx.filter(f=>t-f.birth<550);
+ stepProjectiles(dt,t);
+}
+
+// Hero silhouette: summit command spire with layered plinths and readable beacon.
+function heroFortress(t){
+ const top=geometry.tiers[geometry.tiers.length-1], summit=top?top.y:34;
+ const blocks=[[-4,-6,9,8,summit+2],[4,0,5,5,summit+9],[-10,5,3,4,summit+4]];
+ for(const [x,z,rx,rz,h] of blocks){const base=project(x,z,h-3),peak=project(x,z,h+7),l=project(x-rx,z-rz,h-3),r=project(x+rx,z+rz,h-3);
+  ctx.fillStyle="#354740";ctx.strokeStyle="#d6c49d";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(r.x,r.y);ctx.lineTo(peak.x,peak.y);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.strokeStyle="#cba56f";ctx.beginPath();ctx.moveTo(base.x,base.y);ctx.lineTo(peak.x,peak.y);ctx.stroke();
+ }
+ const tip=project(2,-1,summit+29),root=project(2,-1,summit+8);
+ ctx.strokeStyle="#d9c6a1";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(root.x,root.y);ctx.lineTo(tip.x,tip.y);ctx.stroke();
+ ctx.fillStyle="#ff9851";ctx.shadowColor="#ff7538";ctx.shadowBlur=9;ctx.beginPath();ctx.arc(tip.x,tip.y,2.4+Math.sin(t*.004)*.35,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+ // Concrete battlements and bold landmark towers define three recognizable defense rings.
+ for(const [x,z,y,w] of [[-31,-33,17,13],[30,-34,17,12],[-34,32,17,12],[34,34,17,13],[-21,-13,29,9],[22,13,29,9]]){
+  const a=project(x-w/2,z,y),b=project(x+w/2,z,y),c=project(x+w/2,z,y+9),d=project(x-w/2,z,y+9);
+  ctx.fillStyle="#3f5047";ctx.strokeStyle="#dec9a1";ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(c.x,c.y);ctx.lineTo(d.x,d.y);ctx.closePath();ctx.fill();ctx.stroke();
+  const top=project(x,z,y+12);ctx.strokeStyle="#f1d6a4";ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(top.x,top.y);ctx.lineTo(c.x,c.y);ctx.stroke();
+  const lamp=project(x,z,y+11);ctx.fillStyle="#ff9857";ctx.shadowColor="#ff8845";ctx.shadowBlur=7;ctx.fillRect(lamp.x-2,lamp.y-2,4,4);ctx.shadowBlur=0;
+ }
+ // Summit crown: the command block, spire and flanking pylons must read at wide zoom.
+ const crown=project(0,0,summit+31),baseL=project(-11,-7,summit+8),baseR=project(11,-7,summit+8);
+ ctx.fillStyle="#293b36";ctx.strokeStyle="#e7cca0";ctx.lineWidth=2.8;ctx.beginPath();ctx.moveTo(baseL.x,baseL.y);ctx.lineTo(crown.x,crown.y);ctx.lineTo(baseR.x,baseR.y);ctx.closePath();ctx.fill();ctx.stroke();
+ for(const [x,z] of [[-15,-7],[15,-7]]){const foot=project(x,z,summit+5),head=project(x,z,summit+22);ctx.strokeStyle="#c2ad8b";ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(foot.x,foot.y);ctx.lineTo(head.x,head.y);ctx.stroke();ctx.fillStyle="#ffb77b";ctx.fillRect(head.x-2,head.y-2,4,4);}
+ // Outer service lights form a recognizable perimeter rather than random visual noise.
+ for(const [x,z,y] of [[-31,-37,17],[30,-33,17],[-35,36,17],[34,39,17],[-13,11,29],[18,-17,29]]){const q=project(x,z,y+1);ctx.fillStyle="#d4783e";ctx.fillRect(q.x-1.5,q.y-1.5,3,3);}
+}
+
+function drawCombat(t){
+ // Each streak consists of recent WORLD positions, rendered through the current camera.
+ ctx.save();ctx.globalCompositeOperation="screen";
+ for(const p of combat.projectiles){
+  if(p.trail.length<2)continue;
+  ctx.beginPath();
+  p.trail.forEach((v,i)=>{const q=project(v.x,v.z,v.y);if(!i)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});
+  ctx.strokeStyle="rgba(255,231,172,.85)";ctx.lineWidth=2.2;ctx.stroke();
+  const head=project(p.x,p.z,p.y);
+  ctx.fillStyle="#fff6cb";ctx.beginPath();ctx.arc(head.x,head.y,2.2,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+ for(const f of combat.fx){
+  const p=project(f.x,f.z,f.y),age=Math.min(1,(t-f.birth)/550);
+  ctx.strokeStyle=f.hit?"rgba(255,212,122,"+(1-age)+")":"rgba(208,186,146,"+(1-age)*.8+")";
+  ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(p.x,p.y,4+age*22,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<7;i++){
+    const a=f.seed*6.28+i*Math.PI*2/7,dist=5+age*(13+(i%3)*8);
+    ctx.strokeStyle=f.hit?"rgba(255,235,178,"+(1-age)+")":"rgba(210,187,145,"+(.8-age*.8)+")";
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*dist*.35,p.y+Math.sin(a)*dist*.3);
+    ctx.lineTo(p.x+Math.cos(a)*dist,p.y+Math.sin(a)*dist*.75);ctx.stroke();
+  }
+ }
+ for(const u of combat.units){
+  const p=project(u.x,u.z,u.y),size=Math.max(5.8,7.6*zoomValue);
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(u.spin);
+  ctx.fillStyle="#0c1510a8";ctx.beginPath();ctx.ellipse(0,size*1.6,size*.98,size*.32,0,0,Math.PI*2);ctx.fill();
+  // Articulated armored infantry with helmet, torso, pack and weapon silhouette.
+  ctx.lineCap="round";ctx.lineJoin="round";
+  const armor=u.down?"#756c5e":"#5a705e",edge=u.down?"#8c8273":"#d0b995";
+  ctx.strokeStyle="#252c28";ctx.lineWidth=Math.max(1.5,size*.52);
+  ctx.beginPath();ctx.moveTo(-size*.22,size*.3);ctx.lineTo(-size*.46,size*1.48);ctx.moveTo(size*.22,size*.3);ctx.lineTo(size*.47,size*1.48);ctx.stroke();
+  ctx.strokeStyle=edge;ctx.lineWidth=Math.max(.7,size*.16);
+  ctx.beginPath();ctx.moveTo(-size*.4,size*1.36);ctx.lineTo(-size*.52,size*1.53);ctx.moveTo(size*.42,size*1.36);ctx.lineTo(size*.55,size*1.53);ctx.stroke();
+  ctx.fillStyle=armor;ctx.strokeStyle=edge;ctx.lineWidth=Math.max(.6,size*.11);
+  ctx.beginPath();ctx.moveTo(-size*.6,-size*.62);ctx.lineTo(size*.6,-size*.62);ctx.lineTo(size*.45,size*.46);ctx.lineTo(-size*.45,size*.46);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle="#34463b";ctx.fillRect(-size*.88,-size*.43,size*.31,size*.75);
+  ctx.fillStyle=u.down?"#807568":"#d7c9a0";ctx.beginPath();ctx.arc(0,-size*1.06,size*.5,Math.PI,Math.PI*2);ctx.lineTo(size*.48,-size*.8);ctx.lineTo(-size*.48,-size*.8);ctx.closePath();ctx.fill();
+  ctx.strokeStyle="#d7c7a5";ctx.lineWidth=Math.max(1,size*.19);ctx.beginPath();ctx.moveTo(-size*.48,-size*.16);ctx.lineTo(-size*.85,size*.31);ctx.moveTo(size*.44,-size*.17);ctx.lineTo(size*.8,size*.31);ctx.stroke();
+  ctx.strokeStyle="#26362d";ctx.lineWidth=Math.max(1,size*.27);ctx.beginPath();ctx.moveTo(size*.12,-size*.08);ctx.lineTo(size*1.3,size*.18);ctx.stroke();
+  ctx.strokeStyle="#e2c285";ctx.lineWidth=Math.max(.6,size*.07);ctx.beginPath();ctx.moveTo(size*.8,size*.14);ctx.lineTo(size*1.48,size*.2);ctx.stroke();
+  if(!u.down){ctx.fillStyle="#ff8753";ctx.fillRect(-size*.23,-size*1.02,size*.45,size*.13);ctx.strokeStyle="#ffb477";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-size*.9,-size*1.65);ctx.lineTo(-size*.9,-size*1.9);ctx.lineTo(size*.9,-size*1.9);ctx.lineTo(size*.9,-size*1.65);ctx.stroke();}
+  ctx.restore();
+ }
+  ctx.font="bold 11px monospace";ctx.textAlign="left";ctx.fillStyle="#e5f2d9";
+ // Weapon metrics live in the instrument pod to avoid cluttering the playfield.
+ ctx.fillStyle=combat.heat>.8?"#ffb372":"#a5e6b4";ctx.fillRect(22,height-51,Math.max(0,(width-44)*combat.heat),4);
+ ctx.strokeStyle="#b6dfbc";ctx.strokeRect(22,height-51,width-44,4);
+ if(combat.radioUntil>t){ctx.textAlign="center";ctx.font="bold 11px monospace";ctx.fillStyle="#d7edc6";ctx.fillText("◀ RADIO: "+combat.radioText.toUpperCase(),width/2,height-77);}
+}
+document.getElementById("lens").addEventListener("click",()=>{lensOn=!lensOn;const b=document.getElementById("lens");b.textContent="OPTICS: "+(lensOn?"ON":"OFF");b.setAttribute("aria-pressed",String(lensOn));});
+function startBoardFire(){
+ primeHeritageSample("laserCannon");
+ if(audioDiag.firstTouch===null)audioDiag.firstTouch=performance.now();
+ initAudio();if(weaponMode===0&&combat.heat>=.98)return;
+ charging=true;recoil=0;if(weaponMode===1)orbitalChargeStart=performance.now();
+ if(weaponMode===0){combat.holding=true;combat.fireTimer=75;heritageSample("gatling",.24,1.35);soundBurst(125,.12,.05,true);}
+}
+function stopBoardFire(){
+ if(!charging&&!combat.holding)return;
+ const wasCharging=charging;charging=false;combat.holding=false;
+ if(wasCharging&&weaponMode!==0){
+  const now=performance.now();
+  if(weaponMode===1){
+   if(now>=orbitalCooldown){launchHeritageOrbital(aimX,aimZ,aimY,Math.max(0,now-orbitalChargeStart),now);}
+   else radioCall("Orbital recharging",now);
+  }else if(weaponMode===2){
+   salvoQueue.push({x:aimX,z:aimZ,y:aimY});soundBurst(570,.12,.075,false);
+   if(salvoQueue.length>=3){heritageSample("salvo",.30,.9);weaponLaunch("salvo",1);const queued=salvoQueue.splice(0);queued.forEach((q,i)=>setTimeout(()=>detonateAt(q.x,q.z,q.y,11,performance.now(),"salvo",1),i*440));radioCall("Salvo away",now);}
+   else radioCall("Salvo target "+salvoQueue.length+" of three",now);
+  }
+  recoil=1;
+ }
+ soundBurst(95,.14,.075,true);
+}
+document.getElementById("weapon").addEventListener("click",()=>{stopBoardFire();weaponMode=(weaponMode+1)%3;document.getElementById("weapon").textContent=weaponLabels[weaponMode]+(weaponMode===2?" / "+salvoQueue.length+"/3":" / READY");});
+document.getElementById("spawn").addEventListener("click",()=>{beginWave();});
+document.getElementById("radio").addEventListener("click",()=>{combat.radioOn=!combat.radioOn;const b=document.getElementById("radio");b.textContent="RADIO: "+(combat.radioOn?"ON":"OFF");b.setAttribute("aria-pressed",String(combat.radioOn));if(!combat.radioOn&&"speechSynthesis" in window)speechSynthesis.cancel();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){thumbActive=false;activePointer=null;stopBoardFire();}});
+spawnUnits(8);
+function beginWave(){liveWaves.on=true;liveWaves.index++;liveWaves.started=performance.now();liveWaves.nextAt=liveWaves.started+1200;liveWaves.pending=8+liveWaves.index*4;radioCall("Wave "+liveWaves.index+" inbound",performance.now());refreshWaveBadge();}
+function refreshWaveBadge(){const b=document.getElementById("liveWaveBtn");if(b)b.textContent=liveWaves.on?"WAVE "+liveWaves.index+" / "+(liveWaves.pending+combat.units.filter(u=>!u.down).length):"▶ WAVES";}
+function updateWaves(t){if(!liveWaves.on)return;
+ if(liveWaves.pending>0&&t>=liveWaves.nextAt){const n=Math.min(4,liveWaves.pending);spawnUnits(n);liveWaves.pending-=n;liveWaves.nextAt=t+1700;refreshWaveBadge();}
+ if(liveWaves.pending===0&&!combat.units.some(u=>!u.down)){liveWaves.on=false;radioCall("Wave "+liveWaves.index+" cleared",t);refreshWaveBadge();}
+}
+function detonateAt(x,z,y,radius,t,type,level){heavyFx.push({x,z,y,radius,birth:t,type,level});if(heavyFx.length>30)heavyFx.shift();
+ let hits=0;for(const u of combat.units){if(u.down)continue;let d=Math.hypot(u.x-x,u.z-z);if(d<radius&&Math.abs(u.y-y)<25){u.life-=type==="orbital"?1.4:0.8;hits++;combat.hits++;if(u.life<=0){u.down=true;u.vy=.14;u.omega=(Math.random()-.5)*.02;u.vx=(u.x-x)*.003;u.vz=(u.z-z)*.003;}}}
+ impact(x,z,y,hits>0,t);weaponImpact(type,level);if(hits>0){heritageSample("salvoConfirm",.12,1.1);radioCall("Good effect on "+hits+" contacts",t);}refreshWaveBadge();
+}
+function drawCombatGuides(t){
+ ctx.save();
+ if(weaponMode===1){const p=project(aimX,aimZ,aimY),rad=charging?heritageTier(Math.max(0,t-orbitalChargeStart)).radius:9,rr=Math.max(8,rad*zoomValue*2);ctx.strokeStyle=charging?"rgba(255,190,93,.88)":"rgba(247,183,111,.35)";ctx.lineWidth=1.7;ctx.setLineDash([5,6]);ctx.beginPath();ctx.ellipse(p.x,p.y,rr,rr*.46,-bankDeg*Math.PI/180,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);if(charging){ctx.fillStyle="#ffdda3";ctx.font="bold 10px monospace";ctx.textAlign="center";ctx.fillText(heritageTier(Math.max(0,t-orbitalChargeStart)).name,p.x,p.y-rr*.57-12);}}
+ if(weaponMode===2){salvoQueue.forEach((q,i)=>{const p=project(q.x,q.z,q.y);ctx.strokeStyle="#b7efcb";ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(p.x,p.y,12,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(p.x-18,p.y);ctx.lineTo(p.x-6,p.y);ctx.moveTo(p.x+6,p.y);ctx.lineTo(p.x+18,p.y);ctx.stroke();ctx.fillStyle="#c9f8d9";ctx.font="bold 12px monospace";ctx.textAlign="center";ctx.fillText(String(i+1),p.x,p.y-19);});}
+ ctx.restore();
+}
+function drawHeavyFx(t){
+ ctx.save();
+ for(const f of heavyFx){
+  const age=(t-f.birth)/1000;if(age<0||age>1)continue;
+  const tier=f.level||1,k=Math.min(1,age),p=project(f.x,f.z,f.y),radius=Math.max(3,f.radius*zoomValue*2*k);
+  const alpha=(1-k)*(f.type==="orbital"?1:.6),hot=f.type==="orbital";
+  const core=hot?(tier===3?"#ffffff":tier===2?"#ffedbb":"#d2ffff"):"#dff6b3";
+  const edge=hot?(tier===3?"#ffad62":tier===2?"#ffbd70":"#79e8e6"):"#b3e0a4";
+  ctx.globalAlpha=alpha;ctx.lineWidth=hot?1.5+tier*1.6:2;
+  ctx.strokeStyle=edge;ctx.shadowColor=edge;ctx.shadowBlur=hot?6+tier*5:3;
+  ctx.beginPath();ctx.ellipse(p.x,p.y,radius,radius*.43,-bankDeg*Math.PI/180,0,Math.PI*2);ctx.stroke();
+  ctx.lineWidth=hot?1+tier*.8:1;ctx.strokeStyle=core;ctx.shadowColor=core;ctx.shadowBlur=hot?7+tier*7:3;
+  ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(2,radius-2),Math.max(2,radius*.43-1),-bankDeg*Math.PI/180,0,Math.PI*2);ctx.stroke();
+  ctx.shadowBlur=0;ctx.globalAlpha=Math.max(0,(1-k*3))*(hot?.25+tier*.14:.2);
+  ctx.fillStyle=core;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0,(8+tier*3)*(1-k)),0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+ heavyFx.splice(0,heavyFx.length,...heavyFx.filter(f=>t-f.birth<1000));
+}
+function updateMesaGuide(){
+ const guide=document.getElementById("mesaGuide"),label=document.getElementById("mesaGuideText");
+ const p=project(0,0,75),cx=width*.5,cy=playableFraming().centerY;
+ const dx=p.x-cx,dy=p.y-cy;
+ const outX=Math.abs(dx)>width*.28,outY=Math.abs(dy)>playableFraming().usableHeight*.27;
+ guide.dataset.edge=outX||outY?"yes":"no";
+ if(outX||outY){label.textContent="MESA "+(outX?(dx>0?"→":"←"):"")+(outY?(dy>0?" ↓":" ↑"):"")+" / RECENTER";}
+ else{label.textContent="◆ MESA IN VIEW";}
+}
+function updateHudInstruments(t){
+ const remaining=combat.units.filter(u=>!u.down).length+liveWaves.pending;
+ document.getElementById("waveProgress").textContent=liveWaves.on?"WAVE "+liveWaves.index+" / ACTIVE":liveWaves.index?"WAVE "+liveWaves.index+" / CLEARED":"WAVE STANDBY";
+ document.getElementById("combatTally").textContent=remaining+" CONTACTS · "+combat.hits+" HITS";
+ document.getElementById("weaponHint").textContent=weaponMode===0?"GATLING · HOLD":weaponMode===1?"ORBITAL · "+(charging?(charge>.75?"OVERCHARGE":charge>.32?"HEAVY":"SNAP"):"HOLD TO CHARGE"):"SALVO · PLOT "+(salvoQueue.length+1)+"/3";
+ updateMesaGuide();
+ const state=activePointer!==null?(t-aimMotionAt>550?"STABLE":"TRACKING"):t-aimMotionAt<650?"SETTLING":"STABLE";
+ const target=document.getElementById("targetState");
+ target.dataset.status=state;target.textContent=(state==="STABLE"?"● ":state==="SETTLING"?"◇ ":"◌ ")+state;
+ document.getElementById("attitudeReadout").innerHTML=(orbitOn?(orbitDirection===1?"↻ CW":"↺ CCW"):"HOLD")+"<span>"+Math.round(pitchDeg)+"° PITCH / "+Math.round(bankDeg)+"° BANK</span>";
+ document.getElementById("instrumentHeading").textContent=(orbitDirection===1?"CW":"CCW")+" / "+Math.round((angle*180/Math.PI+360)%360)+"°";
+ document.getElementById("instrumentArrow").textContent=orbitDirection===1?"↻":"↺";
+ document.getElementById("instrumentPitch").textContent="PITCH "+Math.round(pitchDeg)+"°";
+ document.getElementById("instrumentBank").textContent="BANK "+Math.round(bankDeg)+"°";
+ document.getElementById("weaponStatus").textContent=weaponLabels[weaponMode]+" / "+(charging?"ACTIVE":"READY");
+ document.getElementById("weaponSymbol").textContent=["▰▰▰","◎","◆◆◆"][weaponMode];
+ document.getElementById("weaponMeter").style.width=(charging?Math.max(12,100-charge*95):90)+"%";
+ document.getElementById("quickZoomLabel").textContent=(zoomIndex+1)+"/"+zoomSteps.length;
+ document.getElementById("domeOrbit").textContent=orbitDirection===1?"↻ CW":"↺ CCW";document.getElementById("domePitch").textContent="P"+Math.round(pitchDeg)+"°";document.getElementById("domeBank").textContent="B"+(bankDeg>=0?"+":"")+Math.round(bankDeg)+"°";document.getElementById("domeTilt").style.transform="translate("+(bankDeg*.32)+"px,"+(-(pitchDeg-52)*.28)+"px) rotate("+(bankDeg*.35)+"deg)";
+}
+function frame(t){
+ const dt=Math.min(50,Math.max(0,t-(frame.prev||t)));frame.prev=t;
+ if(cinemaActive){
+  const e=Math.min(1,(t-cinemaStart)/5500),ease=u=>u*u*(3-2*u);
+  zoomValue=.48+(1.20-.48)*ease(e);
+  angle=.20+.32*ease(e);
+  lowView=e<.68;
+  if(e>=1){cinemaActive=false;zoomIndex=2;targetAngle=.52;lowView=false;}
+ }else{
+  if(sweepUntil&&t>sweepUntil){sweepUntil=0;orbitSpeedGoal=.00011;}
+  orbitSpeed+=(orbitSpeedGoal-orbitSpeed)*Math.min(1,dt*.002);
+  if(orbitOn){targetAngle+=dt*orbitSpeed*orbitDirection;}
+  pitchDeg+=(pitchGoal-pitchDeg)*Math.min(1,dt*.005);
+  bankDeg+=(bankGoal-bankDeg)*Math.min(1,dt*.004);
+  const snapEase=performance.now()<snapTurnUntil?Math.min(.34,1-Math.exp(-dt/105)):.11;
+  angle+=(targetAngle-angle)*snapEase;
+  charge=charging?Math.min(1,charge+dt/1800):Math.max(0,charge-dt/500);
+  recoil=Math.max(0,recoil-dt/650);
+  // Charging assists framing but never changes the target's world coordinates.
+  const base=zoomSteps[zoomIndex];
+  const assistStrength=Math.max(.08,.34-(base-1)*.28);
+  const targetZoom=base*(1+assistStrength*charge);
+  zoomValue+=(targetZoom-zoomValue)*Math.min(1,dt*.0045);
+  if(tracking&&activePointer===null){goalX=aimX*.22;goalZ=aimZ*.22;goalY=34+(aimY-34)*.18;}
+  else if(charging){goalX=aimX*.40;goalZ=aimZ*.40;goalY=34+(aimY-34)*.30;}
+  else if(recoil<=0){goalX=0;goalZ=0;goalY=34;}
+  const follow=activePointer!==null?0:Math.min(1,dt*(tracking?.004:.0038));focusX+=(goalX-focusX)*follow;focusZ+=(goalZ-focusZ)*follow;focusY+=(goalY-focusY)*follow;
+  // Keep the selected world-space point within a central safe frame even as
+  // the orbital angle changes; never move the impact location itself.
+  if(charging&&!tracking){
+   const p=project(aimX,aimZ,aimY);
+   const marginX=width*.17,marginY=height*.11;
+   const dx=p.x<marginX?p.x-marginX:p.x>width-marginX?p.x-(width-marginX):0;
+   const dy=p.y<marginY?p.y-marginY:p.y>height-marginY?p.y-(height-marginY):0;
+   const scale=Math.min(width/265,height/(lowView?214:199))*zoomValue;
+   const c=Math.cos(angle),sn=Math.sin(angle);
+   const camDx=dx/Math.max(.001,scale),camDz=dy/Math.max(.001,scale*(lowView?.27:.50));
+   const limit=dt*.032;
+   focusX+=Math.max(-limit,Math.min(limit,camDx*c+camDz*sn));
+   focusZ+=Math.max(-limit,Math.min(limit,-camDx*sn+camDz*c));
+  }
+ }
+ restoreMusic(t);updateCombat(dt,t);updateWaves(t);updateOrbitalFlights(t);
+ terrain();plateau();heroFortress(t);drawCombat(t);drawOrbitalFlights(t);drawHeavyFx(t);drawMagnifier();overlay();drawCombatGuides(t);updateHudInstruments(t);
+ status.textContent=zoomNames[zoomIndex]+" // "+(lowView?"LOW OBLIQUE":"ORBITAL")+" // "+Math.round(zoomValue*100)+"% SCALE";
+ requestAnimationFrame(frame);
+}
+document.getElementById("mesaCenter").addEventListener("click",()=>{
+ goalX=0;goalZ=0;goalY=34;focusX=0;focusZ=0;focusY=34;
+ document.getElementById("domeHint").textContent="MESA RECENTERED";
+});
+function tacticalTurn(radians){
+ cinemaActive=false;
+ targetAngle+=radians;
+ snapTurnUntil=performance.now()+1050;
+ const hint=document.getElementById("domeHint");
+ hint.textContent="QUICK TURN / "+Math.round(Math.abs(radians)*180/Math.PI)+"°";
+}
+document.getElementById("turnLeftQuick").addEventListener("click",()=>tacticalTurn(-Math.PI/2));
+document.getElementById("turnRightQuick").addEventListener("click",()=>tacticalTurn(Math.PI/2));
+document.getElementById("turnWhipQuick").addEventListener("click",()=>tacticalTurn(Math.PI));
+document.getElementById("left").addEventListener("click",()=>{cinemaActive=false;targetAngle-=Math.PI/2;});
+document.getElementById("right").addEventListener("click",()=>{cinemaActive=false;targetAngle+=Math.PI/2;});
+document.getElementById("reset").addEventListener("click",()=>{cinemaActive=false;orbitOn=false;syncOrbit();targetAngle=.52;goalX=0;goalZ=0;goalY=34;zoomIndex=2;lowView=false;});
+document.getElementById("shelves").addEventListener("click",()=>{showShelves=!showShelves;const b=document.getElementById("shelves");b.textContent="SHELVES: "+(showShelves?"ON":"OFF");b.setAttribute("aria-pressed",String(showShelves));});
+document.getElementById("camera").addEventListener("click",()=>{lowView=!lowView;const b=document.getElementById("camera");b.textContent="VIEW: "+(lowView?"LOW":"SURVEY");b.setAttribute("aria-pressed",String(lowView));});
+document.getElementById("out").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.max(0,zoomIndex-1);});
+document.getElementById("in").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.min(zoomSteps.length-1,zoomIndex+1);});
+const flightDash=document.getElementById("flightDash");
+const sphere=document.getElementById("domeSurface"),sphereHint=document.getElementById("domeHint");
+let sphereDrag=null;
+let snapTurnUntil=0;
+const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
+sphere.addEventListener("pointerdown",e=>{
+ e.preventDefault();sphere.setPointerCapture(e.pointerId);
+ const r=sphere.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*300-150,y=(e.clientY-r.top)/r.height*205-111;
+ const rim=Math.hypot(x,y)>73;
+ sphereDrag={id:e.pointerId,x:e.clientX,y:e.clientY,pitch:pitchGoal,bank:bankGoal,rim,angle:Math.atan2(y,x),travel:0};
+ sphereHint.textContent=rim?"TRACE RIM: CHANGE ORBIT":"DRAG: PITCH / BANK";flightDash.dataset.gesture="";
+});
+sphere.addEventListener("pointermove",e=>{
+ const d=sphereDrag;if(!d||d.id!==e.pointerId)return;e.preventDefault();
+ if(d.rim){
+  const r=sphere.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*300-150,y=(e.clientY-r.top)/r.height*205-111;
+  const a=Math.atan2(y,x);d.travel+=angleDelta(d.angle,a);d.angle=a;
+  flightDash.dataset.gesture=d.travel>.12?"rim-right":d.travel<-.12?"rim-left":"";
+  sphereHint.textContent="ORBIT RIM / "+(d.travel>.38?"↻ CW PENDING":d.travel<-.38?"↺ CCW PENDING":"TRACE A LITTLE FURTHER");
+ }else{
+  pitchGoal=Math.max(20,Math.min(75,d.pitch-(e.clientY-d.y)*.23));
+  bankGoal=Math.max(-30,Math.min(30,d.bank+(e.clientX-d.x)*.23));
+  flightDash.dataset.gesture=Math.abs(e.clientY-d.y)>Math.abs(e.clientX-d.x)?(e.clientY<d.y?"up":"down"):(e.clientX<d.x?"left":"right");
+  sphereHint.textContent="PITCH "+Math.round(pitchGoal)+"° / BANK "+Math.round(bankGoal)+"°";
+ }
+});
+function sphereRelease(e){
+ const d=sphereDrag;if(!d||d.id!==e.pointerId)return;
+ if(d.rim&&Math.abs(d.travel)>.38){orbitDirection=d.travel>0?1:-1;orbitOn=true;sphereHint.textContent="ORBIT "+(orbitDirection===1?"CW":"CCW")+" CONFIRMED";}
+ else if(!d.rim&&Math.hypot(e.clientX-d.x,e.clientY-d.y)<9&&Math.hypot(d.x-sphere.getBoundingClientRect().left-sphere.getBoundingClientRect().width*.5,d.y-sphere.getBoundingClientRect().top-sphere.getBoundingClientRect().height*111/205)<32){pitchGoal=52;bankGoal=0;sphereHint.textContent="ATTITUDE LEVELED";}
+ sphereDrag=null;flightDash.dataset.gesture="";
+}
+sphere.addEventListener("pointerup",sphereRelease);sphere.addEventListener("pointercancel",e=>{sphereDrag=null;flightDash.dataset.gesture=""});
+document.getElementById("quickZoomIn").addEventListener("click",()=>document.getElementById("in").click());
+document.getElementById("quickZoomOut").addEventListener("click",()=>document.getElementById("out").click());
+const cockpitTracks={
+ synthwave:["Synthwave House Loop","../assets/audio/music/synthwavehouse_0.ogg"],
+ bilwe:["Bilwe","../assets/audio/music/bilwe.mp3"],
+ technological:["Technological Messup","../assets/audio/music/tecnological_messup_v2.ogg"],
+ void:["Claimed by the Void","../assets/audio/music/claimed_by_the_void_loop.mp3"],
+ brute:["Brute Force","../assets/audio/music/brute_force_loop.mp3"],
+ mindstream:["MindStream","../assets/audio/music/DST-MindStream.mp3"],
+ calm:["Calm Loop","../assets/audio/music/Relaxing_0.mp3"]
+};
+const cockpitPlayer=new Audio();cockpitPlayer.loop=true;cockpitPlayer.volume=.36;cockpitPlayer.preload="none";
+let cockpitMusicPlaying=false,cockpitMusicKey="";
+function cockpitResolvedTrack(){const sel=document.getElementById("musicSelect").value;return sel==="auto"?"synthwave":sel;}
+function cockpitMusicLabel(msg){document.getElementById("musicNowPlaying").textContent=msg;}
+async function cockpitStartMusic(){
+ const key=cockpitResolvedTrack();if(key==="off"){cockpitPlayer.pause();cockpitMusicPlaying=false;cockpitMusicLabel("MUSIC OFF");document.getElementById("musicPlay").textContent="▶ PLAY";return;}
+ if(!cockpitTracks[key])return;
+ if(key!==cockpitMusicKey){cockpitMusicKey=key;cockpitPlayer.src=cockpitTracks[key][1];cockpitPlayer.load();}
+ cockpitMusicLabel("LOADING / "+cockpitTracks[key][0]);
+ try{applyMusicVolume();await cockpitPlayer.play();cockpitMusicPlaying=true;document.getElementById("musicPlaybackState").textContent="NATIVE PLAYER / PLAYING "+Math.round(cockpitPlayer.currentTime)+"s";cockpitMusicLabel("NOW PLAYING / "+cockpitTracks[key][0]);document.getElementById("musicPlay").textContent="Ⅱ PAUSE";}
+ catch(err){cockpitMusicPlaying=false;cockpitMusicLabel("TAP PLAY TO ENABLE AUDIO");document.getElementById("musicPlay").textContent="▶ PLAY";}
+}
+document.getElementById("musicToggle").addEventListener("click",()=>{const p=document.getElementById("musicPanel");p.hidden=!p.hidden;document.getElementById("musicToggle").setAttribute("aria-expanded",String(!p.hidden));});
+document.getElementById("musicClose").addEventListener("click",()=>document.getElementById("musicToggle").click());
+document.getElementById("musicPlay").addEventListener("click",()=>{if(cockpitMusicPlaying){cockpitPlayer.pause();cockpitMusicPlaying=false;cockpitMusicLabel("PAUSED / "+(cockpitTracks[cockpitMusicKey]?.[0]||""));document.getElementById("musicPlay").textContent="▶ PLAY";}else cockpitStartMusic();});
+document.getElementById("musicSelect").addEventListener("change",()=>{if(cockpitResolvedTrack()==="off")cockpitStartMusic();else if(cockpitMusicPlaying)cockpitStartMusic();else cockpitMusicLabel("READY / "+cockpitTracks[cockpitResolvedTrack()][0]);});
+document.getElementById("musicHardMute").addEventListener("click",()=>{cockpitPlayer.muted=!cockpitPlayer.muted;document.getElementById("musicHardMute").textContent=cockpitPlayer.muted?"UNMUTE MUSIC":"MUTE MUSIC";});
+function applyMusicVolume(){
+ const raw=Number(document.getElementById("musicVolume").value)/100;
+ // Nonlinear taper gives the low end more usable separation.
+ const gain=Math.pow(raw,2.1)*.52;
+ cockpitPlayer.muted=raw===0;cockpitPlayer.volume=gain;
+ document.getElementById("musicLevel").textContent=Math.round(raw*100)+"%"+(raw===0?" / MUTED":"");
+}
+document.getElementById("musicVolume").addEventListener("input",applyMusicVolume);
+cockpitPlayer.addEventListener("error",()=>{cockpitMusicLabel("TRACK UNAVAILABLE / CHECK AUDIO");document.getElementById("musicPlaybackState").textContent="MEDIA ERROR "+(cockpitPlayer.error?.code||"?");});cockpitPlayer.addEventListener("timeupdate",()=>{document.getElementById("musicPlaybackState").textContent="NATIVE PLAYBACK / "+Math.floor(cockpitPlayer.currentTime)+"s · "+(cockpitPlayer.muted?"MUTED":"AUDIBLE");});
+document.getElementById("sceneWrap").dataset.cockpitTheme="tactical";
+document.getElementById("themeToggle").addEventListener("click",()=>{const w=document.getElementById("sceneWrap");const next={tactical:"retro",retro:"deck",deck:"amber",amber:"phosphor",phosphor:"tactical"};w.dataset.cockpitTheme=next[w.dataset.cockpitTheme||"tactical"];document.getElementById("themeToggle").textContent=({tactical:"◐ TACT",retro:"◐ RETRO",deck:"▦ DECK",amber:"▤ AMBER",phosphor:"▥ CRT"})[w.dataset.cockpitTheme];});
+document.getElementById("orbitalAudioTest").addEventListener("click",()=>{initAudio();weaponLaunch("orbital",3);setTimeout(()=>weaponImpact("orbital",3),400);document.getElementById("orbitalAudioTest").textContent="♫ STRIKE SENT";setTimeout(()=>document.getElementById("orbitalAudioTest").textContent="♫ TEST STRIKE",1600);});
+document.getElementById("liveWaveBtn").addEventListener("click",()=>{if(!liveWaves.on)beginWave();});
+document.getElementById("sphereLevel").addEventListener("click",()=>{pitchGoal=52;bankGoal=0;sphereHint.textContent="ATTITUDE LEVELED"});
+document.getElementById("classicToggle").addEventListener("click",()=>{document.getElementById("flightToggle").click();
+ const p=document.getElementById("classicPanel");p.hidden=!p.hidden;
+ const b=document.getElementById("classicToggle");b.setAttribute("aria-expanded",String(!p.hidden));b.textContent=p.hidden?"CLASSIC CONTROLS ▾":"CLASSIC CONTROLS ▴";
+});
+document.getElementById("closeFlight").addEventListener("click",()=>document.getElementById("flightToggle").click());
+document.getElementById("flightToggle").addEventListener("click",()=>{
+ const p=document.getElementById("flightControls"),open=p.hidden;p.hidden=!open;
+ const b=document.getElementById("flightToggle");b.setAttribute("aria-expanded",String(open));b.textContent=open?"OPTIONS ▴":"OPTIONS ▾";
+});
+document.getElementById("reverse").addEventListener("click",()=>{orbitDirection*=-1;document.getElementById("reverse").textContent=orbitDirection===1?"REVERSE ↔":"FORWARD ↔";});
+document.getElementById("sweep").addEventListener("click",()=>{orbitOn=true;syncOrbit();sweepUntil=performance.now()+4600;orbitSpeedGoal=.000025;targetAngle+=orbitDirection*.35;});
+document.getElementById("pitchDown").addEventListener("click",()=>{pitchGoal=Math.max(22,pitchGoal-10);});
+document.getElementById("pitchUp").addEventListener("click",()=>{pitchGoal=Math.min(82,pitchGoal+10);});
+document.getElementById("bankLeft").addEventListener("click",()=>{bankGoal=Math.max(-12,bankGoal-4);});
+document.getElementById("bankRight").addEventListener("click",()=>{bankGoal=Math.min(12,bankGoal+4);});
+document.getElementById("level").addEventListener("click",()=>{bankGoal=0;pitchGoal=52;});
+function syncOrbit(){const b=document.getElementById("orbit");b.textContent="ORBIT: "+(orbitOn?"ON":"OFF");b.setAttribute("aria-pressed",String(orbitOn));}
+document.getElementById("orbit").addEventListener("click",()=>{cinemaActive=false;orbitOn=!orbitOn;targetAngle=angle;syncOrbit();});
+// Aim designation: tap once or drag a finger; no repeated tap-to-pan.
+function designate(e,initial=false){
+ const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*width/r.width,py=Math.max(10,(e.clientY-r.top)*height/r.height-52);
+ if(!initial&&aimTouchPx!==null&&Math.hypot(px-aimTouchPx,py-aimTouchPy)<5)return;
+ aimTouchPx=px;aimTouchPy=py;
+ let best={score:Infinity};
+ // Only choose actual visible terrain elevations and penalize jumping surfaces.
+ for(let x=-100;x<=100;x+=3)for(let z=-130;z<=130;z+=3){
+  const y=terrainHeight(x,z),p=project(x,z,y);
+  const dist=(p.x-px)**2+(p.y-py)**2;
+  const surfacePenalty=!initial&&aimSet&&Math.abs(y-aimY)>3?185:0;
+  const travelPenalty=!initial&&aimSet?Math.max(0,Math.hypot(x-aimX,z-aimZ)-11)*1.8:0;
+  const score=dist+surfacePenalty+travelPenalty;
+  if(score<best.score)best={score,x,z,y};
+ }
+ const base=best;for(let x=base.x-3;x<=base.x+3;x+=.75)for(let z=base.z-3;z<=base.z+3;z+=.75){
+  const y=terrainHeight(x,z),p=project(x,z,y),dist=(p.x-px)**2+(p.y-py)**2;
+  const score=dist+(!initial&&aimSet&&Math.abs(y-aimY)>3?185:0)+(!initial&&aimSet?Math.max(0,Math.hypot(x-aimX,z-aimZ)-11)*1.8:0);
+  if(score<best.score)best={score,x,z,y};
+ }
+ if(Math.hypot(best.x-aimX,best.z-aimZ)>1.5||Math.abs(best.y-aimY)>1){aimMotionAt=performance.now();}
+ aimX=best.x;aimZ=best.z;aimY=best.y;aimSet=true;
+}
+canvas.addEventListener("pointerdown",e=>{
+ if(activePointer!==null)return;e.preventDefault();
+ activePointer=e.pointerId;thumbActive=true;
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ canvas.setPointerCapture(e.pointerId);designate(e,true);startBoardFire();
+});
+canvas.addEventListener("pointermove",e=>{
+ if(e.pointerId!==activePointer)return;e.preventDefault();
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ designate(e);
+});
+function endBoardPointer(e){
+ if(e.pointerId!==activePointer)return;
+ activePointer=null;thumbActive=false;aimTouchPx=null;aimTouchPy=null;stopBoardFire();
+}
+canvas.addEventListener("pointerup",endBoardPointer);
+canvas.addEventListener("pointercancel",endBoardPointer);
+canvas.addEventListener("lostpointercapture",endBoardPointer);
+document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)gatlingStop();});
+requestAnimationFrame(frame);
+</script></body></html>
