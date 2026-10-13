@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orbital Defender — Fortified Plateau Concept</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#08110d;color:#c5efcf;font-family:system-ui,-apple-system,sans-serif}
+main{max-width:900px;margin:auto;padding:12px}.heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+h1{font-size:17px;letter-spacing:.07em;margin:4px 0}.eyebrow{font:11px monospace;color:#76b98d;letter-spacing:.19em}
+#scene{display:block;width:100%;height:min(77dvh,760px);min-height:440px;background:#1e241d;border:1px solid #42604e;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;align-items:stretch;margin-top:9px}
+button{border:1px solid #51785d;background:#14251b;color:#e2ffe9;padding:11px 4px;font-size:11px;font-weight:800;border-radius:4px;touch-action:manipulation;min-height:44px}
+button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}button:active{background:#31503a}.status{grid-column:1 / -1;font:11px/1.6 monospace;color:#a9c8ae;text-align:center}
+#gatling{grid-column:span 2;background:#483a24;border-color:#cc9d52;color:#ffe9af;touch-action:none}#gatling[aria-pressed="true"]{background:#765025}#charge{grid-column:span 2;background:#31472b;border-color:#c6ae6a;color:#fff1c6;user-select:none;-webkit-user-select:none}#charge[aria-pressed="true"]{background:#73552b} .note{color:#86a491;font-size:12px;line-height:1.4;margin-top:10px}
+#sceneWrap{position:relative}#pip{position:absolute;z-index:12;top:70px;right:12px;width:148px;height:118px;background:#0c1a14;border:2px solid #c0e8c9;box-shadow:0 6px 22px rgba(0,0,0,.65);pointer-events:none;image-rendering:auto}#pipLabel{position:absolute;z-index:13;top:52px;right:12px;color:#d6f6df;font:10px monospace;pointer-events:none;text-shadow:0 1px 3px #000}
+#audioGate{position:fixed;z-index:90;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(4,10,7,.80);padding:20px}#audioGate .inner{max-width:340px;text-align:center;border:1px solid #95caa1;background:#112119;padding:22px;border-radius:8px}#audioUnlock{background:#355640;border-color:#b2f1bd;width:100%;font-size:16px;margin:12px 0}#audioStateText{font:12px monospace;color:#c2ddc9;line-height:1.5}
+#gameIntro{position:fixed;inset:0;z-index:90;overflow:auto;background:radial-gradient(ellipse at 75% 36%,#726049 0%,#293327 23%,#101915 52%,#050a08 100%);color:#e5edda}
+#gameIntro .bay-art{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.9}
+.bay-art:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 116px,#0008 119px 122px,transparent 126px),linear-gradient(165deg,#18221c 0%,transparent 45%,#080c08 100%)}
+.bay-window{position:absolute;right:-7%;top:8%;width:60%;height:73%;border:18px solid #121911;transform:skew(-8deg);background:linear-gradient(145deg,#a2875a80,#63543c66 40%,#252b2466),repeating-linear-gradient(160deg,transparent 0 28px,#151c1470 32px 34px)}
+.bay-window span{font:10px monospace;color:#e2ca95;position:absolute;right:12%;top:14%}
+.crew{position:absolute;right:36%;bottom:-17%;height:68%;width:23%;border-radius:45% 44% 8% 8%;background:linear-gradient(85deg,#050907,#2d3629 34%,#161b15 70%,#040907);box-shadow:0 -58px 0 -25px #3a4338}
+.gun{position:absolute;right:3%;top:56%;width:47%;height:9%;transform:rotate(-11deg);background:repeating-linear-gradient(90deg,#181e1a 0 18px,#575b43 20px 25px,#101310 26px 32px);border:8px solid #131711;box-shadow:0 13px 0 #1a211b,0 -13px 0 #252b22}
+.operator-console{position:absolute;right:10%;bottom:6%;width:42%;height:21%;transform:skew(-12deg);border:8px solid #27332b;background:repeating-linear-gradient(90deg,#17261b 0 28px,#426343 30px 33px,#101711 34px 46px);box-shadow:0 0 40px #94b98122}
+.flight-panel{position:relative;min-height:100dvh;width:min(570px,100%);padding:clamp(22px,5vw,66px);background:linear-gradient(90deg,#07100ef2,#0b1713d9 75%,#101b14a0);display:flex;flex-direction:column;justify-content:center;gap:13px}
+.flight-panel[hidden]{display:none}
+.flight-eyebrow{font:11px monospace;letter-spacing:2px;color:#9cae8a}.flight-title{font:900 clamp(40px,8vw,77px)/.91 system-ui;letter-spacing:-2px;margin:8px 0;color:#e4e6d9;text-shadow:0 3px 7px #050705}.flight-title.small{font-size:clamp(30px,7vw,53px)}.flight-title em{font-style:normal;color:#9faa7a}
+.flight-sub{font:10px monospace;letter-spacing:2px;color:#d6ddce;margin:3px 0 35px}
+.flight-primary{border:1px solid #a3c291;border-radius:2px;background:linear-gradient(90deg,#233a2a,#1c3324);color:#f1f7e9;font:700 15px monospace;text-align:left;letter-spacing:2px;padding:15px;display:flex;justify-content:space-between;align-items:center}
+.flight-primary:disabled{opacity:.37}.flight-primary span{font-size:24px}
+.future-item{font:13px monospace;color:#b4c6b1;padding:14px;border:1px solid #53625266}.future-item small{float:right;color:#809583}
+.flight-footer{font:11px/1.6 monospace;color:#92aa90;margin-top:18px}.checkrow{display:flex;justify-content:space-between;gap:6px;padding:12px;border-bottom:1px solid #445945;font:11px monospace}.checkrow strong{color:#afdda2}
+.flightControls{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;background:#0e1b14;border:1px solid #44614a;border-radius:5px}
+.flightControls[hidden]{display:none}.toolbar>button{font-size:10px}#flightToggle[aria-expanded="true"]{background:#314c39}
+#sceneWrap{isolation:isolate}.flightControls{position:absolute;z-index:25;inset:auto 8px 8px;display:block;max-height:72%;overflow-y:auto;overscroll-behavior:contain;padding:11px;background:rgba(7,18,14,.96);border:1px solid #9dc5a1;border-radius:8px;box-shadow:0 3px 24px #000b;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.flightControls[hidden]{display:none}.flightHead{display:flex;align-items:center;justify-content:space-between;font:700 11px monospace;letter-spacing:1px;color:#c4e8ca;padding:0 2px 8px}.flightHead button{min-height:30px;min-width:36px;font-size:23px;padding:0}.flightSection{padding:6px 0;border-top:1px solid #44634f}.flightSectionTitle{font:10px monospace;color:#91ad99;margin:2px 0 8px;letter-spacing:1px}.flightGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.flightGrid button{padding:7px 2px 6px;min-height:61px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}.flightSymbol{font-size:23px;line-height:1;color:#d3e6c5}.flightGrid small{font-size:9px;line-height:1.1;letter-spacing:.2px}.flightSecondary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding-top:7px;border-top:1px solid #44634f}.flightSecondary button{font-size:9px;min-height:36px;padding:4px 1px}
+#sceneWrap{overflow:hidden}.hudMission,.hudAttitude,.hudTarget{position:absolute;pointer-events:none;z-index:15;color:#d0e6d0;background:#07140edc;border:1px solid #5c8064;padding:6px 8px;font:10px/1.4 monospace;letter-spacing:.3px;border-radius:3px;text-shadow:0 1px 2px #000}
+.hudMission{top:9px;left:9px}.hudMission span,.hudAttitude span{display:block;color:#96b79c;font-size:9px}.hudAttitude{top:9px;right:9px;text-align:right}.hudTarget{bottom:11px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#d6e4bd}.hudTarget[data-status="STABLE"]{border-color:#9acc9d;color:#b4f4bb}.hudTarget[data-status="SETTLING"]{border-color:#d1a962;color:#ead193}
+.flightInstrument{display:grid;grid-template-columns:1fr 1fr;gap:9px;align-items:center;padding:8px;background:#15251b;border:1px solid #45664d;border-radius:4px;margin-bottom:7px}
+.instrumentCompass{position:relative;margin:auto;border:1px solid #7ca389;border-radius:50%;width:91px;height:91px;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(circle,#243e2d,#0a1710)}
+.instrumentCompass:before{content:"N";position:absolute;top:3px;font:9px monospace;color:#abcdb1}.instrumentArrow{font-size:30px;color:#c1e6b8}.instrumentCompass small{font:9px monospace;color:#9bb59d}.instrumentAttitude{display:flex;flex-direction:column;gap:8px;font:11px monospace;color:#d9ead5}.instrumentAttitude strong{font-size:9px;letter-spacing:1px;color:#90ae93}
+.flightControls{max-height:68%}.flightGrid button{min-height:49px}.flightSymbol{font-size:20px}.flightSecondary{margin-top:7px}
+#sphereMode{padding:2px 0 9px}.sphereHeader{display:flex;justify-content:space-between;font:700 10px monospace;color:#c9e1c4;letter-spacing:.6px}.sphereHeader span{font-size:9px;color:#8ba991}#domeSurface{width:min(100%,300px);margin:4px auto 0;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}#domeSurface:active{cursor:grabbing}#domeSurface svg{display:block;max-height:194px}.sphereReadout{display:flex;justify-content:space-around;gap:5px;font:10px monospace;color:#d2e4ca;background:#14261b;border:1px solid #506b52;padding:8px 2px;border-radius:4px}#domeHint{font:9px/1.3 monospace;color:#bdc69e;text-align:center;margin-top:6px;min-height:25px}.sphereActions{display:grid;grid-template-columns:1fr 1.6fr;gap:6px;margin-top:3px}.sphereActions button{min-height:39px;font-size:10px}#classicPanel[hidden]{display:none}.flightControls{max-height:75%}#domeTilt{transform-box:fill-box;transform-origin:center}
+</style></head>
+<body><div id="gameIntro" class="flight-screen">
+ <div class="bay-art"><div class="bay-window"><span>PLATEAU / SECTOR 07</span></div><div class="crew"></div><div class="gun"></div><div class="operator-console"></div></div>
+ <section class="flight-panel" id="menuPanel">
+ <div class="flight-eyebrow">OD // ORBITAL DEFENSE COMMAND</div><h1 class="flight-title">ORBITAL<br><em>DEFENDER</em></h1>
+ <p class="flight-sub">HIGHER GROUND. A SAFER TOMORROW.</p>
+ <button id="beginPreflight" class="flight-primary">START MISSION <span>›</span></button>
+ <div class="future-item">TRAINING <small>COMING LATER</small></div><div class="future-item">LOADOUT <small>COMING LATER</small></div>
+ <div class="flight-footer">GUNSHIP 01 // DEFENSE UPLINK // SYSTEM STANDBY</div>
+ </section>
+ <section class="flight-panel" id="preflightPanel" hidden>
+ <div class="flight-eyebrow">OD // MISSION DEPLOYMENT SEQUENCE</div><h1 class="flight-title small">PRE-FLIGHT<br><em>SYSTEM CHECK</em></h1>
+ <div class="checkrow"><span>01 / TARGETING OPTICS</span><strong>READY</strong></div>
+ <div class="checkrow"><span>02 / ORBIT STABILIZATION</span><strong>READY</strong></div>
+ <div class="checkrow"><span>03 / WEAPON FEED</span><strong>READY</strong></div>
+ <div class="checkrow"><span>04 / BATTLEFIELD LINK</span><strong>READY</strong></div>
+ <div class="checkrow"><span>05 / AUDIO COMMS</span><strong id="commsStatus">STANDBY</strong></div>
+ <button id="audioUnlock" class="flight-primary">ACTIVATE COMMS <span>›</span></button>
+ <button id="deploy" class="flight-primary" disabled>BEGIN DEPLOYMENT <span>›</span></button>
+ <div id="audioStateText" class="flight-footer">Audio must be running before deployment.</div>
+ </section>
+ </div><main><div class="heading"><div><span class="eyebrow">V0.6 // DOME STUDY 06.6</span><h1>OPERATION: FORTIFIED PLATEAU — 05.6</h1></div><span class="eyebrow">COMBAT LAB</span></div>
+<div id="sceneWrap"><canvas id="scene" aria-label="Rotatable concept of a fortified plateau with a defended mesa summit and surrounding assault routes"></canvas><canvas id="pip" width="296" height="236" aria-label="Magnified impact view"></canvas><div id="pipLabel">056 / IMPACT OPTIC</div><div id="missionReadout" class="hudMission">OD / SECTOR 07 <span>FORTRESS DEFENSE</span></div>
+<div id="attitudeReadout" class="hudAttitude">↻ CW <span>52° / 0°</span></div>
+<div id="targetState" class="hudTarget">◌ TRACKING</div>
+<div id="flightControls" class="flightControls" hidden role="group" aria-label="Flight commands">
+<div class="flightHead"><span>FLIGHT // COMMAND DECK</span><button id="closeFlight" type="button" aria-label="Close flight commands">×</button></div>
+<div id="sphereMode">
+<div class="sphereHeader">ORBITAL COMMAND SPHERE <span>GESTURE CONTROL</span></div>
+<div id="domeSurface" role="application" aria-label="Flight sphere: drag center for pitch and bank; swipe around rim to reverse orbit" tabindex="0">
+<svg viewBox="0 0 300 205" width="100%" aria-hidden="true">
+<defs><radialGradient id="domeMat" cx="32%" cy="23%" r="83%"><stop offset="0" stop-color="#7e9885"/><stop offset=".38" stop-color="#365640"/><stop offset="1" stop-color="#08170f"/></radialGradient><linearGradient id="domePlinth" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#607c61"/><stop offset="1" stop-color="#111d16"/></linearGradient></defs>
+<ellipse cx="150" cy="176" rx="109" ry="20" fill="#020a05"/><rect x="40" y="151" width="220" height="45" rx="13" fill="url(#domePlinth)" stroke="#66876c"/><ellipse cx="150" cy="153" rx="106" ry="29" fill="#172d1e" stroke="#a0ba99"/>
+<g id="domeTilt"><path d="M51 146C56 80 102 30 150 30C198 30 244 80 249 146Q250 176 150 178Q50 176 51 146" fill="url(#domeMat)" stroke="#acc7aa" stroke-width="2"/>
+<g stroke="#a8d0ad" fill="none" opacity=".55"><path d="M74 111Q150 89 226 111M89 79Q150 63 211 79M150 35V166" stroke-dasharray="4 5"/><ellipse cx="150" cy="145" rx="81" ry="14"/></g>
+<g font-family="monospace" font-size="11" text-anchor="middle" fill="#e3efd9"><text x="150" y="56">N</text><text x="86" y="133">W</text><text x="214" y="133">E</text><text x="150" y="161">S</text></g></g>
+<circle cx="150" cy="111" r="17" fill="#0d2215" stroke="#d4c08e" stroke-width="2"/><circle cx="150" cy="111" r="3" fill="#e9d39f"/>
+<path id="domeCue" d="M66 112 A84 84 0 0 1 234 112" stroke="#e9c879" fill="none" stroke-width="3" opacity=".6"/>
+<text x="150" y="188" text-anchor="middle" font-size="10" font-family="monospace" fill="#d3e9d1">DRAG DOME / SWIPE RIM</text></svg></div>
+<div class="sphereReadout"><span id="domeOrbit">↻ CW</span><span id="domePitch">PITCH 52°</span><span id="domeBank">BANK 0°</span></div>
+<div id="domeHint">CENTER: DRAG TO PITCH / BANK · RIM: TRACE TO REVERSE</div>
+<div class="sphereActions"><button id="sphereLevel">⊕ LEVEL</button><button id="classicToggle" aria-expanded="false">CLASSIC CONTROLS ▾</button></div>
+</div>
+<div id="classicPanel" hidden>
+<div class="flightInstrument"><div class="instrumentCompass"><span class="instrumentArrow" id="instrumentArrow">↻</span><small id="instrumentHeading">CW / 030°</small></div><div class="instrumentAttitude"><strong>CAMERA ATTITUDE</strong><span id="instrumentPitch">PITCH 52°</span><span id="instrumentBank">BANK 0°</span></div></div>
+<div class="flightSection"><div class="flightSectionTitle">ORBIT / POSITION</div><div class="flightGrid">
+<button id="left"><span class="flightSymbol">↶</span><small>TURN −90°</small></button><button id="right"><span class="flightSymbol">↷</span><small>TURN +90°</small></button><button id="reverse"><span class="flightSymbol">⇄</span><small>REVERSE</small></button><button id="sweep"><span class="flightSymbol">⌁</span><small>SWEEP</small></button>
+</div></div><div class="flightSection"><div class="flightSectionTitle">ATTITUDE / OPTICS</div><div class="flightGrid">
+<button id="pitchDown"><span class="flightSymbol">↘</span><small>DIP</small></button><button id="pitchUp"><span class="flightSymbol">↗</span><small>PITCH</small></button><button id="bankLeft"><span class="flightSymbol">⤺</span><small>BANK LEFT</small></button><button id="bankRight"><span class="flightSymbol">⤻</span><small>BANK RIGHT</small></button>
+<button id="level"><span class="flightSymbol">⊕</span><small>LEVEL</small></button><button id="out"><span class="flightSymbol">−</span><small>ZOOM OUT</small></button><button id="in"><span class="flightSymbol">+</span><small>ZOOM IN</small></button><button id="reset"><span class="flightSymbol">⌖</span><small>RESET</small></button>
+</div></div><div class="flightSecondary"><button id="camera">VIEW: SURVEY</button><button id="shelves" aria-pressed="true">SHELVES: ON</button><button id="spawn">REINFORCE</button><button id="radio" aria-pressed="true">RADIO: ON</button></div>
+</div></div></div>
+<div class="toolbar">
+<button id="weapon">GATLING / READY</button><button id="orbit" aria-pressed="true">↻ ORBIT</button><button id="lens" aria-pressed="true">◎ OPTIC</button><button id="flightToggle" aria-expanded="false" aria-controls="flightControls">FLIGHT ▾</button>
+<span class="status" id="status">RETICLE TRACK // ORBIT ACTIVE</span></div>
+<p class="note" style="display:none">Combat Study 04.4 unified fire/focus and inset impact optics: continuous orbit now stays active while the camera gradually zooms toward the designated aim point, then eases back on release. Quarter-turns remain available. Touch or drag on terrain to designate an aim point, hold CHARGE to ease the camera inward, release to simulate a shot and return to survey. Isolated combat experiment: touch and hold the battlefield to launch world-space Gatling rounds with gravity, or charge, drag to adjust aim, release to stop or launch, watch enemy impacts and read radio confirmations. Touch the terrain to aim. No production combat changes. No enemies, targeting, damage or existing game rules have been changed.</p></main>
+<script>
+"use strict";
+const canvas=document.getElementById("scene"),ctx=canvas.getContext("2d"),status=document.getElementById("status");
+let width=1,height=1,angle=.52,targetAngle=.52,showShelves=true,lowView=false,zoomIndex=2,zoomValue=1,cinemaStart=0,cinemaActive=false,focusX=0,focusZ=0,focusY=34,goalX=0,goalZ=0,goalY=34,aimX=0,aimZ=0,aimY=34,charging=false,charge=0,recoil=0,chargeStart=0,aimSet=false,orbitOn=true,orbitDirection=1,orbitSpeed=.00011,orbitSpeedGoal=.00011,sweepUntil=0,pitchDeg=52,pitchGoal=52,bankDeg=0,bankGoal=0,tracking=true;const zoomSteps=[.9,1.02,1.17,1.48,1.86],zoomNames=["WIDE THEATER","SURVEY","TACTICAL","OBSERVATION","DETAIL"];
+function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);width=r.width;height=r.height;canvas.width=Math.round(width*d);canvas.height=Math.round(height*d);ctx.setTransform(d,0,0,d,0,0);}
+addEventListener("resize",resize);resize();
+// Elevation remap preserves the approved Study 02 structure while giving
+// the lower two geological shelves monumental, continuous rock faces.
+// Original 0/9/17/24/29/34 -> expanded 0/18/38/60/65/70.
+function elevation(y){
+ const knots=[[0,0],[9,10],[17,24],[24,77],[29,92],[34,106]];
+ if(y<=0)return y*2;
+ for(let i=1;i<knots.length;i++){
+  if(y<=knots[i][0]){const a=knots[i-1],b=knots[i],t=(y-a[0])/(b[0]-a[0]);return a[1]+t*(b[1]-a[1]);}
+ }
+ return 106+(y-34);
+}
+function project(x,z,y=0){
+ const c=Math.cos(angle),s=Math.sin(angle),rx=x*c-z*s,rz=x*s+z*c;
+ const scale=Math.min(width/265,height/(lowView?214:199))*zoomValue;
+ const tilt=Math.PI*pitchDeg/180;
+ const depthFactor=Math.sin(tilt)*.84;
+ const verticalFactor=Math.cos(tilt)*1.18;
+ const fc=Math.cos(angle),fs=Math.sin(angle),frx=focusX*fc-focusZ*fs,frz=focusX*fs+focusZ*fc;
+ const sx=(rx-frx)*scale,sy=(rz-frz)*scale*depthFactor-(elevation(y)-elevation(focusY))*scale*verticalFactor;
+ const bank=bankDeg*Math.PI/180,bc=Math.cos(bank),bs=Math.sin(bank);
+ return{x:width*.5+sx*bc-sy*bs,y:height*.49+sx*bs+sy*bc,depth:rz};
+}
+function poly(points,fill,stroke=null,lw=1){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}}
+function line(a,b,color,w=1){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+function ellipse(x,z,rx,rz,color,y=0){const p=project(x,z,y),a=project(x+rx,z,y),b=project(x,z+rz,y);ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(p.x,p.y,Math.max(1,Math.abs(a.x-p.x)),Math.max(1,Math.abs(b.y-p.y)),angle,0,Math.PI*2);ctx.fill();}
+function box(x,z,w,d,h,side,roof){const q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];const b=q.map(v=>project(v[0],v[1],34)),t=q.map(v=>project(v[0],v[1],34+h));poly([b[1],b[2],t[2],t[1]],side);poly([b[2],b[3],t[3],t[2]],side);poly(t,roof,"#8f9275");}
+function path(points,color,widthLine){for(let i=1;i<points.length;i++)line(project(...points[i-1]),project(...points[i]),color,widthLine);}
+function terrain(){
+ctx.fillStyle="#41463a";ctx.fillRect(0,0,width,height);
+for(let i=0;i<150;i++){const x=((i*83)%245)-122,z=((i*59)%225)-112;ellipse(x,z,3+i%6,2+i%4,i%3===0?"rgba(162,131,78,.13)":"rgba(91,113,79,.13)");}
+// Scattered distant terrain establishes scale in wide mode: dry washes,
+ // convoy roads, rocky outcrops and sparse shrubs, never a blank theater.
+ for(let i=0;i<410;i++){
+  const x=((i*73+19)%520)-260,z=((i*109+43)%500)-250;
+  if(Math.abs(x)<72&&Math.abs(z)<88)continue;
+  const p=project(x,z,0),r=Math.max(.65,(i%7+2)*Math.min(width/265,height/199)*zoomValue*.36);
+  ctx.fillStyle=i%5===0?"rgba(171,145,102,.42)":i%3===0?"rgba(97,111,75,.54)":"rgba(43,50,40,.4)";
+  ctx.beginPath();ctx.ellipse(p.x,p.y,r,r*.47,(i%8)*.41,0,Math.PI*2);ctx.fill();
+ }
+ for(const wash of [
+  [[-255,-145,0],[-170,-119,0],[-114,-84,0],[-70,-76,0]],
+  [[250,185,0],[172,145,0],[125,111,0],[75,73,0]],
+  [[-210,191,0],[-148,150,0],[-108,111,0],[-72,75,0]]
+ ]){path(wash,"rgba(187,155,100,.34)",9*zoomValue);path(wash,"rgba(218,186,129,.17)",3*zoomValue);}
+ for(const d of [0,Math.PI/2,Math.PI,Math.PI*1.5]){const dx=Math.cos(d),dz=Math.sin(d);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#6f6650",8);path([[dx*95,dz*95],[dx*62,dz*62],[dx*47,dz*47]],"#918368",2);}
+}
+const geometry={
+ shelves:[
+ {y:9,shape:[[-52,-70],[-19,-78],[17,-76],[44,-61],[57,-38],[60,-1],[50,32],[32,67],[8,80],[-28,77],[-54,56],[-65,23],[-65,-19]],top:"#816849"},
+ {y:17,shape:[[-39,-61],[-8,-66],[20,-59],[42,-42],[48,-15],[42,17],[31,48],[8,61],[-23,59],[-42,40],[-49,9],[-47,-29]],top:"#997753"}
+ ],
+ foot:[[-30,-51],[5,-55],[31,-45],[39,-21],[33,8],[26,39],[11,55],[-14,57],[-33,42],[-42,14],[-39,-19]],
+ tiers:[
+ {y:24,shape:[[-24,-44],[4,-47],[25,-38],[30,-18],[26,9],[20,35],[8,46],[-13,48],[-27,34],[-34,10],[-32,-19]],top:"#9e8159"},
+ {y:29,shape:[[-20,-35],[3,-39],[20,-29],[23,-8],[19,15],[12,32],[-6,36],[-22,25],[-27,5],[-25,-19]],top:"#b49767"},
+ {y:34,shape:[[-15,-31],[2,-33],[15,-24],[17,-8],[12,6],[-4,13],[-17,5],[-21,-13]],top:"#c8ac7a"}
+ ],
+ structures:[
+ {x:-2,z:-12,y:34,w:12,d:10,h:7,type:"COMMAND"},
+ {x:10,z:-20,y:34,w:4,d:4,h:14,type:"SIGNAL"},
+ {x:-10,z:20,y:29,w:9,d:7,h:5,type:"STORAGE"},
+ {x:8,z:39,y:24,w:8,d:5,h:4,type:"CHECKPOINT"}
+ ],
+ ascent:[[37,55,0],[33,44,5],[23,42,10],[29,30,15],[19,25,20],[8,39,24]]
+};
+function tierFaces(top,bottom,bottomY,topY,shade){
+ const n=top.length;
+ // Divide the face by top-edge segments and anchor it to a corresponding
+ // proportional perimeter point below. Sorting by projected depth prevents
+ // near faces from disappearing beneath distant ones.
+ const faces=[];
+ for(let i=0;i<n;i++){
+  const a=i/n,b=(i+1)/n;
+  const qa=perimeterPoint(bottom,a),qb=perimeterPoint(bottom,b);
+  const ta=top[i],tb=top[(i+1)%n];
+  const depth=(project(ta[0],ta[1],topY).depth+project(tb[0],tb[1],topY).depth)/2;
+  faces.push({depth,i,verts:[project(...qa,bottomY),project(...qb,bottomY),project(...tb,topY),project(...ta,topY)]});
+ }
+ faces.sort((a,b)=>a.depth-b.depth);
+ for(const face of faces){
+  poly(face.verts,face.i%3===0?"#70543a":face.i%2===0?shade:"#886743","#4c3d31",.65);
+  for(let n=1;n<5;n++){
+   const t=n/5,a=face.verts[0],b=face.verts[1],c=face.verts[2],d=face.verts[3];
+   line({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t},{x:d.x+(c.x-d.x)*t,y:d.y+(c.y-d.y)*t},n%2?"rgba(217,172,107,.28)":"rgba(32,27,24,.25)",.8);
+  }
+ }
+}
+function perimeterPoint(shape,t){
+ const lengths=shape.map((p,i)=>Math.hypot(shape[(i+1)%shape.length][0]-p[0],shape[(i+1)%shape.length][1]-p[1]));
+ const sum=lengths.reduce((a,b)=>a+b,0);let dist=((t%1)+1)%1*sum;
+ for(let i=0;i<shape.length;i++){
+  if(dist<=lengths[i]){const p=shape[i],q=shape[(i+1)%shape.length],v=dist/lengths[i];return[p[0]+(q[0]-p[0])*v,p[1]+(q[1]-p[1])*v];}
+  dist-=lengths[i];
+ }
+ return shape[0];
+}
+function plateau(){
+ ellipse(0,2,52,68,"rgba(10,13,10,.45)");
+ let below=showShelves?geometry.shelves[0].shape:geometry.foot,belowY=0;
+ const allTiers=showShelves?[...geometry.shelves,...geometry.tiers]:geometry.tiers;
+ // Expanded tiers connect vertically; the original citadel remains untouched.
+ if(showShelves) below=geometry.shelves[0].shape;
+ for(const tier of allTiers){
+  if(showShelves && tier===geometry.shelves[0]){
+   const footing=tier.shape.map(p=>[p[0]*1.13,p[1]*1.11]);
+   tierFaces(tier.shape,footing,0,tier.y,"#806044");
+  }else{
+   tierFaces(tier.shape,below,belowY,tier.y,"#967248");
+  }
+  poly(tier.shape.map(v=>project(...v,tier.y)),tier.top,"#e2c08d",1.6);
+  below=tier.shape;belowY=tier.y;
+ }
+ // West Point-inspired defensive spine, overlook terraces, and broad retaining edges.
+ if(showShelves){
+  for(const seg of [
+   [[-42,-45],[-33,-57],17], [[-33,-57],[-7,-63],17], [[12,-61],[32,-48],17],
+   [[39,-34],[45,-15],17], [[38,21],[28,44],17], [[9,56],[-9,58],17],
+   [[-52,-29],[-58,-7],9], [[-58,-7],[-55,14],9], [[-47,48],[-28,69],9],
+   [[-19,73],[8,77],9],[[30,66],[43,47],9]
+  ]){
+   const[a,b,y]=seg;
+   line(project(...a,y+1.3),project(...b,y+1.3),"#574735",7);
+   line(project(...a,y+2.5),project(...b,y+2.5),"#cbb18c",2.5);
+  }
+  for(const o of [[-33,-48,17],[34,37,17],[-49,24,9],[28,58,9]]){
+   const [x,z,y]=o;
+   const q=[[x-5,z-3],[x+5,z-3],[x+5,z+3],[x-5,z+3]].map(p=>project(...p,y+2));
+   poly(q,"#b8a283","#e9d5ab",1);
+  }
+  // Narrow carved road zigzags from the outer shelf to the citadel ascent.
+  const lowerRoad=[[65,76,0],[51,68,9],[41,58,9],[47,45,13],[31,39,17],[39,32,17],[37,55,0]];
+  for(let i=1;i<lowerRoad.length;i++){
+   const a=project(...lowerRoad[i-1]),b=project(...lowerRoad[i]);
+   line(a,b,"#5a4a39",8);line(a,b,"#d4b68b",4);
+  }
+ }
+ // Parapet runs are intentionally incomplete: ruined wall gaps suggest breaches.
+ for(const segment of [
+  [[-21,-33],[-10,-38],24],[[11,-39],[24,-32],24],
+  [[-28,14],[-19,29],24],[[7,43],[-7,46],24],
+  [[-22,-21],[-22,4],29],[[12,29],[20,15],29],
+  [[-13,-26],[0,-29],34],[[13,-18],[14,-3],34]
+ ]){const [a,b,y]=segment;line(project(...a,y+1.6),project(...b,y+1.6),"#68563d",6);line(project(...a,y+2.7),project(...b,y+2.7),"#dfc395",2);}
+ // Switchback approach rendered on top of the rock face, with step highlights.
+ for(let i=1;i<geometry.ascent.length;i++){
+  const a=project(...geometry.ascent[i-1]),b=project(...geometry.ascent[i]);
+  line(a,b,"#4b3f33",10);line(a,b,"#e1c494",5);line(a,b,"rgba(255,235,189,.45)",1);
+ }
+ for(let i=1;i<geometry.ascent.length-1;i++){const p=project(...geometry.ascent[i]);ctx.fillStyle="#ecd3a2";ctx.fillRect(p.x-3,p.y-3,6,6);}
+ // Structures use each terrace's actual Y coordinate.
+ const buildings=geometry.structures.slice().sort((a,b)=>project(a.x,a.z,a.y).depth-project(b.x,b.z,b.y).depth);
+ for(const o of buildings){
+  const {x,z,w,d,y,h}=o,q=[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]];
+  const low=q.map(v=>project(...v,y)),hi=q.map(v=>project(...v,y+h));
+  poly([low[1],low[2],hi[2],hi[1]],"#75654d");
+  poly([low[2],low[3],hi[3],hi[2]],"#5e5546");
+  poly(hi,o.type==="SIGNAL"?"#829686":"#b0a17e","#e4cfa1",1);
+  if(o.type==="SIGNAL"){line(project(x,z,y+h),project(x,z,y+h+11),"#b1d5bc",2);const tip=project(x,z,y+h+11);ctx.fillStyle="#a9fbd3";ctx.fillRect(tip.x-2,tip.y-2,4,4);}
+ }
+ const p=project(-2,-12,44);ctx.font="bold 10px monospace";ctx.textAlign="center";ctx.fillStyle="#d8ffdd";ctx.fillText("FORWARD COMMAND",p.x,p.y-13);
+}
+function drawWeaponReticle(x,y){
+ const mobile=Math.min(width,height),r=Math.max(28,Math.min(43,mobile*.11));
+ const color=weaponMode===0?"#b8e8c6":weaponMode===1?"#d7f4e2":"#e9c38e";
+ ctx.save();ctx.translate(x,y);ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=1.45;
+ const segment=(x1,y1,x2,y2)=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
+ const corner=(sx,sy,arm)=>{segment(sx*(r-10),sy*r,sx*r,sy*r);segment(sx*r,sy*(r-10),sx*r,sy*r);};
+ for(const a of [[-1,-1],[-1,1],[1,-1],[1,1]])corner(...a);
+ const gap=weaponMode===1?6:9;
+ segment(-r*.55,0,-gap,0);segment(gap,0,r*.55,0);
+ segment(0,-r*.5,0,-gap);segment(0,gap,0,r*.5);
+ ctx.beginPath();ctx.arc(0,0,1.8,0,Math.PI*2);ctx.fill();
+ // Short broken ballistic / orbital guide in the right-hand quadrant.
+ // Guide direction counter-rotates with orbit to evoke the off-axis firing solution.
+ const bend=Math.sin(angle)*8,base=r*.37;
+ ctx.beginPath();
+ for(let k=0;k<7;k++){
+  const t=k/7,a=(.25+t*.85),px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;
+  if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }
+ ctx.strokeStyle=color;ctx.globalAlpha=.72;ctx.setLineDash([4,5]);ctx.stroke();ctx.setLineDash([]);
+ for(let k=0;k<4;k++){const t=k/3,a=.25+t*.85,px=base+Math.sin(a*1.5)*11+bend*t,py=-r*.6+t*r*1.25;segment(px,py,px+5+(weaponMode===0?combat.heat*5:0),py+2);}
+ ctx.globalAlpha=1;ctx.strokeStyle=color;
+ if(weaponMode===0){
+   // Heat-informed spread: fragmented tick arc; no giant targeting circle.
+   const spread=r*.59+combat.heat*8;
+   for(let k=0;k<9;k++){const a=k*Math.PI*2/9+angle*.2;segment(Math.cos(a)*spread,Math.sin(a)*spread,Math.cos(a)*(spread+3.5),Math.sin(a)*(spread+3.5));}
+ }else if(weaponMode===1){
+   const tighten=13-charge*5;corner(-1,-1,tighten);
+   segment(-r*.35,r*.83,-r*.35+charge*r*.7,r*.83);
+ }else{
+   // Four blast extent corners, no full opaque circle.
+   const br=r*.92;
+   for(let k=0;k<4;k++){const a=Math.PI*.25+k*Math.PI*.5;segment(Math.cos(a)*br,Math.sin(a)*br,Math.cos(a)*(br+8),Math.sin(a)*(br+8));}
+ }
+ ctx.restore();
+}
+function drawMagnifier(){
+ const pip=document.getElementById("pip"),label=document.getElementById("pipLabel");
+ if(!lensOn){pip.style.display="none";label.style.display="none";return;}
+ pip.style.display="block";label.style.display="block";
+ const rect=canvas.getBoundingClientRect();
+ const rw=rect.width/width,rh=rect.height/height;
+ const w=Math.min(148,rect.width*.42),h=w*.8;
+ const px=thumbActive?Math.max(12,Math.min(rect.width-w-12,thumbX*rw-w*.5)):rect.width-w-14;
+ const py=thumbActive?Math.max(40,Math.min(rect.height-h-20,thumbY*rh-h-30)):74;
+ pipPosX=pipPosX===null?px:pipPosX+(px-pipPosX)*.22;
+ pipPosY=pipPosY===null?py:pipPosY+(py-pipPosY)*.22;
+ pip.style.width=w+"px";pip.style.height=h+"px";pip.style.left=pipPosX+"px";pip.style.top=pipPosY+"px";pip.style.right="auto";
+ label.style.left=pipPosX+"px";label.style.top=Math.max(5,pipPosY-17)+"px";label.style.right="auto";
+ const p=project(aimX,aimZ,aimY),d=canvas.width/width;
+ opticX=opticX===null?p.x:opticX+(p.x-opticX)*.26;opticY=opticY===null?p.y:opticY+(p.y-opticY)*.26;
+ const srcW=Math.min(52*d,canvas.width),srcH=Math.min(42*d,canvas.height);
+ const sx=Math.max(0,Math.min(canvas.width-srcW,opticX*d-srcW/2));
+ const sy=Math.max(0,Math.min(canvas.height-srcH,opticY*d-srcH/2));
+ const g=pip.getContext("2d");g.clearRect(0,0,pip.width,pip.height);
+ // Separate destination canvas avoids undefined overlapping source/destination copies on iOS Safari.
+ g.drawImage(canvas,sx,sy,srcW,srcH,0,0,pip.width,pip.height);
+ g.strokeStyle="#dff9e5";g.lineWidth=2;
+ const cx=pip.width/2,cy=pip.height/2;
+ g.beginPath();g.moveTo(cx-15,cy);g.lineTo(cx+15,cy);g.moveTo(cx,cy-15);g.lineTo(cx,cy+15);g.stroke();
+}
+function overlay(){
+ const g=ctx.createLinearGradient(0,0,0,height);g.addColorStop(0,"rgba(4,17,11,.16)");g.addColorStop(1,"rgba(4,17,11,.03)");ctx.fillStyle=g;ctx.fillRect(0,0,width,height);
+ ctx.strokeStyle="rgba(129,235,172,.32)";ctx.lineWidth=1;ctx.strokeRect(12,12,width-24,height-24);
+ ctx.font="11px monospace";ctx.fillStyle="#adf5c5";ctx.textAlign="left";
+ ctx.fillText("OD / DOME 066",22,32);
+ ctx.fillText("MODE "+zoomNames[zoomIndex]+" / PITCH "+Math.round(pitchDeg)+" / BANK "+Math.round(bankDeg),22,48);
+ ctx.fillText("RETICLE LOCK / FLIGHT ATTITUDE",22,height-22);
+ ctx.textAlign="right";ctx.fillText("CAM "+Math.round(angle*180/Math.PI)+"°",width-22,32);
+ // Minimal, weapon-specific optics. World-space reticle remains authoritative.
+ const mark=project(aimX,aimZ,aimY);
+ drawWeaponReticle(mark.x,mark.y);
+ ctx.fillStyle="#d9e9da";ctx.textAlign="right";
+ ctx.fillText(weaponLabels[weaponMode]+" / "+(weaponMode===0?"HEAT "+Math.round(combat.heat*100)+"%":weaponMode===1?"CHARGE "+Math.round(charge*100)+"%":"AREA 12"),width-22,height-23);
+ if(recoil>0){ctx.textAlign="center";ctx.fillStyle="#ffe5ae";ctx.fillText("ROUND RELEASED · SIMULATED",width*.5,height*.82);}
+
+}
+
+// Procedural audio: no external recordings or licensing dependencies.
+let audioCtx=null,noiseBuffer=null,lastImpactSound=0;
+const audioDiag={firstTouch:null,firstScheduled:null,resumeRequested:null,resumeResolved:null,count:0,errors:0,lastError:"NONE"};
+function elapsed(start){return start===null?"--":((performance.now()-start)/1000).toFixed(1)+"s";}
+function audioDiagnostics(){
+ const d=audioDiag,state=audioCtx?audioCtx.state:"NOT CREATED";
+ const lines=["AUDIO 056 / "+state,"TOUCH +"+elapsed(d.firstTouch),
+ "SCHEDULED "+d.count+" / FIRST +"+(d.firstScheduled===null?"--":((d.firstScheduled-d.firstTouch)/1000).toFixed(2)+"s"),
+ "RESUME "+(d.resumeRequested===null?"--":d.resumeResolved===null?"PENDING "+elapsed(d.resumeRequested):"OK +"+((d.resumeResolved-d.firstTouch)/1000).toFixed(2)+"s"),
+ "ERRORS "+d.errors+" "+d.lastError.slice(0,20)];
+ ctx.save();ctx.font="bold 10px monospace";ctx.textAlign="left";
+ ctx.fillStyle="rgba(4,15,10,.85)";ctx.fillRect(13,56,Math.min(264,width-26),105);
+ lines.forEach((v,i)=>{ctx.fillStyle=i===0?"#ffda91":"#d0ecd5";ctx.fillText(v,20,75+i*18);});
+ ctx.restore();
+}
+function initAudio(){
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  if(!audioCtx){audioCtx=new C();audioCtx.onstatechange=()=>{};noiseBuffer=audioCtx.createBuffer(1,audioCtx.sampleRate*.3,audioCtx.sampleRate);
+   const d=noiseBuffer.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  // Prime audio directly inside the user gesture; Safari resumes asynchronously.
+  if(audioCtx.state==="suspended"){audioDiag.resumeRequested=performance.now();const p=audioCtx.resume();if(p&&p.then)p.then(()=>{audioDiag.resumeResolved=performance.now();}).catch(e=>{audioDiag.errors++;audioDiag.lastError=String(e);});}
+  // A near-silent oscillator establishes an active output path on the very first touch.
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  g.gain.value=.0001;o.connect(g).connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+.015);
+ }catch(e){audioDiag.errors++;audioDiag.lastError=String(e);}
+}
+function soundBurst(freq,duration,volume,noise=false){
+ if(!audioCtx||audioCtx.state==="closed")return;
+ audioDiag.count++;if(audioDiag.firstScheduled===null)audioDiag.firstScheduled=performance.now();
+ const now=audioCtx.currentTime,src=noise?audioCtx.createBufferSource():audioCtx.createOscillator();
+ if(noise)src.buffer=noiseBuffer;else{src.type="sawtooth";src.frequency.setValueAtTime(freq,now);src.frequency.exponentialRampToValueAtTime(Math.max(35,freq*.45),now+duration);}
+ const filter=audioCtx.createBiquadFilter();filter.type="lowpass";filter.frequency.value=noise?freq:1200;
+ const gain=audioCtx.createGain();gain.gain.setValueAtTime(Math.max(.0001,volume),now);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+ src.connect(filter).connect(gain).connect(audioCtx.destination);src.start(now);src.stop(now+duration+.02);
+}
+// A real button click is required on some iPhone Safari sessions to unlock audio.
+// Do not hide the gate until context actually transitions to running.
+document.getElementById("beginPreflight").addEventListener("click",()=>{
+ document.getElementById("menuPanel").hidden=true;
+ document.getElementById("preflightPanel").hidden=false;
+});
+const audioStateText=document.getElementById("audioStateText");
+document.getElementById("audioUnlock").addEventListener("click",()=>{
+ initAudio();audioStateText.textContent="AUDIO COMMS / "+(audioCtx?audioCtx.state:"UNAVAILABLE");
+ if(!audioCtx)return;
+ const ready=()=>{
+  if(audioCtx.state!=="running"){audioStateText.textContent="AUDIO COMMS / "+audioCtx.state+" — TAP AGAIN";return;}
+  document.getElementById("commsStatus").textContent="ONLINE";
+  audioStateText.textContent="AUDIO COMMS / VERIFIED — READY FOR DEPLOYMENT";
+  document.getElementById("deploy").disabled=false;
+  document.getElementById("audioUnlock").hidden=true;
+  soundBurst(300,.11,.11,true);
+ };
+ if(audioCtx.state==="running")ready();
+ else audioCtx.resume().then(ready).catch(()=>{audioStateText.textContent="AUDIO COMMS / NOT READY — RETRY";});
+});
+document.getElementById("deploy").addEventListener("click",()=>{
+ if(!audioCtx||audioCtx.state!=="running")return;
+ document.getElementById("gameIntro").style.display="none";
+ soundBurst(170,.12,.11,true);
+});
+let stableAimAt=performance.now(),lastAimX=0,lastAimZ=0,lastAimY=34,aimMotionAt=0;
+let aimTouchPx=null,aimTouchPy=null,pipPosX=null,pipPosY=null,opticX=null,opticY=null;
+let weaponMode=0,lensOn=true,thumbActive=false,thumbX=width*.5,thumbY=height*.7,activePointer=null;const weaponLabels=["GATLING","PRECISION","HEAVY"];const combat={units:[],fx:[],tracers:[],projectiles:[],holding:false,heat:0,fireTimer:0,hits:0,radioOn:true,lastRadio:-9999,radioText:"RADIO STANDBY",radioUntil:0,shotCount:0};
+function spawnUnits(){
+ for(let i=0;i<15;i++){
+  const theta=(i/15)*Math.PI*2+Math.random()*.22;
+  const rad=80+Math.random()*18;
+  combat.units.push({x:Math.cos(theta)*rad,z:Math.sin(theta)*rad,y:0,vx:0,vz:0,vy:0,spin:0,omega:0,life:1,down:false,age:0,phase:Math.random()*6.28});
+ }
+ if(combat.units.length>55)combat.units.splice(0,combat.units.length-55);
+}
+function radioCall(message,t){
+ if(!combat.radioOn||t-combat.lastRadio<1900)return;
+ combat.lastRadio=t;combat.radioText=message;combat.radioUntil=t+2400;
+ if("speechSynthesis" in window){
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(message.toLowerCase());u.rate=1.05;u.pitch=.76;u.volume=.35;speechSynthesis.speak(u);}catch(e){}
+ }
+}
+function impact(x,z,y,hit,t){
+ combat.fx.push({x,z,y,birth:t,hit,seed:Math.random()});
+ if(t-lastImpactSound>110){lastImpactSound=t;soundBurst(hit?670:340,.11,hit?.07:.045,true);}
+ if(combat.fx.length>65)combat.fx.splice(0,combat.fx.length-65);
+}
+// World-space Gatling: meters are stylized world units; fixed ballistic gravity.
+const BALLISTIC_G=26;
+function pointInPolygon(x,z,poly){
+ let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+  const a=poly[i],b=poly[j];
+  if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }return inside;
+}
+function terrainHeight(x,z){
+ let h=0;
+ for(const sh of geometry.shelves)if(pointInPolygon(x,z,sh.shape))h=Math.max(h,sh.y);
+ for(const sh of geometry.tiers)if(pointInPolygon(x,z,sh.shape))h=Math.max(h,sh.y);
+ return h;
+}
+function firePhysicalRound(t){
+ // Camera-right basis (cos(angle), -sin(angle)) projects to screen right.
+ // Keep the weapon on the same apparent side as we orbit or move aim.
+ const spread=.23+combat.heat*.85,target={x:aimX+(Math.random()-.5)*spread,z:aimZ+(Math.random()-.5)*spread,y:aimY};
+ const side=108;
+ const origin={x:target.x+Math.cos(angle)*side,z:target.z-Math.sin(angle)*side,y:target.y+20};
+ const flight=.39,vy=(target.y-origin.y+.5*BALLISTIC_G*flight*flight)/flight;
+ combat.projectiles.push({x:origin.x,z:origin.z,y:origin.y,vx:(target.x-origin.x)/flight,
+  vz:(target.z-origin.z)/flight,vy,age:0,trail:[{...origin}],target});
+ if(combat.projectiles.length>45)combat.projectiles.shift();
+}
+function resolveImpact(p,t){
+ let nearest=null,dist=7;
+ for(const u of combat.units){if(u.down)continue;
+  const d=Math.hypot(u.x-p.x,u.z-p.z);
+  if(d<dist&&Math.abs(u.y-p.y)<9){dist=d;nearest=u;}
+ }
+ if(nearest){
+  nearest.life-=.38;combat.hits++;impact(p.x,p.z,p.y,true,t);
+  if(combat.hits===1||combat.hits%12===0)radioCall("Rounds on target",t);
+  nearest.vx+=(Math.random()-.5)*.08;nearest.vz+=(Math.random()-.5)*.08;
+  if(nearest.life<=0){nearest.down=true;nearest.vy=.14;nearest.omega=(Math.random()-.5)*.014;
+   radioCall(combat.hits%4===0?"Multiple hostiles down":"Good effect on target",t);}
+ }else impact(p.x,p.z,p.y,false,t);
+}
+function stepProjectiles(dt,t){
+ const step=Math.min(dt,50)/1000,remaining=[];
+ for(const p of combat.projectiles){
+  const sub=4,h=step/sub;let hit=false;
+  for(let j=0;j<sub;j++){
+   p.x+=p.vx*h;p.z+=p.vz*h;p.y+=p.vy*h-.5*BALLISTIC_G*h*h;
+   p.vy-=BALLISTIC_G*h;p.age+=h;
+   const terrain=terrainHeight(p.x,p.z);
+   if(p.y<=terrain){p.y=terrain;resolveImpact(p,t);hit=true;break;}
+  }
+  if(!hit&&p.age<2.4){
+   p.trail.push({x:p.x,z:p.z,y:p.y});
+   if(p.trail.length>9)p.trail.shift();remaining.push(p);
+  }
+ }
+ combat.projectiles=remaining;
+}
+function updateCombat(dt,t){
+ combat.heat=Math.max(0,combat.heat-dt*.00023);
+ if(combat.holding&&combat.heat<1){
+  combat.fireTimer+=dt;
+  while(combat.fireTimer>75){
+   combat.fireTimer-=75;combat.heat=Math.min(1,combat.heat+.019);
+   combat.shotCount++;
+   soundBurst(240+Math.random()*90,.052,.035,false);
+   firePhysicalRound(t);
+  }
+  if(combat.heat>=1){combat.holding=false;charging=false;radioCall("Gun overheating",t);}
+ }else combat.fireTimer=0;
+
+ for(const u of combat.units){
+  u.age+=dt;
+  if(u.down){
+   const k=dt/16.67;u.x+=u.vx*k;u.z+=u.vz*k;u.y=Math.max(0,u.y+u.vy*k);u.vy-=.009*k;
+   if(u.y===0){u.vx*=.91;u.vz*=.91;u.omega*=.92;}u.spin+=u.omega*k;
+  }else{
+   const toward=Math.atan2(-u.z,-u.x);u.x+=Math.cos(toward)*dt*.002;u.z+=Math.sin(toward)*dt*.002;
+  }
+ }
+ combat.units=combat.units.filter(u=>!u.down||u.age<26000);
+ combat.fx=combat.fx.filter(f=>t-f.birth<550);
+ stepProjectiles(dt,t);
+}
+function drawCombat(t){
+ // Each streak consists of recent WORLD positions, rendered through the current camera.
+ ctx.save();ctx.globalCompositeOperation="screen";
+ for(const p of combat.projectiles){
+  if(p.trail.length<2)continue;
+  ctx.beginPath();
+  p.trail.forEach((v,i)=>{const q=project(v.x,v.z,v.y);if(!i)ctx.moveTo(q.x,q.y);else ctx.lineTo(q.x,q.y);});
+  ctx.strokeStyle="rgba(255,231,172,.85)";ctx.lineWidth=2.2;ctx.stroke();
+  const head=project(p.x,p.z,p.y);
+  ctx.fillStyle="#fff6cb";ctx.beginPath();ctx.arc(head.x,head.y,2.2,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+ for(const f of combat.fx){
+  const p=project(f.x,f.z,f.y),age=Math.min(1,(t-f.birth)/550);
+  ctx.strokeStyle=f.hit?"rgba(255,212,122,"+(1-age)+")":"rgba(208,186,146,"+(1-age)*.8+")";
+  ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(p.x,p.y,4+age*22,0,Math.PI*2);ctx.stroke();
+  for(let i=0;i<7;i++){
+    const a=f.seed*6.28+i*Math.PI*2/7,dist=5+age*(13+(i%3)*8);
+    ctx.strokeStyle=f.hit?"rgba(255,235,178,"+(1-age)+")":"rgba(210,187,145,"+(.8-age*.8)+")";
+    ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*dist*.35,p.y+Math.sin(a)*dist*.3);
+    ctx.lineTo(p.x+Math.cos(a)*dist,p.y+Math.sin(a)*dist*.75);ctx.stroke();
+  }
+ }
+ for(const u of combat.units){
+  const p=project(u.x,u.z,u.y),size=Math.max(2.5,5*zoomValue);
+  ctx.save();ctx.translate(p.x,p.y);ctx.rotate(u.spin);
+  ctx.strokeStyle=u.down?"#93806c":"#e2bfa0";ctx.lineWidth=Math.max(1,size*.32);
+  ctx.beginPath();ctx.moveTo(0,-size);ctx.lineTo(0,size);ctx.moveTo(0,-size*.35);ctx.lineTo(-size*.65,size*.18);
+  ctx.moveTo(0,-size*.35);ctx.lineTo(size*.65,size*.18);ctx.moveTo(0,size);ctx.lineTo(-size*.55,size*1.6);ctx.moveTo(0,size);ctx.lineTo(size*.55,size*1.6);ctx.stroke();
+  ctx.fillStyle=u.down?"#8d7966":"#cfb99e";ctx.beginPath();ctx.arc(0,-size*1.35,size*.48,0,Math.PI*2);ctx.fill();ctx.restore();
+ }
+ ctx.font="bold 11px monospace";ctx.textAlign="left";ctx.fillStyle="#e5f2d9";
+ ctx.fillText("GATLING  /  HEAT "+Math.round(combat.heat*100)+"%",22,height-58);
+ ctx.fillStyle=combat.heat>.8?"#ffb372":"#a5e6b4";ctx.fillRect(22,height-51,Math.max(0,(width-44)*combat.heat),4);
+ ctx.strokeStyle="#b6dfbc";ctx.strokeRect(22,height-51,width-44,4);
+ if(combat.radioUntil>t){ctx.textAlign="center";ctx.font="bold 11px monospace";ctx.fillStyle="#d7edc6";ctx.fillText("◀ RADIO: "+combat.radioText.toUpperCase(),width/2,height-77);}
+}
+document.getElementById("lens").addEventListener("click",()=>{lensOn=!lensOn;const b=document.getElementById("lens");b.textContent="OPTICS: "+(lensOn?"ON":"OFF");b.setAttribute("aria-pressed",String(lensOn));});
+function startBoardFire(){
+ if(audioDiag.firstTouch===null)audioDiag.firstTouch=performance.now();
+ initAudio();if(weaponMode===0&&combat.heat>=.98)return;
+ charging=true;recoil=0;
+ if(weaponMode===0){combat.holding=true;combat.fireTimer=75;soundBurst(110,.18,.11,true);}
+}
+function stopBoardFire(){
+ if(!charging&&!combat.holding)return;
+ const wasCharging=charging;charging=false;combat.holding=false;
+ if(wasCharging&&weaponMode!==0&&charge>.18){
+  impact(aimX,aimZ,aimY,false,performance.now());
+  soundBurst(weaponMode===1?185:90,.26,.13,true);recoil=1;
+ }
+ soundBurst(95,.14,.075,true);
+}
+document.getElementById("weapon").addEventListener("click",()=>{stopBoardFire();weaponMode=(weaponMode+1)%3;document.getElementById("weapon").textContent="WEAPON: "+weaponLabels[weaponMode];});
+document.getElementById("spawn").addEventListener("click",()=>{spawnUnits();radioCall("New contacts approaching",performance.now());});
+document.getElementById("radio").addEventListener("click",()=>{combat.radioOn=!combat.radioOn;const b=document.getElementById("radio");b.textContent="RADIO: "+(combat.radioOn?"ON":"OFF");b.setAttribute("aria-pressed",String(combat.radioOn));if(!combat.radioOn&&"speechSynthesis" in window)speechSynthesis.cancel();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden){thumbActive=false;activePointer=null;stopBoardFire();}});
+spawnUnits();
+
+function updateHudInstruments(t){
+ const state=activePointer!==null?(t-aimMotionAt>550?"STABLE":"TRACKING"):t-aimMotionAt<650?"SETTLING":"STABLE";
+ const target=document.getElementById("targetState");
+ target.dataset.status=state;target.textContent=(state==="STABLE"?"● ":state==="SETTLING"?"◇ ":"◌ ")+state;
+ document.getElementById("attitudeReadout").innerHTML=(orbitOn?(orbitDirection===1?"↻ CW":"↺ CCW"):"HOLD")+"<span>"+Math.round(pitchDeg)+"° PITCH / "+Math.round(bankDeg)+"° BANK</span>";
+ document.getElementById("instrumentHeading").textContent=(orbitDirection===1?"CW":"CCW")+" / "+Math.round((angle*180/Math.PI+360)%360)+"°";
+ document.getElementById("instrumentArrow").textContent=orbitDirection===1?"↻":"↺";
+ document.getElementById("instrumentPitch").textContent="PITCH "+Math.round(pitchDeg)+"°";
+ document.getElementById("instrumentBank").textContent="BANK "+Math.round(bankDeg)+"°";
+ document.getElementById("domeOrbit").textContent=orbitDirection===1?"↻ CW":"↺ CCW";document.getElementById("domePitch").textContent="PITCH "+Math.round(pitchDeg)+"°";document.getElementById("domeBank").textContent="BANK "+Math.round(bankDeg)+"°";document.getElementById("domeTilt").style.transform="translate("+(bankDeg*.32)+"px,"+(-(pitchDeg-52)*.28)+"px) rotate("+(bankDeg*.35)+"deg)";
+}
+function frame(t){
+ const dt=Math.min(50,Math.max(0,t-(frame.prev||t)));frame.prev=t;
+ if(cinemaActive){
+  const e=Math.min(1,(t-cinemaStart)/5500),ease=u=>u*u*(3-2*u);
+  zoomValue=.48+(1.20-.48)*ease(e);
+  angle=.20+.32*ease(e);
+  lowView=e<.68;
+  if(e>=1){cinemaActive=false;zoomIndex=2;targetAngle=.52;lowView=false;}
+ }else{
+  if(sweepUntil&&t>sweepUntil){sweepUntil=0;orbitSpeedGoal=.00011;}
+  orbitSpeed+=(orbitSpeedGoal-orbitSpeed)*Math.min(1,dt*.002);
+  if(orbitOn){targetAngle+=dt*orbitSpeed*orbitDirection;}
+  pitchDeg+=(pitchGoal-pitchDeg)*Math.min(1,dt*.005);
+  bankDeg+=(bankGoal-bankDeg)*Math.min(1,dt*.004);
+  angle+=(targetAngle-angle)*.11;
+  charge=charging?Math.min(1,charge+dt/1800):Math.max(0,charge-dt/500);
+  recoil=Math.max(0,recoil-dt/650);
+  // Charging assists framing but never changes the target's world coordinates.
+  const base=zoomSteps[zoomIndex];
+  const assistStrength=Math.max(.08,.34-(base-1)*.28);
+  const targetZoom=base*(1+assistStrength*charge);
+  zoomValue+=(targetZoom-zoomValue)*Math.min(1,dt*.0045);
+  if(tracking&&activePointer===null){goalX=aimX;goalZ=aimZ;goalY=aimY;}
+  else if(charging){goalX=aimX*.40;goalZ=aimZ*.40;goalY=34+(aimY-34)*.30;}
+  else if(recoil<=0){goalX=0;goalZ=0;goalY=34;}
+  const follow=activePointer!==null?0:Math.min(1,dt*(tracking?.005:.0038));focusX+=(goalX-focusX)*follow;focusZ+=(goalZ-focusZ)*follow;focusY+=(goalY-focusY)*follow;
+  // Keep the selected world-space point within a central safe frame even as
+  // the orbital angle changes; never move the impact location itself.
+  if(charging&&!tracking){
+   const p=project(aimX,aimZ,aimY);
+   const marginX=width*.17,marginY=height*.11;
+   const dx=p.x<marginX?p.x-marginX:p.x>width-marginX?p.x-(width-marginX):0;
+   const dy=p.y<marginY?p.y-marginY:p.y>height-marginY?p.y-(height-marginY):0;
+   const scale=Math.min(width/265,height/(lowView?214:199))*zoomValue;
+   const c=Math.cos(angle),sn=Math.sin(angle);
+   const camDx=dx/Math.max(.001,scale),camDz=dy/Math.max(.001,scale*(lowView?.27:.50));
+   const limit=dt*.032;
+   focusX+=Math.max(-limit,Math.min(limit,camDx*c+camDz*sn));
+   focusZ+=Math.max(-limit,Math.min(limit,-camDx*sn+camDz*c));
+  }
+ }
+ updateCombat(dt,t);
+ terrain();plateau();drawCombat(t);drawMagnifier();overlay();updateHudInstruments(t);
+ status.textContent=zoomNames[zoomIndex]+" // "+(lowView?"LOW OBLIQUE":"ORBITAL")+" // "+Math.round(zoomValue*100)+"% SCALE";
+ requestAnimationFrame(frame);
+}
+document.getElementById("left").addEventListener("click",()=>{cinemaActive=false;targetAngle-=Math.PI/2;});
+document.getElementById("right").addEventListener("click",()=>{cinemaActive=false;targetAngle+=Math.PI/2;});
+document.getElementById("reset").addEventListener("click",()=>{cinemaActive=false;orbitOn=false;syncOrbit();targetAngle=.52;goalX=0;goalZ=0;goalY=34;zoomIndex=2;lowView=false;});
+document.getElementById("shelves").addEventListener("click",()=>{showShelves=!showShelves;const b=document.getElementById("shelves");b.textContent="SHELVES: "+(showShelves?"ON":"OFF");b.setAttribute("aria-pressed",String(showShelves));});
+document.getElementById("camera").addEventListener("click",()=>{lowView=!lowView;const b=document.getElementById("camera");b.textContent="VIEW: "+(lowView?"LOW":"SURVEY");b.setAttribute("aria-pressed",String(lowView));});
+document.getElementById("out").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.max(0,zoomIndex-1);});
+document.getElementById("in").addEventListener("click",()=>{cinemaActive=false;zoomIndex=Math.min(zoomSteps.length-1,zoomIndex+1);});
+const sphere=document.getElementById("domeSurface"),sphereHint=document.getElementById("domeHint");
+let sphereDrag=null;
+const angleDelta=(a,b)=>Math.atan2(Math.sin(b-a),Math.cos(b-a));
+sphere.addEventListener("pointerdown",e=>{
+ e.preventDefault();sphere.setPointerCapture(e.pointerId);
+ const r=sphere.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*300-150,y=(e.clientY-r.top)/r.height*205-111;
+ const rim=Math.hypot(x,y)>73;
+ sphereDrag={id:e.pointerId,x:e.clientX,y:e.clientY,pitch:pitchGoal,bank:bankGoal,rim,angle:Math.atan2(y,x),travel:0};
+ sphereHint.textContent=rim?"RIM: TRACE AN ARC TO REVERSE":"DOME: DRAG UP/DOWN PITCH · LEFT/RIGHT BANK";
+});
+sphere.addEventListener("pointermove",e=>{
+ const d=sphereDrag;if(!d||d.id!==e.pointerId)return;e.preventDefault();
+ if(d.rim){
+  const r=sphere.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*300-150,y=(e.clientY-r.top)/r.height*205-111;
+  const a=Math.atan2(y,x);d.travel+=angleDelta(d.angle,a);d.angle=a;
+  sphereHint.textContent="ORBIT RIM / "+(d.travel>.38?"↻ CW PENDING":d.travel<-.38?"↺ CCW PENDING":"TRACE A LITTLE FURTHER");
+ }else{
+  pitchGoal=Math.max(20,Math.min(75,d.pitch-(e.clientY-d.y)*.23));
+  bankGoal=Math.max(-30,Math.min(30,d.bank+(e.clientX-d.x)*.23));
+  sphereHint.textContent="PITCH "+Math.round(pitchGoal)+"° / BANK "+Math.round(bankGoal)+"°";
+ }
+});
+function sphereRelease(e){
+ const d=sphereDrag;if(!d||d.id!==e.pointerId)return;
+ if(d.rim&&Math.abs(d.travel)>.38){orbitDirection=d.travel>0?1:-1;orbitOn=true;sphereHint.textContent="ORBIT "+(orbitDirection===1?"CW":"CCW")+" CONFIRMED";}
+ else if(!d.rim&&Math.hypot(e.clientX-d.x,e.clientY-d.y)<9&&Math.hypot(d.x-sphere.getBoundingClientRect().left-sphere.getBoundingClientRect().width*.5,d.y-sphere.getBoundingClientRect().top-sphere.getBoundingClientRect().height*111/205)<32){pitchGoal=52;bankGoal=0;sphereHint.textContent="ATTITUDE LEVELED";}
+ sphereDrag=null;
+}
+sphere.addEventListener("pointerup",sphereRelease);sphere.addEventListener("pointercancel",e=>{sphereDrag=null});
+document.getElementById("sphereLevel").addEventListener("click",()=>{pitchGoal=52;bankGoal=0;sphereHint.textContent="ATTITUDE LEVELED"});
+document.getElementById("classicToggle").addEventListener("click",()=>{
+ const p=document.getElementById("classicPanel");p.hidden=!p.hidden;
+ const b=document.getElementById("classicToggle");b.setAttribute("aria-expanded",String(!p.hidden));b.textContent=p.hidden?"CLASSIC CONTROLS ▾":"CLASSIC CONTROLS ▴";
+});
+document.getElementById("closeFlight").addEventListener("click",()=>document.getElementById("flightToggle").click());
+document.getElementById("flightToggle").addEventListener("click",()=>{
+ const p=document.getElementById("flightControls"),open=p.hidden;p.hidden=!open;
+ const b=document.getElementById("flightToggle");b.setAttribute("aria-expanded",String(open));b.textContent=open?"FLIGHT ▴":"FLIGHT ▾";
+});
+document.getElementById("reverse").addEventListener("click",()=>{orbitDirection*=-1;document.getElementById("reverse").textContent=orbitDirection===1?"REVERSE ↔":"FORWARD ↔";});
+document.getElementById("sweep").addEventListener("click",()=>{orbitOn=true;syncOrbit();sweepUntil=performance.now()+4600;orbitSpeedGoal=.000025;targetAngle+=orbitDirection*.35;});
+document.getElementById("pitchDown").addEventListener("click",()=>{pitchGoal=Math.max(22,pitchGoal-10);});
+document.getElementById("pitchUp").addEventListener("click",()=>{pitchGoal=Math.min(82,pitchGoal+10);});
+document.getElementById("bankLeft").addEventListener("click",()=>{bankGoal=Math.max(-12,bankGoal-4);});
+document.getElementById("bankRight").addEventListener("click",()=>{bankGoal=Math.min(12,bankGoal+4);});
+document.getElementById("level").addEventListener("click",()=>{bankGoal=0;pitchGoal=52;});
+function syncOrbit(){const b=document.getElementById("orbit");b.textContent="ORBIT: "+(orbitOn?"ON":"OFF");b.setAttribute("aria-pressed",String(orbitOn));}
+document.getElementById("orbit").addEventListener("click",()=>{cinemaActive=false;orbitOn=!orbitOn;targetAngle=angle;syncOrbit();});
+// Aim designation: tap once or drag a finger; no repeated tap-to-pan.
+function designate(e,initial=false){
+ const r=canvas.getBoundingClientRect(),px=(e.clientX-r.left)*width/r.width,py=Math.max(10,(e.clientY-r.top)*height/r.height-52);
+ if(!initial&&aimTouchPx!==null&&Math.hypot(px-aimTouchPx,py-aimTouchPy)<5)return;
+ aimTouchPx=px;aimTouchPy=py;
+ let best={score:Infinity};
+ // Only choose actual visible terrain elevations and penalize jumping surfaces.
+ for(let x=-100;x<=100;x+=3)for(let z=-130;z<=130;z+=3){
+  const y=terrainHeight(x,z),p=project(x,z,y);
+  const dist=(p.x-px)**2+(p.y-py)**2;
+  const surfacePenalty=!initial&&aimSet&&Math.abs(y-aimY)>3?185:0;
+  const travelPenalty=!initial&&aimSet?Math.max(0,Math.hypot(x-aimX,z-aimZ)-11)*1.8:0;
+  const score=dist+surfacePenalty+travelPenalty;
+  if(score<best.score)best={score,x,z,y};
+ }
+ const base=best;for(let x=base.x-3;x<=base.x+3;x+=.75)for(let z=base.z-3;z<=base.z+3;z+=.75){
+  const y=terrainHeight(x,z),p=project(x,z,y),dist=(p.x-px)**2+(p.y-py)**2;
+  const score=dist+(!initial&&aimSet&&Math.abs(y-aimY)>3?185:0)+(!initial&&aimSet?Math.max(0,Math.hypot(x-aimX,z-aimZ)-11)*1.8:0);
+  if(score<best.score)best={score,x,z,y};
+ }
+ if(Math.hypot(best.x-aimX,best.z-aimZ)>1.5||Math.abs(best.y-aimY)>1){aimMotionAt=performance.now();}
+ aimX=best.x;aimZ=best.z;aimY=best.y;aimSet=true;
+}
+canvas.addEventListener("pointerdown",e=>{
+ if(activePointer!==null)return;e.preventDefault();
+ activePointer=e.pointerId;thumbActive=true;
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ canvas.setPointerCapture(e.pointerId);designate(e,true);startBoardFire();
+});
+canvas.addEventListener("pointermove",e=>{
+ if(e.pointerId!==activePointer)return;e.preventDefault();
+ const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
+ designate(e);
+});
+function endBoardPointer(e){
+ if(e.pointerId!==activePointer)return;
+ activePointer=null;thumbActive=false;aimTouchPx=null;aimTouchPy=null;stopBoardFire();
+}
+canvas.addEventListener("pointerup",endBoardPointer);
+canvas.addEventListener("pointercancel",endBoardPointer);
+canvas.addEventListener("lostpointercapture",endBoardPointer);
+document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
+document.addEventListener("visibilitychange",()=>{if(document.hidden)gatlingStop();});
+requestAnimationFrame(frame);
+</script></body></html>
