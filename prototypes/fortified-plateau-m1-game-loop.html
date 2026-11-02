@@ -957,7 +957,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
 <button id="pitchDown"><span class="flightSymbol">↘</span><small>DIP</small></button><button id="pitchUp"><span class="flightSymbol">↗</span><small>PITCH</small></button><button id="bankLeft"><span class="flightSymbol">⤺</span><small>BANK LEFT</small></button><button id="bankRight"><span class="flightSymbol">⤻</span><small>BANK RIGHT</small></button>
 <button id="level"><span class="flightSymbol">⊕</span><small>LEVEL</small></button><button id="out"><span class="flightSymbol">−</span><small>ZOOM OUT</small></button><button id="in"><span class="flightSymbol">+</span><small>ZOOM IN</small></button><button id="reset"><span class="flightSymbol">⌖</span><small>RESET</small></button>
 </div></div><div class="flightSecondary"><button id="camera">VIEW: SURVEY</button><button id="shelves" aria-pressed="true">SHELVES: ON</button><button id="spawn">REINFORCE</button><button id="radio" aria-pressed="true">RADIO: ON</button></div>
-</div><div class="flightSection" id="desktopControls"><div class="flightSectionTitle">DESKTOP / KEYBOARD &amp; MOUSE</div><div class="desktopKeyLegend">1 / 2 / 3 · SELECT WEAPON &nbsp; | &nbsp; Q / E · TURN 90°<br>R · RECENTER &nbsp; | &nbsp; + / − · ZOOM<br>M · MUTE MUSIC &nbsp; | &nbsp; ESC · CLOSE PANELS<br>MOUSE · AIM &nbsp; | &nbsp; LEFT CLICK / HOLD · FIRE / CHARGE</div></div></div><div id="musicPanel" class="musicPanel" hidden role="group" aria-label="Cockpit audio controls">
+</div><div class="flightSection" id="desktopControls"><div class="flightSectionTitle">DESKTOP / KEYBOARD &amp; MOUSE</div><div class="desktopKeyLegend">1 / 2 / 3 · SELECT WEAPON &nbsp; | &nbsp; Q / E · TURN 90°<br>R · RECENTER &nbsp; | &nbsp; + / − · ZOOM<br>M · MUTE MUSIC &nbsp; | &nbsp; ESC · CLOSE PANELS<br>MOUSE · AIM &nbsp; | &nbsp; LEFT CLICK / HOLD · FIRE / CHARGE<br>SCROLL WHEEL · ZOOM IN / OUT</div></div></div><div id="musicPanel" class="musicPanel" hidden role="group" aria-label="Cockpit audio controls">
  <div class="musicHeader"><b>♫ AUDIO / DECK</b><button id="musicClose" type="button" aria-label="Close audio controls">×</button></div>
  <div class="musicTrackRow"><span id="musicNowPlaying">STANDBY / MUSIC OFF</span><button id="musicPlay" type="button">▶ PLAY</button></div>
  <label class="musicSelectLabel" for="musicSelect">TRACK</label><select id="musicSelect">
@@ -2059,6 +2059,16 @@ function endBoardPointer(e){
  if(e.pointerId!==activePointer)return;
  activePointer=null;thumbActive=false;aimTouchPx=null;aimTouchPy=null;stopBoardFire();
 }
+// Mouse-wheel zoom uses the same bounded zoom controls as the cockpit buttons.
+let lastWheelZoomAt=0;
+canvas.addEventListener("wheel",e=>{
+ if(e.ctrlKey||!e.deltaY)return; // leave browser pinch/accessibility zoom alone
+ e.preventDefault();
+ const now=performance.now();
+ if(now-lastWheelZoomAt<95)return;
+ lastWheelZoomAt=now;
+ document.getElementById(e.deltaY<0?"quickZoomIn":"quickZoomOut").click();
+},{passive:false});
 canvas.addEventListener("pointerup",endBoardPointer);
 canvas.addEventListener("pointercancel",endBoardPointer);
 canvas.addEventListener("lostpointercapture",endBoardPointer);
