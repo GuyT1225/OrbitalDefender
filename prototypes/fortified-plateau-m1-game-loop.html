@@ -1758,7 +1758,7 @@ function missionHud(){
 }
 function missionFinish(won){
  if(mission.phase==="won"||mission.phase==="lost")return;
- mission.phase=won?"won":"lost";liveWaves.on=false;liveWaves.pending=0;combat.holding=false;charging=false;gatlingStop();
+ mission.phase=won?"won":"lost";liveWaves.on=false;liveWaves.pending=0;combat.holding=false;charging=false;stopBoardFire();
  const panel=document.getElementById("missionResult");panel.hidden=false;
  document.getElementById("missionResultTitle").textContent=won?"FORTRESS SECURED":"FORTRESS LOST";
  document.getElementById("missionResultStats").textContent="SCORE "+mission.score+" · "+mission.kills+" KILLS · "+mission.arrivals+" BREACHES · WAVE "+liveWaves.index+"/"+mission.maxWaves;
@@ -2061,7 +2061,7 @@ canvas.addEventListener("pointerup",endBoardPointer);
 canvas.addEventListener("pointercancel",endBoardPointer);
 canvas.addEventListener("lostpointercapture",endBoardPointer);
 document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
-document.addEventListener("visibilitychange",()=>{if(document.hidden)gatlingStop();});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopBoardFire();});
 requestAnimationFrame(frame);
 
 (function(){const needle=document.getElementById("rollNeedle"),label=document.querySelector(".rollLabel"),readout=document.getElementById("domeBank");if(!needle||!label||!readout)return;function sync(){const m=readout.textContent.match(/-?\d+(?:\.\d+)?/);if(!m)return;const v=Number(m[0]);needle.style.transform="rotate("+Math.max(-80,Math.min(80,v))+"deg)";label.textContent="ROLL "+Math.round(v)+"°";}new MutationObserver(sync).observe(readout,{childList:true,characterData:true,subtree:true});sync();})();
