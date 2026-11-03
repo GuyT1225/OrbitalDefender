@@ -847,6 +847,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
 #missionRestart{min-height:48px;padding:10px 18px;color:#fff4d9;background:#493821;border:1px solid #d6b172;font:bold 13px monospace;cursor:pointer}
 @media(max-width:430px){#missionHud{top:4px;left:50%;font-size:9px;max-width:94%;overflow:hidden}}
 .desktopKeyLegend{font:10px/1.75 monospace;color:#d0e6d0;letter-spacing:.15px;padding:3px 2px 5px}
+.pauseOverlay[hidden]{display:none!important}.pauseOverlay{position:absolute;z-index:80;inset:0;display:grid;place-items:center;background:rgba(2,9,6,.81);padding:16px}.pauseCard{width:min(330px,100%);padding:24px;background:#0e2117;border:1px solid #9cc3a1;box-shadow:0 12px 42px #000b;text-align:center;color:#e5f1dd}.pauseKicker{font:10px monospace;letter-spacing:2px;color:#9fbd9e}.pauseCard h2{font:900 34px system-ui;margin:8px 0}.pauseCard p{font:12px/1.5 monospace;color:#a9c5ab}.pauseCard button{display:block;width:100%;margin:10px 0;font-size:12px}.pauseCard small{font:10px monospace;color:#aec7b0}
 </style></head>
 <body><div id="gameIntro" class="flight-screen">
  <div class="bay-art"><div class="bay-window"><span>PLATEAU / SECTOR 07</span></div><div class="crew"></div><div class="gun"></div><div class="operator-console"></div></div>
@@ -947,6 +948,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
   <div class="dashUtility"><button id="sphereLevel" type="button">⊕ LVL</button><button id="classicToggle" aria-expanded="false" type="button">OPTIONS</button></div>
   <div id="domeHint" class="dashHint" aria-live="off"></div>
 </div>
+<div id="pauseOverlay" class="pauseOverlay" hidden role="dialog" aria-modal="true" aria-label="Mission paused"><div class="pauseCard"><div class="pauseKicker">OD // MISSION HOLD</div><h2>PAUSED</h2><p>Combat and mission timers are suspended.</p><button id="pauseResume" type="button">▶ RESUME MISSION</button><button id="pauseRestart" type="button">↻ RESTART MISSION</button><small>SPACE / ESC TO RESUME</small></div></div>
 <div id="flightControls" class="flightControls" hidden role="group" aria-label="Flight commands">
 <div class="flightHead"><span>FLIGHT // CLASSIC SETTINGS</span><button id="closeFlight" type="button" aria-label="Close flight commands">×</button></div>
 <div id="classicPanel" hidden>
@@ -957,7 +959,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
 <button id="pitchDown"><span class="flightSymbol">↘</span><small>DIP</small></button><button id="pitchUp"><span class="flightSymbol">↗</span><small>PITCH</small></button><button id="bankLeft"><span class="flightSymbol">⤺</span><small>BANK LEFT</small></button><button id="bankRight"><span class="flightSymbol">⤻</span><small>BANK RIGHT</small></button>
 <button id="level"><span class="flightSymbol">⊕</span><small>LEVEL</small></button><button id="out"><span class="flightSymbol">−</span><small>ZOOM OUT</small></button><button id="in"><span class="flightSymbol">+</span><small>ZOOM IN</small></button><button id="reset"><span class="flightSymbol">⌖</span><small>RESET</small></button>
 </div></div><div class="flightSecondary"><button id="camera">VIEW: SURVEY</button><button id="shelves" aria-pressed="true">SHELVES: ON</button><button id="spawn">REINFORCE</button><button id="radio" aria-pressed="true">RADIO: ON</button></div>
-</div><div class="flightSection" id="desktopControls"><div class="flightSectionTitle">DESKTOP / KEYBOARD &amp; MOUSE</div><div class="desktopKeyLegend">1 / 2 / 3 · SELECT WEAPON &nbsp; | &nbsp; Q / E · TURN 90°<br>R · RECENTER &nbsp; | &nbsp; + / − · ZOOM<br>M · MUTE MUSIC &nbsp; | &nbsp; ESC · CLOSE PANELS<br>MOUSE · AIM &nbsp; | &nbsp; LEFT CLICK / HOLD · FIRE / CHARGE<br>SCROLL WHEEL · ZOOM IN / OUT</div></div></div><div id="musicPanel" class="musicPanel" hidden role="group" aria-label="Cockpit audio controls">
+</div><div class="flightSection" id="desktopControls"><div class="flightSectionTitle">DESKTOP / KEYBOARD &amp; MOUSE</div><div class="desktopKeyLegend">1 / 2 / 3 · SELECT WEAPON &nbsp; | &nbsp; Q / E · TURN 90°<br>R · RECENTER &nbsp; | &nbsp; + / − · ZOOM<br>M · MUTE MUSIC &nbsp; | &nbsp; SPACE · PAUSE<br>ESC · CLOSE PANELS / PAUSE<br>MOUSE · AIM &nbsp; | &nbsp; LEFT CLICK / HOLD · FIRE / CHARGE<br>SCROLL WHEEL · ZOOM IN / OUT</div></div></div><div id="musicPanel" class="musicPanel" hidden role="group" aria-label="Cockpit audio controls">
  <div class="musicHeader"><b>♫ AUDIO / DECK</b><button id="musicClose" type="button" aria-label="Close audio controls">×</button></div>
  <div class="musicTrackRow"><span id="musicNowPlaying">STANDBY / MUSIC OFF</span><button id="musicPlay" type="button">▶ PLAY</button></div>
  <label class="musicSelectLabel" for="musicSelect">TRACK</label><select id="musicSelect">
@@ -1436,7 +1438,11 @@ document.getElementById("deploy").addEventListener("click",()=>{
  document.getElementById("gameIntro").style.display="none";
  soundBurst(170,.12,.11,true);
 });
-let stableAimAt=performance.now(),lastAimX=0,lastAimZ=0,lastAimY=34,aimMotionAt=0;
+// The mission clock excludes paused wall time; all combat deadlines use this clock.
+let gamePaused=false,pauseWallStart=0,pausedWallTotal=0;
+function gameNow(){const wall=gamePaused?pauseWallStart:performance.now();return wall-pausedWallTotal;}
+let scheduledSalvos=[];
+let stableAimAt=gameNow(),lastAimX=0,lastAimZ=0,lastAimY=34,aimMotionAt=0;
 let aimTouchPx=null,aimTouchPy=null,pipPosX=null,pipPosY=null,opticX=null,opticY=null;
 let weaponMode=0,lensOn=true,thumbActive=false,thumbX=width*.5,thumbY=height*.7,activePointer=null;const weaponLabels=["GATLING","ORBITAL","SALVO"];const combat={units:[],fx:[],tracers:[],projectiles:[],holding:false,heat:0,fireTimer:0,hits:0,radioOn:true,lastRadio:-9999,radioText:"RADIO STANDBY",radioUntil:0,shotCount:0};
 const liveWaves={on:false,index:0,pending:0,nextAt:0,started:0,kills:0};
@@ -1475,7 +1481,7 @@ function spawnUnits(count=15){
 }
 let lastConfirmAt=-9999;
 function radioConfirm(message){
- const now=performance.now();if(now-lastConfirmAt<750)return;lastConfirmAt=now;
+ const now=gameNow();if(now-lastConfirmAt<750)return;lastConfirmAt=now;
  withWeaponAudio(()=>{
  // Deliberately short, high-mid communication chirps: separate from explosion bass.
  duckWeapons(650,.20);
@@ -1711,23 +1717,25 @@ function salvoDetonation(){
  });
 }
 function startBoardFire(){
+ if(gamePaused)return;
  primeHeritageSample("laserCannon");
- if(audioDiag.firstTouch===null)audioDiag.firstTouch=performance.now();
+ if(audioDiag.firstTouch===null)audioDiag.firstTouch=gameNow();
  initAudio();if(weaponMode===0&&combat.heat>=.98)return;
- charging=true;recoil=0;if(weaponMode===1)orbitalChargeStart=performance.now();
- if(weaponMode===0){combat.holding=true;gatlingBurstStart=performance.now();combat.fireTimer=0;gatlingSpinUp();}
+ charging=true;recoil=0;if(weaponMode===1)orbitalChargeStart=gameNow();
+ if(weaponMode===0){combat.holding=true;gatlingBurstStart=gameNow();combat.fireTimer=0;gatlingSpinUp();}
 }
 function stopBoardFire(){
+ if(gamePaused){charging=false;combat.holding=false;barrelSpinDown();return;}
  if(!charging&&!combat.holding)return;
  const wasCharging=charging;charging=false;combat.holding=false;
  if(wasCharging&&weaponMode!==0){
-  const now=performance.now();
+  const now=gameNow();
   if(weaponMode===1){
    if(now>=orbitalCooldown){launchHeritageOrbital(aimX,aimZ,aimY,Math.max(0,now-orbitalChargeStart),now);}
    else radioCall("Orbital recharging",now);
   }else if(weaponMode===2){
    salvoQueue.push({x:aimX,z:aimZ,y:aimY});heritageNoise(.035,.036,1400,"bandpass");
-   if(salvoQueue.length>=3){const queued=salvoQueue.splice(0);queued.forEach((q,i)=>setTimeout(()=>{salvoThump(i);const launch=performance.now();stickyFlights.push({...q,birth:launch,landAt:launch+650,start:{x:q.x-58,z:q.z-44,y:q.y+37},control:{x:q.x-22,z:q.z-20,y:q.y+55},number:i+1});},i*360));radioCall("Sticky salvo away",now);}
+   if(salvoQueue.length>=3){const queued=salvoQueue.splice(0);queued.forEach((q,i)=>scheduledSalvos.push({...q,number:i+1,launchAt:now+i*360}));radioCall("Sticky salvo away",now);}
    else radioCall("Salvo target "+salvoQueue.length+" of three",now);
   }
   recoil=1;
@@ -1763,7 +1771,7 @@ function missionFinish(won){
  const panel=document.getElementById("missionResult");panel.hidden=false;
  document.getElementById("missionResultTitle").textContent=won?"FORTRESS SECURED":"FORTRESS LOST";
  document.getElementById("missionResultStats").textContent="SCORE "+mission.score+" · "+mission.kills+" KILLS · "+mission.arrivals+" BREACHES · WAVE "+liveWaves.index+"/"+mission.maxWaves;
- radioCall(won?"Fortress secured":"Fortress lost",performance.now());refreshWaveBadge();
+ radioCall(won?"Fortress secured":"Fortress lost",gameNow());refreshWaveBadge();
 }
 function missionStep(t){
  if(mission.phase!=="playing")return;
@@ -1780,11 +1788,12 @@ function missionStep(t){
 }
 document.getElementById("missionRestart").addEventListener("click",()=>location.reload());
 function beginWave(){
+ if(gamePaused)return;
  if(liveWaves.on||mission.phase==="won"||mission.phase==="lost"||liveWaves.index>=mission.maxWaves)return;
  mission.phase="playing";liveWaves.on=true;liveWaves.index++;
- liveWaves.started=performance.now();liveWaves.nextAt=liveWaves.started+500;
+ liveWaves.started=gameNow();liveWaves.nextAt=liveWaves.started+500;
  liveWaves.pending=mission.waveSizes[liveWaves.index-1];
- radioCall("Wave "+liveWaves.index+" inbound",performance.now());refreshWaveBadge();missionHud();
+ radioCall("Wave "+liveWaves.index+" inbound",gameNow());refreshWaveBadge();missionHud();
 }
 function refreshWaveBadge(){const b=document.getElementById("liveWaveBtn");if(!b)return;b.disabled=liveWaves.on||mission.phase==="won"||mission.phase==="lost";b.textContent=mission.phase==="won"?"MISSION COMPLETE":mission.phase==="lost"?"FORTRESS LOST":liveWaves.on?"WAVE "+liveWaves.index+" / "+(liveWaves.pending+combat.units.filter(u=>!u.down).length):liveWaves.index?"▶ NEXT WAVE":"▶ START DEFENSE";}
 function updateWaves(t){if(!liveWaves.on)return;
@@ -1796,6 +1805,12 @@ function detonateAt(x,z,y,radius,t,type,level){heavyFx.push({x,z,y,radius,birth:
  impact(x,z,y,hits>0,t);weaponImpact(type,level);if(hits>0){heritageSample("salvoConfirm",.12,1.1);radioCall("Good effect on "+hits+" contacts",t);}refreshWaveBadge();
 }
 function updateStickySalvo(t){
+ for(let i=scheduledSalvos.length-1;i>=0;i--){
+  const q=scheduledSalvos[i];if(t<q.launchAt)continue;
+  salvoThump(q.number-1);
+  stickyFlights.push({...q,birth:t,landAt:t+650,start:{x:q.x-58,z:q.z-44,y:q.y+37},control:{x:q.x-22,z:q.z-20,y:q.y+55}});
+  scheduledSalvos.splice(i,1);
+ }
  for(let i=stickyFlights.length-1;i>=0;i--){const q=stickyFlights[i];if(t>=q.landAt){stickyCharges.push({...q,armedAt:t,detonateAt:t+STICKY_FUSE});stickyFlights.splice(i,1);withWeaponAudio(()=>{heritageNoise(.045,.065,1250,"bandpass");heritageSweep(270,75,.11,"triangle",.06);});}}
  for(let i=stickyCharges.length-1;i>=0;i--){const q=stickyCharges[i];if(t>=q.detonateAt){salvoDetonation();detonateAt(q.x,q.z,q.y,17,t,"salvo",1);stickyCharges.splice(i,1);}}
 }
@@ -1859,7 +1874,9 @@ function updateHudInstruments(t){
  document.getElementById("quickZoomLabel").textContent=(zoomIndex+1)+"/"+zoomSteps.length;
  document.getElementById("domeOrbit").textContent=orbitDirection===1?"↻ CW":"↺ CCW";document.getElementById("domePitch").textContent="P"+Math.round(pitchDeg)+"°";document.getElementById("domeBank").textContent="B"+(bankDeg>=0?"+":"")+Math.round(bankDeg)+"°";document.getElementById("domeTilt").style.transform="translate("+(bankDeg*.32)+"px,"+(-(pitchDeg-52)*.28)+"px) rotate("+(bankDeg*.35)+"deg)";
 }
-function frame(t){
+function frame(realT){
+ if(gamePaused){requestAnimationFrame(frame);return;}
+ const t=gameNow();
  const dt=Math.min(50,Math.max(0,t-(frame.prev||t)));frame.prev=t;
  if(cinemaActive){
   const e=Math.min(1,(t-cinemaStart)/5500),ease=u=>u*u*(3-2*u);
@@ -1873,7 +1890,7 @@ function frame(t){
   if(orbitOn){targetAngle+=dt*orbitSpeed*orbitDirection;}
   pitchDeg+=(pitchGoal-pitchDeg)*Math.min(1,dt*.005);
   bankDeg+=(bankGoal-bankDeg)*Math.min(1,dt*.004);
-  const snapEase=performance.now()<snapTurnUntil?Math.min(.34,1-Math.exp(-dt/105)):.11;
+  const snapEase=gameNow()<snapTurnUntil?Math.min(.34,1-Math.exp(-dt/105)):.11;
   angle+=(targetAngle-angle)*snapEase;
   charge=charging?Math.min(1,charge+dt/1800):Math.max(0,charge-dt/500);
   recoil=Math.max(0,recoil-dt/650);
@@ -1913,7 +1930,7 @@ document.getElementById("mesaCenter").addEventListener("click",()=>{
 function tacticalTurn(radians){
  cinemaActive=false;
  targetAngle+=radians;
- snapTurnUntil=performance.now()+1050;
+ snapTurnUntil=gameNow()+1050;
  const hint=document.getElementById("domeHint");
  hint.textContent="QUICK TURN / "+Math.round(Math.abs(radians)*180/Math.PI)+"°";
 }
@@ -2012,7 +2029,7 @@ document.getElementById("flightToggle").addEventListener("click",()=>{
  const b=document.getElementById("flightToggle");b.setAttribute("aria-expanded",String(open));b.textContent=open?"OPTIONS ▴":"OPTIONS ▾";
 });
 document.getElementById("reverse").addEventListener("click",()=>{orbitDirection*=-1;document.getElementById("reverse").textContent=orbitDirection===1?"REVERSE ↔":"FORWARD ↔";});
-document.getElementById("sweep").addEventListener("click",()=>{orbitOn=true;syncOrbit();sweepUntil=performance.now()+4600;orbitSpeedGoal=.000025;targetAngle+=orbitDirection*.35;});
+document.getElementById("sweep").addEventListener("click",()=>{orbitOn=true;syncOrbit();sweepUntil=gameNow()+4600;orbitSpeedGoal=.000025;targetAngle+=orbitDirection*.35;});
 document.getElementById("pitchDown").addEventListener("click",()=>{pitchGoal=Math.max(22,pitchGoal-10);});
 document.getElementById("pitchUp").addEventListener("click",()=>{pitchGoal=Math.min(82,pitchGoal+10);});
 document.getElementById("bankLeft").addEventListener("click",()=>{bankGoal=Math.max(-12,bankGoal-4);});
@@ -2040,16 +2057,17 @@ function designate(e,initial=false){
   const score=dist+(!initial&&aimSet&&Math.abs(y-aimY)>3?185:0)+(!initial&&aimSet?Math.max(0,Math.hypot(x-aimX,z-aimZ)-11)*1.8:0);
   if(score<best.score)best={score,x,z,y};
  }
- if(Math.hypot(best.x-aimX,best.z-aimZ)>1.5||Math.abs(best.y-aimY)>1){aimMotionAt=performance.now();}
+ if(Math.hypot(best.x-aimX,best.z-aimZ)>1.5||Math.abs(best.y-aimY)>1){aimMotionAt=gameNow();}
  aimX=best.x;aimZ=best.z;aimY=best.y;aimSet=true;
 }
 canvas.addEventListener("pointerdown",e=>{
- if(activePointer!==null)return;e.preventDefault();
+ if(gamePaused||activePointer!==null)return;e.preventDefault();
  activePointer=e.pointerId;thumbActive=true;
  const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
  canvas.setPointerCapture(e.pointerId);designate(e,true);startBoardFire();
 });
 canvas.addEventListener("pointermove",e=>{
+ if(gamePaused)return;
  if(activePointer===null&&e.pointerType==="mouse") {designate(e);return;}
  if(e.pointerId!==activePointer)return;e.preventDefault();
  const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
@@ -2062,7 +2080,7 @@ function endBoardPointer(e){
 // Mouse-wheel zoom uses the same bounded zoom controls as the cockpit buttons.
 let lastWheelZoomAt=0;
 canvas.addEventListener("wheel",e=>{
- if(e.ctrlKey||!e.deltaY)return; // leave browser pinch/accessibility zoom alone
+ if(gamePaused||e.ctrlKey||!e.deltaY)return; // leave browser pinch/accessibility zoom alone
  e.preventDefault();
  const now=performance.now();
  if(now-lastWheelZoomAt<95)return;
@@ -2074,11 +2092,39 @@ canvas.addEventListener("pointercancel",endBoardPointer);
 canvas.addEventListener("lostpointercapture",endBoardPointer);
 document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopBoardFire();});
+// M1f.1: Pausing freezes the simulation clock, queued salvos, and audio context.
+let resumeMusicOnUnpause=false;
+function toggleMissionPause(force){
+ if(mission.phase==="won"||mission.phase==="lost")return;
+ if(document.getElementById("gameIntro").style.display!=="none")return;
+ const next=typeof force==="boolean"?force:!gamePaused;
+ if(next===gamePaused)return;
+ if(next){
+  pauseWallStart=performance.now();gamePaused=true;
+  charging=false;combat.holding=false;thumbActive=false;activePointer=null;
+  aimTouchPx=null;aimTouchPy=null;barrelSpinDown();
+  resumeMusicOnUnpause=cockpitMusicPlaying&&!cockpitPlayer.paused;
+  if(resumeMusicOnUnpause)cockpitPlayer.pause();
+  if(audioCtx?.state==="running")audioCtx.suspend().catch(()=>{});
+ }else{
+  pausedWallTotal+=performance.now()-pauseWallStart;gamePaused=false;
+  frame.prev=gameNow();
+  if(audioCtx?.state==="suspended")audioCtx.resume().catch(()=>{});
+  if(resumeMusicOnUnpause&&cockpitMusicPlaying)cockpitPlayer.play().catch(()=>{});
+  resumeMusicOnUnpause=false;
+ }
+ document.getElementById("pauseOverlay").hidden=!gamePaused;
+}
+document.getElementById("pauseResume").addEventListener("click",()=>toggleMissionPause(false));
+document.getElementById("pauseRestart").addEventListener("click",()=>location.reload());
 // M1f: Desktop commands reuse the cockpit controls and their existing handlers.
 document.addEventListener("keydown",e=>{
  if(e.altKey||e.ctrlKey||e.metaKey||e.repeat)return;
  const target=e.target;
  if(target instanceof HTMLElement&&(target.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))return;
+ if(e.code==="Space"){e.preventDefault();toggleMissionPause();return;}
+ if(e.code==="Escape"&&gamePaused){e.preventDefault();toggleMissionPause(false);return;}
+ if(gamePaused)return;
  let control=null;
  if(e.code==="Digit1"||e.code==="Numpad1")control='[data-wheel-weapon="0"]';
  else if(e.code==="Digit2"||e.code==="Numpad2")control='[data-wheel-weapon="1"]';
@@ -2092,7 +2138,7 @@ document.addEventListener("keydown",e=>{
  else if(e.code==="Escape"){
   if(!document.getElementById("musicPanel").hidden)control="#musicClose";
   else if(!document.getElementById("flightControls").hidden)control="#closeFlight";
-  else return;
+  else {e.preventDefault();toggleMissionPause(true);return;}
  }else return;
  const button=document.querySelector(control);
  if(!button)return;
