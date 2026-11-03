@@ -848,6 +848,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
 @media(max-width:430px){#missionHud{top:4px;left:50%;font-size:9px;max-width:94%;overflow:hidden}}
 .desktopKeyLegend{font:10px/1.75 monospace;color:#d0e6d0;letter-spacing:.15px;padding:3px 2px 5px}
 .pauseOverlay[hidden]{display:none!important}.pauseOverlay{position:absolute;z-index:80;inset:0;display:grid;place-items:center;background:rgba(2,9,6,.81);padding:16px}.pauseCard{width:min(330px,100%);padding:24px;background:#0e2117;border:1px solid #9cc3a1;box-shadow:0 12px 42px #000b;text-align:center;color:#e5f1dd}.pauseKicker{font:10px monospace;letter-spacing:2px;color:#9fbd9e}.pauseCard h2{font:900 34px system-ui;margin:8px 0}.pauseCard p{font:12px/1.5 monospace;color:#a9c5ab}.pauseCard button{display:block;width:100%;margin:10px 0;font-size:12px}.pauseCard small{font:10px monospace;color:#aec7b0}
+.inputDiag{position:absolute;z-index:48;top:62px;left:9px;display:flex;flex-direction:column;gap:2px;padding:7px 9px;border:1px solid #eac273;background:rgba(3,15,10,.92);color:#e4f2d8;font:10px/1.4 monospace;pointer-events:none;max-width:275px;text-shadow:0 1px 1px #000}.inputDiag strong{color:#f7d88e;letter-spacing:.6px;margin-bottom:3px}.inputDiag span{white-space:nowrap}
 </style></head>
 <body><div id="gameIntro" class="flight-screen">
  <div class="bay-art"><div class="bay-window"><span>PLATEAU / SECTOR 07</span></div><div class="crew"></div><div class="gun"></div><div class="operator-console"></div></div>
@@ -948,6 +949,7 @@ button{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}butt
   <div class="dashUtility"><button id="sphereLevel" type="button">⊕ LVL</button><button id="classicToggle" aria-expanded="false" type="button">OPTIONS</button></div>
   <div id="domeHint" class="dashHint" aria-live="off"></div>
 </div>
+<div id="inputDiag" class="inputDiag" aria-live="off"><strong>M1g-01 / INPUT TELEMETRY</strong><span id="diagPointer">POINTER: NONE</span><span id="diagGate">CANVAS DOWN: NONE</span><span id="diagTrigger">TRIGGER: OFF</span><span id="diagShot">SHOTS: 0 · FIRST: --</span><span id="diagWave">WAVE: IDLE</span></div>
 <div id="pauseOverlay" class="pauseOverlay" hidden role="dialog" aria-modal="true" aria-label="Mission paused"><div class="pauseCard"><div class="pauseKicker">OD // MISSION HOLD</div><h2>PAUSED</h2><p>Combat and mission timers are suspended.</p><button id="pauseResume" type="button">▶ RESUME MISSION</button><button id="pauseRestart" type="button">↻ RESTART MISSION</button><small>SPACE / ESC TO RESUME</small></div></div>
 <div id="flightControls" class="flightControls" hidden role="group" aria-label="Flight commands">
 <div class="flightHead"><span>FLIGHT // CLASSIC SETTINGS</span><button id="closeFlight" type="button" aria-label="Close flight commands">×</button></div>
@@ -1518,6 +1520,7 @@ function terrainHeight(x,z){
  return h;
 }
 function firePhysicalRound(t){
+ diagShotFired();
  // Twin lateral mounts: each barrel has its own physical origin, arc and visible trail.
  const side=108,spread=.23+combat.heat*.85,flight=.39;
  const baseTarget={x:aimX+(Math.random()-.5)*spread,z:aimZ+(Math.random()-.5)*spread,y:aimY};
@@ -1921,6 +1924,7 @@ function frame(realT){
  restoreMusic(t);if(mission.phase!=="won"&&mission.phase!=="lost"){updateCombat(dt,t);missionStep(t);updateWaves(t);updateOrbitalFlights(t);updateStickySalvo(t);}
  terrain();if(worldView==="natural")worldSetDressing();if(worldView!=="grid")boardContrastMarks();plateau();heroFortress(t);drawCombat(t);drawOrbitalFlights(t);drawHeavyFx(t);drawMagnifier();overlay();drawCombatGuides(t);updateHudInstruments(t);
  status.textContent=zoomNames[zoomIndex]+" // "+(lowView?"LOW OBLIQUE":"ORBITAL")+" // "+Math.round(zoomValue*100)+"% SCALE";
+ diagRefresh();
  requestAnimationFrame(frame);
 }
 document.getElementById("mesaCenter").addEventListener("click",()=>{
@@ -2062,6 +2066,7 @@ function designate(e,initial=false){
 }
 canvas.addEventListener("pointerdown",e=>{
  if(gamePaused||activePointer!==null)return;e.preventDefault();
+ diagCanvasAccepted(e);
  activePointer=e.pointerId;thumbActive=true;
  const r=canvas.getBoundingClientRect();thumbX=e.clientX-r.left;thumbY=e.clientY-r.top;
  canvas.setPointerCapture(e.pointerId);designate(e,true);startBoardFire();
@@ -2092,6 +2097,26 @@ canvas.addEventListener("pointercancel",endBoardPointer);
 canvas.addEventListener("lostpointercapture",endBoardPointer);
 document.getElementById("lens").addEventListener("contextmenu",e=>e.preventDefault());
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopBoardFire();});
+// Instrumentation only: no changes to weapon logic, aiming, spawn timing or controls.
+let diagLastPointer="NONE",diagCanvasDownAt=null,diagShotsAtDown=0,diagFirstMs=null,diagTotalShots=0;
+document.addEventListener("pointerdown",e=>{
+ const target=e.target instanceof Element?e.target.closest("button,canvas,[id]"):null;
+ diagLastPointer=(target?.id||target?.tagName||e.target?.tagName||"UNKNOWN").toUpperCase();
+ document.getElementById("diagPointer").textContent="POINTER: "+diagLastPointer;
+},true);
+function diagCanvasAccepted(e){
+ diagCanvasDownAt=performance.now();diagShotsAtDown=diagTotalShots;diagFirstMs=null;
+ document.getElementById("diagGate").textContent="CANVAS DOWN: ACCEPTED / "+e.pointerType.toUpperCase();
+}
+function diagShotFired(){
+ diagTotalShots++;
+ if(diagCanvasDownAt!==null&&diagFirstMs===null)diagFirstMs=Math.round(performance.now()-diagCanvasDownAt);
+}
+function diagRefresh(){
+ document.getElementById("diagTrigger").textContent="TRIGGER: "+(combat.holding?"ON / GATLING":charging?"CHARGING":"OFF")+" · "+(activePointer===null?"NO POINTER":"POINTER HELD");
+ document.getElementById("diagShot").textContent="SHOTS: "+diagTotalShots+" · FIRST: "+(diagFirstMs===null?"--":diagFirstMs+"ms");
+ document.getElementById("diagWave").textContent="WAVE: "+liveWaves.index+" · PENDING "+liveWaves.pending+" · UNITS "+combat.units.filter(u=>!u.down).length;
+}
 // M1f.1: Pausing freezes the simulation clock, queued salvos, and audio context.
 let resumeMusicOnUnpause=false;
 function toggleMissionPause(force){
